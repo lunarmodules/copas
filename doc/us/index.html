@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
-<title>Copas - Lua Coroutine Oriented Portable Asynchronous Services</title>
+<title>Copas - Coroutine Oriented Portable Asynchronous Services for Lua</title>
 <style type="text/css">
 ul { list-style-type: disc };
 </style>
@@ -19,8 +19,8 @@ border="0" alt="Copas" src="copas.png"></a> </td>
 </tr>
 
 <tr>
-<td align="center" valign="top">Lua Coroutine Oriented Portable
-Asynchronous Services</td>
+<td align="center" valign="top">Coroutine Oriented Portable
+Asynchronous Services for Lua</td>
 </tr>
 </table>
 </center>
@@ -50,8 +50,26 @@ Asynchronous Services</td>
 <a name="over"></a> 
 <h2>Overview</h2>
 
-<p>Copas (Coroutine Oriented Portable Asynchronous Services) offers a
-dispatcher and socket operations based on coroutines.
+<p>Copas offers a dispatcher based on coroutines that can be used by
+socket request/response server programs. A server registered with Copas
+should provide a handler for requests and use Copas socket functions to
+send the response.
+</p>
+
+<p>Since Copas is coroutine based, using it within a pcall or xpcall context
+does not work with Lua 5.0 yielding. If you need to use 
+those functions we strongly suggest using Xavante's 
+<a href="http://luaforge.net/frs/?group_id=6">coxpcall</a>, a coroutine safe
+version of the Lua 5.0 protected calls.
+</p>
+
+<p>
+Copas follows the
+<a href="http://www.keplerproject.org/compat">package proposal</a>
+for Lua 5.1, therefore this package should be "installed".
+In other words, if you are using Lua 5.0, the file <tt>compat-5.1.lua</tt>
+must be installed in the <tt>LUA_PATH</tt>. If you are using Lua 5.1,
+nothing should be done.
 </p>
 
 <p>Copas is free software and uses the same
@@ -61,7 +79,7 @@ dispatcher and socket operations based on coroutines.
 <a name="version"></a>
 <h2>Current version</h2>
 
-<p>Current version is 1.0 Beta. It was developed for Lua 5.0.</p>
+<p>Current version is 1.0 Beta. It was developed for Lua 5.0 and Lua 5.1.</p>
 
 <a name="download"></a> 
 <h2>Download</h2>
@@ -75,24 +93,15 @@ Copas can be downloaded from its
 <h2>What's new</h2>
 
 <ul>
-<li>[17/Feb/2005] Version 1.0 beta released</li>
+<li>[17/Feb/2005] Version 1.0 beta released<br>
+First public version</li>
 </ul>
-
-<p>
-Copas 1.0 beta follows the
-<a href="http://www.keplerproject.org/compat">package proposal</a>
-for Lua 5.1, therefore this package should be "installed".
-In other words,
-if you are using Lua 5.0, the file <tt>compat-5.1.lua</tt> must be
-installed in the <tt>LUA_PATH</tt>. If you are using Lua 5.1,
-nothing should be done.
-</p>
 
 <a name="reference"></a>
 <h2>Reference</h2>
 
-<p>Copas functions are separated in two groups. The first is relative to the
-dispatcher:</p>
+<p>Copas functions are separated in two groups. The first one is relative to
+the use of the dispatcher:</p>
 <ul>
 <li>
 <b><code>copas.addserver(server, handler, timeout)</code></b>
@@ -153,7 +162,7 @@ Mike Pall and David Burgess</p>
 Comments are welcome!</p>
 
 <hr>
-<small>$Id: index.html,v 1.6 2005/02/17 22:39:10 carregal Exp $</small>
+<small>$Id: index.html,v 1.7 2005/02/18 21:12:26 carregal Exp $</small>
 </body>
 </html>
 

@@ -8,6 +8,7 @@
 --    copas.flush - flushes the writing buffer if necessary
 --    copas.receive - receives data from a socket
 --    copas.send  - sends data through a buffered socket
+--    copas.wrap  - wraps a LuaSocket socket with Copas methods
 --
 -- Authors: Andre Carregal and Javier Guerra
 -- Contributors: Diego Nehab, Mike Pall and David Burgess
