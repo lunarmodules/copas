@@ -70,36 +70,35 @@ associated handler passing the client socket returned by
 the clients:</p>
 <ul>
 <li>
-<b><code>copas.flush(client)</code></b>
+<b><code>copas.flush(skt)</code></b>
 <br>
 Flushes a client write buffer. <code>copas.flush()</code> is called from time
 to time by <code>copas.loop()</code> but it may be necessary to call it from
 the handler function.
 </li>
 <li>
-<b><code>copas.receive(client, pattern)</code></b>
+<b><code>copas.receive(skt, pattern)</code></b>
 <br>
-Reads data from a client according to a pattern just like LuaSocket
+Reads data from a client socket according to a pattern just like LuaSocket
 <code>socket:receive()</code>. The Copas version does not block and allows
 the multitasking of the other handlers.
 </li>
 <li>
-<b><code>copas.send(client, data)</code></b>
+<b><code>copas.send(skt, data)</code></b>
 <br>
-Sends data to a client just like <code>socket:send()</code>. The Copas version
+Sends data to a client socket just like <code>socket:send()</code>. The Copas version
 is buffered and does not block, allowing the multitasking of the other handlers.
 </li>
 <li>
-<b><code>copas.wrap (skt)</code></b>
+<b><code>copas.wrap(skt)</code></b>
 <br>
-Wraps a LuaSocket socket to use Copas' methods. After the wrapping,
-<code>skt:send()</code> calls <code>copas.send()</code> and
-<code>skt:receive()</code> calls <code>copas.receive()</code>
+Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
+but use Copas' methods <code>copas.send()</code> and <code>copas.receive()</code>
 automatically.
 </li>
 </ul>
 
 <hr>
-<small>$Id: reference.html,v 1.1 2005/03/10 23:14:00 carregal Exp $</small>
+<small>$Id: reference.html,v 1.2 2005/03/10 23:21:14 carregal Exp $</small>
 </body>
 </html>
