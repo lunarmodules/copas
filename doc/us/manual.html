@@ -1,0 +1,146 @@
+<!doctype html public "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+    <title>Copas - Coroutine Oriented Portable Asynchronous Services for Lua</title>
+    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css">
+</head>
+<body>
+<center>
+<table border="0" cellspacing="2" cellpadding="2">
+<tr>
+<td align="center"><a href="http://www.keplerproject.org"><img
+border="0" alt="Copas" src="copas.png"></a> </td>
+</tr>
+
+<tr>
+<td align="center"><big><b>Copas</b></big> </td>
+</tr>
+
+<tr>
+<td align="center" valign="top">Coroutine Oriented Portable
+Asynchronous Services for Lua</td>
+</tr>
+</table>
+</center>
+
+<center>
+<small>
+<a href="index.html">home</a> &middot;
+<a href="license.html">license</a> &middot;
+<a href="reference.html">reference</a>
+</small>
+</center>
+
+<h2>Background</h2>
+
+<p>Copas is a dispatcher that can help a lot in the creation of request/response
+servers based on
+<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>.
+In such servers usually there is a dispatcher loop like the one below:</p>
+
+<pre class="example">
+server = socket.bind(host, port)
+while true
+  skt = server:accept()
+  handle(skt)
+end
+</pre>
+
+<p>where <code>handler</code> is a function that implements the server protocol using LuaSocket's
+socket functions:</p>
+
+<pre class="example">
+function handle(skt)
+  ...
+  reqdata = skt:receive(pattern) -- gets some data from the client - "the request"
+  ...
+  skt:send(respdata) -- sends some data to the client - "the response"
+  ...
+end
+</pre>
+
+<p>
+he problem with that approach is that the dispatcher loop is doing a busy wait
+and can handle just one connection at a time. To solve the busy waiting we can
+use LuaSocket's <code>socket.select()</code>, like in:</p>
+
+<pre class="example">
+server = socket.bind(host, port)
+reading = {server}
+while true
+  input = socket.select(reading)
+  skt = input:accept()
+  handle(skt)
+end
+</pre>
+
+<p>
+While this helps our CPU usage, the server is still accepting only one client
+connection at a time. To handle more than one client the server must be able to
+multitask, and the solution usually involves some kind of threads.</p>
+<p>The dispatcher loop then becomes something like:</p>
+
+<pre class="example">
+server = socket.bind(host, port)
+reading = {server}
+while true
+  input = socket.select(reading)
+  skt = input:accept()
+  newthread(handle(skt))
+end
+</pre>
+
+<p>
+where <code>newthread</code> is able to create a new thread that executes
+independently the handler function.</p>
+
+<p>
+The use of threads in the new loop solves the multitasking problem but may
+create another. Some platforms does not offer multithreading or maybe you
+don't want to use threads at all.</p>
+<p>
+If that is the case, using Lua's coroutines may help a lot, and that's
+exactly what Copas does. Copas implements the dispatcher loop using coroutines
+so the handlers can multitask without the use of threads.</p>
+
+<h2>Using Copas</h2>
+<p>
+If you already have a running server using some dispatcher like the previous
+ones, migrating to Copas is quite simple, usually consisting of just three
+steps.</p>
+<p>
+First each server socket and its handler function have to be registered
+with Copas:
+
+<pre class="example">
+server = socket.bind(host, port)
+copas.addserver(server, handle)
+</pre>
+
+<p>Second the server handler has to be changed to use Copas sockets instead of
+LuaSocket's:</p>
+
+<pre class="example">
+function handle(skt)
+  skt = copas.wrap(skt) -- now skt behaves like a LuaSocket socket but uses Copas
+  ...
+  reqdata = skt:receive(pattern) -- gets some data from the client - "the request"
+  ...
+  skt:send(respdata) -- sends some data to the client - "the response"
+   ...
+end
+</pre>
+
+<p>Finally, to run the dispatcher infinite loop you just call:</p>
+
+<pre class="example">
+copas.loop()
+</pre>
+
+<p>During the loop Copas' dispatcher accepts connections from clients and
+automatically calls the corresponding handler functions.<p>
+
+<hr>
+<small>$Id: manual.html,v 1.1 2005/03/10 23:14:00 carregal Exp $</small>
+</body>
+</html>

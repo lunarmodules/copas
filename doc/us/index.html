@@ -17,8 +17,9 @@ border="0" alt="Copas" src="copas.png"></a> </td>
 </tr>
 
 <tr>
-<td align="center" valign="top">Coroutine Oriented Portable
-Asynchronous Services for Lua</td>
+<td align="center" valign="top">
+Coroutine Oriented Portable Asynchronous Services for Lua
+</td>
 </tr>
 </table>
 </center>
@@ -26,8 +27,9 @@ Asynchronous Services for Lua</td>
 <center><small>
 <a href="#over">overview</a> &middot;
 <a href="#download">download</a> &middot;
-<a href="#new">news</a> &middot;
-<a href="manual.html">manual</a>
+<a href="license.html">license</a> &middot;
+<a href="reference.html">reference</a> &middot;
+<a href="examples.html">examples</a>
 </small></center>
 
 <hr>
@@ -37,12 +39,10 @@ Asynchronous Services for Lua</td>
     <li><a href="#over">Overview</a></li>
     <li><a href="#version">Current Version</a></li>
     <li><a href="#download">Download</a></li>
+    <li><a href="license.html">License</a></li>
     <li><a href="#new">What's new</a></li>
-    <li><a href="manual.html">Manual</a></li>
-    <ul>
-        <li><a href="manual.html#reference">Reference</a></li>
-        <li><a href="manual.html#using">Using Copas</a></li>
-    </ul>
+    <li><a href="reference.html">Reference</a></li>
+    <li><a href="examples.html">Examples</a></li>
     <li><a href="#credits">Credits</a></li>
     <li><a href="#contact">Contact us</a></li>
 </ul>
@@ -50,32 +50,31 @@ Asynchronous Services for Lua</td>
 <a name="over"></a> 
 <h2>Overview</h2>
 
-<p>Copas offers a dispatcher based on coroutines that can be used by
-socket request/response servers based on
-<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>.
+<p>
+Copas is a dispatcher based on coroutines that can be used by
+TCP/IP socket request/response servers. It used
+<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>
+as the interface with the TCP/IP stack.</p>
+<p>
 A server registered with Copas should provide a handler for requests and use
-Copas socket functions to send the response.
-</p>
-
-<p>Since Copas is coroutine based, using it within a pcall or xpcall context
-does not work with Lua 5.0 yielding. If you need to use 
-those functions we strongly suggest using Xavante's 
-<a href="http://luaforge.net/frs/?group_id=6">coxpcall</a>, a coroutine safe
-version of the Lua 5.0 protected calls.
-</p>
-
+Copas socket functions to send the response. Copas loops through requests and
+invokes the corresponding handlers.</p>
 <p>
 Copas follows the
 <a href="http://www.keplerproject.org/compat">package proposal</a>
 for Lua 5.1, therefore this package should be "installed".
 In other words, if you are using Lua 5.0, the file <tt>compat-5.1.lua</tt>
 must be installed in the <tt>LUA_PATH</tt>. If you are using Lua 5.1,
-nothing should be done.
-</p>
+nothing should be done.</p>
+<p>
+Since Copas is coroutine based, using it within a pcall or xpcall context
+does not work with Lua 5.0 yielding. If you need to use 
+those functions we strongly suggest using Xavante's 
+<a href="http://luaforge.net/frs/?group_id=6">coxpcall</a>, a coroutine safe
+version of the Lua 5.0 protected calls.</p>
 
-<p>Copas is free software and uses the same
-<a href="license.html">license</a> as Lua 5.0.
-</p>
+<p>Copas is free software and uses the same <a href="license.html">license</a>
+as Lua 5.0.</p>
 
 <a name="version"></a>
 <h2>Current version</h2>
@@ -87,8 +86,8 @@ nothing should be done.
 
 <p>
 Copas can be downloaded from its
-<a href="http://luaforge.net/frs/?group_id=100">LuaForge</a> page.
-</p>
+<a href="http://luaforge.net/frs/?group_id=100">LuaForge</a> page.</p>
+<p>CVS access is also available from LuaForge.</p>
 
 <a name="new"></a>
 <h2>What's new</h2>
@@ -115,6 +114,6 @@ Mike Pall and David Burgess</p>
 Comments are welcome!</p>
 
 <hr>
-<small>$Id: index.html,v 1.9 2005/03/08 22:33:01 carregal Exp $</small>
+<small>$Id: index.html,v 1.10 2005/03/10 23:14:00 carregal Exp $</small>
 </body>
 </html>

@@ -1,0 +1,105 @@
+<!doctype html public "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+    <title>Copas - Coroutine Oriented Portable Asynchronous Services for Lua</title>
+    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css">
+</head>
+
+<body>
+<center>
+<table border="0" cellspacing="2" cellpadding="2">
+<tr>
+<td align="center"><a href="http://www.keplerproject.org"><img
+border="0" alt="Copas" src="copas.png"></a> </td>
+</tr>
+
+<tr>
+<td align="center"><big><b>Copas</b></big> </td>
+</tr>
+
+<tr>
+<td align="center" valign="top">
+Coroutine Oriented Portable Asynchronous Services for Lua
+</td>
+</tr>
+</table>
+</center>
+
+<center>
+<small>
+<a href="index.html">home</a> &middot;
+<a href="license.html">license</a> &middot;
+<a href="examples.html">examples</a>
+</small>
+</center>
+
+<hr>
+<a name="reference"></a>
+<h2>Reference</h2>
+
+<p>
+Copas functions are separated in two groups.</p>
+<p>
+The first group is relative to the use of the dispatcher itself and
+are used to register servers and to execute the main loop of Copas:</p>
+
+<ul>
+<li>
+<b><code>copas.addserver(server, handler[, timeout])</code></b>
+<br>
+Adds a new <code>server</code> and its <code>handler</code> to the dispatcher
+using an optional <code>timeout</code>.<br>
+<code>server</code> is a LuaSocket server socket created using
+<code>socket.bind()</code>.<br>
+<code>handler</code> is a function that receives a LuaSocket client socket
+and handles the communication with that client.<br>
+<code>timeout</code> is the timeout for blocking I/O in seconds.
+</li>
+<li>
+<b><code>copas.loop()</code></b>
+<br>
+Starts the Copas infinite loop accepting client connections for the 
+registered servers and handling those connections with the corresponding
+handlers. Every time a server accepts a connection, Copas calls the
+associated handler passing the client socket returned by
+<code>accept()</code>.
+</li>
+</ul>
+
+<p>The second group is used by the handler functions to exchange data with
+the clients:</p>
+<ul>
+<li>
+<b><code>copas.flush(client)</code></b>
+<br>
+Flushes a client write buffer. <code>copas.flush()</code> is called from time
+to time by <code>copas.loop()</code> but it may be necessary to call it from
+the handler function.
+</li>
+<li>
+<b><code>copas.receive(client, pattern)</code></b>
+<br>
+Reads data from a client according to a pattern just like LuaSocket
+<code>socket:receive()</code>. The Copas version does not block and allows
+the multitasking of the other handlers.
+</li>
+<li>
+<b><code>copas.send(client, data)</code></b>
+<br>
+Sends data to a client just like <code>socket:send()</code>. The Copas version
+is buffered and does not block, allowing the multitasking of the other handlers.
+</li>
+<li>
+<b><code>copas.wrap (skt)</code></b>
+<br>
+Wraps a LuaSocket socket to use Copas' methods. After the wrapping,
+<code>skt:send()</code> calls <code>copas.send()</code> and
+<code>skt:receive()</code> calls <code>copas.receive()</code>
+automatically.
+</li>
+</ul>
+
+<hr>
+<small>$Id: reference.html,v 1.1 2005/03/10 23:14:00 carregal Exp $</small>
+</body>
+</html>
