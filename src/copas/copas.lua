@@ -70,7 +70,6 @@ function receive(client, pattern)
   pattern = pattern or "*l"
   repeat
     s, err, part = client:receive(pattern, part)
---	print ("copas.receive", client, pattern, s, err, part)
     if s or err ~= "timeout" then return s, err end
     coroutine.yield(client, _reading)
   until false
@@ -126,7 +125,7 @@ local _skt_mt = {__index = {
 		end,
 }}
 
-function skt_wrap (skt)
+function wrap (skt)
 	return  setmetatable ({socket = skt}, _skt_mt)
 end
 
@@ -150,7 +149,6 @@ end
 -- handle threads on a queue
 local function _tick (skt)
 	local co = _threads[skt]
---	queue:remove (skt)
 	local status, res, new_q = coroutine.resume(co, skt)
 	if not status then
 		error(res)
