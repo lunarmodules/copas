@@ -5,12 +5,9 @@
 -- Usage:
 --    copas.addserver(server, handler)
 --    copas.loop()
---
--- The handler should use copas.send, copas.receive instead of
--- the LuaSocket versions.
---
--- copas.flush flushes the writing buffer if necessary, it is also called
--- automatically by copas.loop()
+--    copas.flush - flushes the writing buffer if necessary
+--    copas.receive - receives data from a socket
+--    copas.send  - sends data through a buffered socket
 --
 -- Authors: Andre Carregal and Javier Guerra
 -- Contributors: Diego Nehab, Mike Pall and David Burgess
@@ -67,7 +64,7 @@ local _writing = _newset() -- sockets currently being written
 -------------------------------------------------------------------------------
 local _buffer = {}
 
--- reads a pattern from a client and yields to reading set on timeouts
+-- reads a pattern from a client and yields to the reading set on timeouts
 function receive(client, pattern)
   local s, err, part
   pattern = pattern or "*l"
@@ -79,8 +76,8 @@ function receive(client, pattern)
   until false
 end
 
--- sends data from a client. The operation is buffered and
--- yield yield to writing set on timeouts
+-- sends data to a client. The operation is buffered and
+-- yields to the writing set on timeouts
 function send(client, data)
   if _buffer[client] == nil then
     _buffer[client] = ""
