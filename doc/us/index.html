@@ -51,8 +51,7 @@ Asynchronous Services</td>
 <h2>Overview</h2>
 
 <p>Copas (Coroutine Oriented Portable Asynchronous Services) offers a
-dispatcher and socket operations based on coroutines. It also offers a
-coroutine based version of pcall and xpcall that allows yielding from within.
+dispatcher and socket operations based on coroutines.
 </p>
 
 <p>Copas is free software and uses the same
@@ -125,32 +124,17 @@ Reads a pattern from a client and yields to the reading set on timeouts.
 Sends data to a client. The operation is buffered and yields to the writing
 set on timeouts.
 </li>
-</ul>
-
-<a name="ref_coxpcall"></a>
-<h2>coxpcall</h2>
-
-<p>coxpcall encapsulates Lua protected calls with a coroutine based loop,
-so errors can be dealed without the usual pcall/xpcall issues with coroutines
-yielding.</p>
-
-<ul>
 <li>
-<b><code>coxpcall(f, err)</code></b>
+<b><code>copas.wrap (skt)</code></b>
 <br>
-Offers the same functionality as Lua xpcall(f, err).
-</li>
-<li>
-<b><code>copcall(f, ...)</code></b>
-<br>
-Offers the same functionality as Lua copcall(f, ...).
+Wraps a socket to use Copas' methods.
 </li>
 </ul>
 
 <a name="examples"></a> 
 <h2>Examples</h2>
 
-<p>To do</p>
+<p>(to do)</p>
 
 <a name="credits"></a> 
 <h2>Credits</h2>
@@ -170,7 +154,7 @@ Mike Pall and David Burgess</p>
 Comments are welcome!</p>
 
 <hr>
-<small>$Id: index.html,v 1.4 2005/02/17 22:13:06 carregal Exp $</small>
+<small>$Id: index.html,v 1.5 2005/02/17 22:37:07 carregal Exp $</small>
 </body>
 </html>
 
