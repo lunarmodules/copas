@@ -61,7 +61,7 @@ end
 </pre>
 
 <p>
-he problem with that approach is that the dispatcher loop is doing a busy wait
+The problem with that approach is that the dispatcher loop is doing a busy wait
 and can handle just one connection at a time. To solve the busy waiting we can
 use LuaSocket's <code>socket.select()</code>, like in:</p>
 
@@ -142,6 +142,6 @@ copas.loop()
 automatically calls the corresponding handler functions.<p>
 
 <hr>
-<small>$Id: manual.html,v 1.2 2005/03/10 23:35:44 carregal Exp $</small>
+<small>$Id: manual.html,v 1.3 2005/03/10 23:38:52 carregal Exp $</small>
 </body>
 </html>
