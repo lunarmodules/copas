@@ -1,12 +1,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
-<title>Copas - Coroutine Oriented Portable Asynchronous Services for Lua</title>
-<style type="text/css">
-ul { list-style-type: disc };
-</style>
+    <title>Copas - Coroutine Oriented Portable Asynchronous Services for Lua</title>
+    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css">
 </head>
-<body bgcolor="#FFFFFF">
+<body>
 <center>
 <table border="0" cellspacing="2" cellpadding="2">
 <tr>
@@ -29,31 +27,34 @@ Asynchronous Services for Lua</td>
 <a href="#over">overview</a> &middot;
 <a href="#download">download</a> &middot;
 <a href="#new">news</a> &middot;
-<a href="#reference">reference</a> &middot;
-<a href="#examples">examples</a>
+<a href="manual.html">manual</a>
 </small></center>
 
 <hr>
 <h2>Contents</h2>
 
 <ul>
-<li><a href="#over">Overview</a></li>
-<li><a href="#version">Current Version</a></li>
-<li><a href="#download">Download</a></li>
-<li><a href="#new">What's new</a></li>
-<li><a href="#reference">Reference</a></li>
-<li><a href="#examples">Examples</a></li>
-<li><a href="#credits">Credits</a></li>
-<li><a href="#contact">Contact us</a></li>
+    <li><a href="#over">Overview</a></li>
+    <li><a href="#version">Current Version</a></li>
+    <li><a href="#download">Download</a></li>
+    <li><a href="#new">What's new</a></li>
+    <li><a href="manual.html">Manual</a></li>
+    <ul>
+        <li><a href="manual.html#reference">Reference</a></li>
+        <li><a href="manual.html#using">Using</a></li>
+    </ul>
+    <li><a href="#credits">Credits</a></li>
+    <li><a href="#contact">Contact us</a></li>
 </ul>
 
 <a name="over"></a> 
 <h2>Overview</h2>
 
 <p>Copas offers a dispatcher based on coroutines that can be used by
-socket request/response server programs. A server registered with Copas
-should provide a handler for requests and use Copas socket functions to
-send the response.
+socket request/response servers based on
+<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>.
+A server registered with Copas should provide a handler for requests and use
+Copas socket functions to send the response.
 </p>
 
 <p>Since Copas is coroutine based, using it within a pcall or xpcall context
@@ -97,54 +98,6 @@ Copas can be downloaded from its
 First public version</li>
 </ul>
 
-<a name="reference"></a>
-<h2>Reference</h2>
-
-<p>Copas functions are separated in two groups. The first one is relative to
-the use of the dispatcher:</p>
-<ul>
-<li>
-<b><code>copas.addserver(server, handler, timeout)</code></b>
-<br>
-Adds a new server and its handler to the dispatcher using an optional timeout.
-</li>
-<li>
-<b><code>copas.loop()</code></b>
-<br>
-Listen to client requests and handles them.
-</li>
-</ul>
-
-<p>The second group is used by the handlers to exchange data with clients:</p>
-<ul>
-<li>
-<b><code>copas.flush(client)</code></b>
-<br>
-Flushes a client write buffer.
-</li>
-<li>
-<b><code>copas.receive(client, pattern)</code></b>
-<br>
-Reads a pattern from a client and yields to the reading set on timeouts.
-</li>
-<li>
-<b><code>copas.send(client, data)</code></b>
-<br>
-Sends data to a client. The operation is buffered and yields to the writing
-set on timeouts.
-</li>
-<li>
-<b><code>copas.wrap (skt)</code></b>
-<br>
-Wraps a socket to use Copas' methods.
-</li>
-</ul>
-
-<a name="examples"></a> 
-<h2>Examples</h2>
-
-<p>(to do)</p>
-
 <a name="credits"></a> 
 <h2>Credits</h2>
 
@@ -162,7 +115,6 @@ Mike Pall and David Burgess</p>
 Comments are welcome!</p>
 
 <hr>
-<small>$Id: index.html,v 1.7 2005/02/18 21:12:26 carregal Exp $</small>
+<small>$Id: index.html,v 1.8 2005/03/06 21:29:35 carregal Exp $</small>
 </body>
 </html>
-
