@@ -33,12 +33,71 @@ Asynchronous Services for Lua</td>
 </center>
 
 <hr>
-<h2>Background</h2>
+<h2>Introduction to Copas</h2>
 
 <p>Copas is a dispatcher that can help a lot in the creation of request/response
 servers based on
-<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>.
-In such servers usually there is a dispatcher loop like the one below:</p>
+<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>.</p>
+<p>Assuming you know how to implement the desired protocol, the first thing you have
+to do is create a server socket to receive the client connections.
+To do this you have to bind a host and a port using</p>
+
+<pre class="example">
+server = socket.bind(host, port)
+</pre>
+
+<p>Then you have to create a handler function that implements the desired protocol.
+The handler function will be called with a socket for each client connection
+and you can use <code>copas.send()</code> and <code>copas.receive()</code> on that socket to
+exchange data with the client.</p>
+
+<p>For example, a simple echo handler would be:</p>
+
+<pre class="example">
+function echoHandler(skt)
+  while true
+    local data = copas.receive(skt)
+    if data == "quit" then
+      break
+    end
+    copas.send(skt, data)
+  end
+end
+</pre>
+
+<p>If all you will do with the socket is send and receive data, you may alternatively use
+<code>copas.wrap()</code> to let your code more close to the LuaSocket way of life:</p>
+
+<pre class="example">
+function echoHandler(skt)
+  skt = copas.wrap(skt)
+  while true
+    local data = skt:receive()
+    if data == "quit" then
+      break
+    end
+    skt:send(data)
+  end
+end
+</pre>
+
+<p>To register the server socket and associate it with the corresponding handler we do:</p>
+<pre class="example">
+copas.addserver(server, EchoHandler)
+</pre>
+
+<p>And to start Copas and all the registered servers we call:</p>
+
+<pre class="example">
+copas.loop()
+</pre>
+
+<p>As long as every handler uses Copas's <code>send</code> and <code>receive</code>,
+simultaneous connections will be handled transparently by Copas.</p>
+
+<h2>Why use Copas?</h2>
+
+<p>In a basic LuaSocket server usually there is a dispatcher loop like the one below:</p>
 
 <pre class="example">
 server = socket.bind(host, port)
@@ -48,7 +107,7 @@ while true
 end
 </pre>
 
-<p>where <code>handler</code> is a function that implements the server protocol using LuaSocket's
+<p>where <code>handle</code> is a function that implements the server protocol using LuaSocket's
 socket functions:</p>
 
 <pre class="example">
@@ -107,7 +166,7 @@ If that is the case, using Lua's coroutines may help a lot, and that's
 exactly what Copas does. Copas implements the dispatcher loop using coroutines
 so the handlers can multitask without the use of threads.</p>
 
-<h2>Using Copas</h2>
+<h2>Using Copas with an existing server</h2>
 <p>
 If you already have a running server using some dispatcher like the previous
 ones, migrating to Copas is quite simple, usually consisting of just three
@@ -121,8 +180,22 @@ server = socket.bind(host, port)
 copas.addserver(server, handle)
 </pre>
 
-<p>Second the server handler has to be changed to use Copas sockets instead of
-LuaSocket's:</p>
+<p>Secondly the server handler has to be changed to use Copas. One solution
+is to use Copas <code>send</code> and <code>receive</code> functions:</p>
+
+<pre class="example">
+function handle(skt)
+  ...
+  -- gets some data from the client - "the request"
+  reqdata = copas.receive(skt, pattern)
+  ...
+  -- sends some data to the client - "the response"
+  copas.send(skt, respdata)
+   ...
+end
+</pre>
+
+<p>the alternative is to wrap the received socket:</p>
 
 <pre class="example">
 function handle(skt)
@@ -148,6 +221,6 @@ copas.loop()
 automatically calls the corresponding handler functions.<p>
 
 <hr>
-<small>$Id: manual.html,v 1.4 2005/03/11 03:51:18 carregal Exp $</small>
+<small>$Id: manual.html,v 1.5 2005/03/11 04:48:07 carregal Exp $</small>
 </body>
 </html>
