@@ -1,18 +1,22 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-   "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
     <title>Copas - Coroutine Oriented Portable Asynchronous Services for Lua</title>
-    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css">
+    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 </head>
 <body>
 <div id="container">
 
 <div id="product">
-<a href="http://www.keplerproject.org"><img alt="Copas" src="copas.png" /></a>
-<big><strong>Copas</strong></big> - 
-Coroutine Oriented Portable Asynchronous Services for Lua
+	<div id="product_logo"><a href="http://www.keplerproject.org">
+		<img alt="Copas logo" src="copas.png"/>
+	</a></div>
+	<div id="product_name"><big><strong>Copas</strong></big></div>
+	<div id="product_description">Coroutine Oriented Portable Asynchronous Services for Lua</div>
 </div> <!-- id="product" -->
+
 
 <div id="main">
 
@@ -29,14 +33,21 @@ Coroutine Oriented Portable Asynchronous Services for Lua
             <li><a href="index.html#contact">Contact us</a></li>
         </ul>
     </li>
-    <li><strong>Examples</strong></li>
+    <li><strong>Examples</strong>
+        <ul>
+            <li><a href="examples.html#introduction">Introduction</a></li>
+            <li><a href="examples.html#why">Why use?</a></li>
+            <li><a href="examples.html#using">Using</a></li>
+        </ul>
+    </li>
     <li><a href="reference.html">Reference</a></li>
     <li><a href="license.html">License</a></li>
 </ul>
 </div> <!-- id="navigation" -->
 
 <div id="content">
-<h2>Introduction to Copas</h2>
+
+<h2><a name="introduction"></a>Introduction to Copas</h2>
 
 <p>Copas is a dispatcher that can help a lot in the creation of request/response
 servers based on
@@ -98,7 +109,7 @@ copas.loop()
 <p>As long as every handler uses Copas's <code>send</code> and <code>receive</code>,
 simultaneous connections will be handled transparently by Copas.</p>
 
-<h2>Why use Copas?</h2>
+<h2><a name="why"></a>Why use Copas?</h2>
 
 <p>In a basic LuaSocket server usually there is a dispatcher loop like the one below:</p>
 
@@ -169,14 +180,14 @@ If that is the case, using Lua's coroutines may help a lot, and that's
 exactly what Copas does. Copas implements the dispatcher loop using coroutines
 so the handlers can multitask without the use of threads.</p>
 
-<h2>Using Copas with an existing server</h2>
+<h2><a name="using"></a>Using Copas with an existing server</h2>
 <p>
 If you already have a running server using some dispatcher like the previous
 ones, migrating to Copas is quite simple, usually consisting of just three
 steps.</p>
 <p>
 First each server socket and its handler function have to be registered
-with Copas:
+with Copas:</p>
 
 <pre class="example">
 server = socket.bind(host, port)
@@ -221,16 +232,16 @@ copas.loop()
 </pre>
 
 <p>During the loop Copas' dispatcher accepts connections from clients and
-automatically calls the corresponding handler functions.<p>
+automatically calls the corresponding handler functions.</p>
 
 </div> <!-- id="content" -->
 
 </div> <!-- id="main" -->
 
 <div id="about">
-	<p><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a></p>
+	<p><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
 	<p><small>
-	$Id: manual.html,v 1.7 2005/03/13 20:53:50 carregal Exp $
+	$Id: manual.html,v 1.8 2005/03/16 21:05:57 carregal Exp $
 	</small></p>
 </div> <!-- id="about" -->
 
