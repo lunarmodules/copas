@@ -1,8 +1,6 @@
 -------------------------------------------------------------------------------
 -- Copas - Coroutine Oriented Portable Asynchronous Services
 -- 
--- Version #4
---
 -- Offers a dispatcher and socket operations based on coroutines.
 -- Usage:
 --    copas.addserver(server, handler)
