@@ -27,7 +27,8 @@ Asynchronous Services for Lua</td>
 <small>
 <a href="index.html">home</a> &middot;
 <a href="license.html">license</a> &middot;
-<a href="reference.html">reference</a>
+<a href="reference.html">reference</a> &middot;
+<strong>examples</strong>
 </small>
 </center>
 
@@ -53,9 +54,11 @@ socket functions:</p>
 <pre class="example">
 function handle(skt)
   ...
-  reqdata = skt:receive(pattern) -- gets some data from the client - "the request"
+  -- gets some data from the client - "the request"
+  reqdata = skt:receive(pattern)
   ...
-  skt:send(respdata) -- sends some data to the client - "the response"
+  -- sends some data to the client - "the response"
+  skt:send(respdata)
   ...
 end
 </pre>
@@ -123,11 +126,14 @@ LuaSocket's:</p>
 
 <pre class="example">
 function handle(skt)
-  skt = copas.wrap(skt) -- now skt behaves like a LuaSocket socket but uses Copas
+  skt = copas.wrap(skt)
+  -- now skt behaves like a LuaSocket socket but uses Copas'
   ...
-  reqdata = skt:receive(pattern) -- gets some data from the client - "the request"
+  -- gets some data from the client - "the request"
+  reqdata = skt:receive(pattern)
   ...
-  skt:send(respdata) -- sends some data to the client - "the response"
+  -- sends some data to the client - "the response"
+  skt:send(respdata)
    ...
 end
 </pre>
@@ -142,6 +148,6 @@ copas.loop()
 automatically calls the corresponding handler functions.<p>
 
 <hr>
-<small>$Id: manual.html,v 1.3 2005/03/10 23:38:52 carregal Exp $</small>
+<small>$Id: manual.html,v 1.4 2005/03/11 03:51:18 carregal Exp $</small>
 </body>
 </html>
