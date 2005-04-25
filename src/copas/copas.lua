@@ -242,10 +242,12 @@ end
 -- Dispatcher loop.
 -- Listen to client requests and handles them
 -------------------------------------------------------------------------------
-function loop()
+function loop(exit_test)
 	local err
 
 	while true do
+                if exit_test and exit_test() then break end
+
 		err = _select ()
 
 		if err then
