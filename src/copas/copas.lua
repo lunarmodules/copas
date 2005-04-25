@@ -5,6 +5,7 @@
 -- Usage:
 --    copas.addserver(server, handler)
 --    copas.loop()
+--    copas.step()
 --    copas.flush - flushes the writing buffer if necessary
 --    copas.receive - receives data from a socket
 --    copas.send  - sends data through a buffered socket
@@ -239,25 +240,29 @@ end
 
 
 -------------------------------------------------------------------------------
+-- Dispatcher loop step.
+-- Listen to client requests and handles them
+-------------------------------------------------------------------------------
+function step()
+	local err = _select ()
+
+	if err then
+		error(err)
+	end
+		
+	for tsk in tasks() do
+		for ev in tsk:events () do
+			tsk:tick (ev)
+		end
+	end
+end
+
+-------------------------------------------------------------------------------
 -- Dispatcher loop.
 -- Listen to client requests and handles them
 -------------------------------------------------------------------------------
-function loop(exit_test)
-	local err
-
+function loop()
 	while true do
-                if exit_test and exit_test() then break end
-
-		err = _select ()
-
-		if err then
-			error(err)
-		end
-		
-		for tsk in tasks() do
-			for ev in tsk:events () do
-				tsk:tick (ev)
-			end
-		end
+		step()
 	end
 end

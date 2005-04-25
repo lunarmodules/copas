@@ -234,6 +234,14 @@ copas.loop()
 <p>During the loop Copas' dispatcher accepts connections from clients and
 automatically calls the corresponding handler functions.</p>
 
+<p>If you do not want copas to enter an infinite loop (you have to respond to events from other sources, such as an user interface), you should have your own loop and call <pre>copas.step</pre> at each iteration of the loop. It could be like this:</p>
+
+<pre class="example">
+while true do
+  copas.step()
+  -- processing for other events here
+end
+
 </div> <!-- id="content" -->
 
 </div> <!-- id="main" -->
@@ -241,7 +249,7 @@ automatically calls the corresponding handler functions.</p>
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
 	<p><small>
-	$Id: manual.html,v 1.10 2005/03/17 22:21:33 carregal Exp $
+	$Id: manual.html,v 1.11 2005/04/25 20:38:37 mascarenhas Exp $
 	</small></p>
 </div> <!-- id="about" -->
 
