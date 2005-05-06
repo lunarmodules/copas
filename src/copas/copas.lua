@@ -14,6 +14,8 @@
 -- Authors: Andre Carregal and Javier Guerra
 -- Contributors: Diego Nehab, Mike Pall and David Burgess
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
+--
+-- $Id: copas.lua,v 1.9 2005/05/06 20:23:23 carregal Exp $
 -------------------------------------------------------------------------------
 require "socket"
 
@@ -242,8 +244,6 @@ end
 -------------------------------------------------------------------------------
 -- Dispatcher loop step.
 -- Listen to client requests and handles them
---
--- $Id: copas.lua,v 1.8 2005/05/06 20:22:44 carregal Exp $
 -------------------------------------------------------------------------------
 function step()
 	local err = _select ()
