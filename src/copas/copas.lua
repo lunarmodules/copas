@@ -242,6 +242,8 @@ end
 -------------------------------------------------------------------------------
 -- Dispatcher loop step.
 -- Listen to client requests and handles them
+--
+-- $Id: copas.lua,v 1.8 2005/05/06 20:22:44 carregal Exp $
 -------------------------------------------------------------------------------
 function step()
 	local err = _select ()
