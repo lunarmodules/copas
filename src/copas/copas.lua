@@ -15,7 +15,7 @@
 -- Contributors: Diego Nehab, Mike Pall and David Burgess
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.11 2005/05/11 15:43:19 carregal Exp $
+-- $Id: copas.lua,v 1.12 2005/05/11 17:56:52 carregal Exp $
 -------------------------------------------------------------------------------
 require "socket"
 
@@ -246,11 +246,10 @@ end
 -- Listen to client requests and handles them
 -------------------------------------------------------------------------------
 function step(timeout)
-	local err
 
-    repeat
-        err = _select (timeout)
-    until err ~= "timeout" 
+    local err = _select (timeout)
+    
+    if err == "timeout" then return end
 
 	if err then
 		error(err)
