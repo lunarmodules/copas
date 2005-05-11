@@ -15,7 +15,7 @@
 -- Contributors: Diego Nehab, Mike Pall and David Burgess
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.10 2005/05/11 15:26:25 carregal Exp $
+-- $Id: copas.lua,v 1.11 2005/05/11 15:43:19 carregal Exp $
 -------------------------------------------------------------------------------
 require "socket"
 
@@ -25,7 +25,7 @@ module "copas"
 _COPYRIGHT   = "Copyright (C) 2004-2005 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
 _NAME        = "Copas"
-_VERSION     = "1.0 Beta"
+_VERSION     = "1.0"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
