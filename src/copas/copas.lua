@@ -3,9 +3,9 @@
 -- 
 -- Offers a dispatcher and socket operations based on coroutines.
 -- Usage:
---    copas.addserver(server, handler)
---    copas.loop()
---    copas.step()
+--    copas.addserver(server, handler, timeout)
+--    copas.loop(timeout) - listens infinetely
+--    copas.step(timeout) - executes one listening step
 --    copas.flush - flushes the writing buffer if necessary
 --    copas.receive - receives data from a socket
 --    copas.send  - sends data through a buffered socket
@@ -15,7 +15,7 @@
 -- Contributors: Diego Nehab, Mike Pall and David Burgess
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.9 2005/05/06 20:23:23 carregal Exp $
+-- $Id: copas.lua,v 1.10 2005/05/11 15:26:25 carregal Exp $
 -------------------------------------------------------------------------------
 require "socket"
 
@@ -234,9 +234,9 @@ function _writable_t:tick (output)
 end
 addtask (_writable_t)
 
-local function _select ()
+local function _select (timeout)
 	local err
-	_readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing)
+	_readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
 	return err
 end
 
@@ -245,8 +245,12 @@ end
 -- Dispatcher loop step.
 -- Listen to client requests and handles them
 -------------------------------------------------------------------------------
-function step()
-	local err = _select ()
+function step(timeout)
+	local err
+
+    repeat
+        err = _select (timeout)
+    until err ~= "timeout" 
 
 	if err then
 		error(err)
@@ -263,8 +267,8 @@ end
 -- Dispatcher loop.
 -- Listen to client requests and handles them
 -------------------------------------------------------------------------------
-function loop()
+function loop(timeout)
 	while true do
-		step()
+		step(timeout)
 	end
 end
