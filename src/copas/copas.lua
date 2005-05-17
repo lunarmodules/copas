@@ -13,9 +13,10 @@
 --
 -- Authors: Andre Carregal and Javier Guerra
 -- Contributors: Diego Nehab, Mike Pall and David Burgess
+--
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.12 2005/05/11 17:56:52 carregal Exp $
+-- $Id: copas.lua,v 1.13 2005/05/17 20:54:05 carregal Exp $
 -------------------------------------------------------------------------------
 require "socket"
 
