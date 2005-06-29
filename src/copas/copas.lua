@@ -16,7 +16,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.13 2005/05/17 20:54:05 carregal Exp $
+-- $Id: copas.lua,v 1.14 2005/06/29 20:52:25 tomas Exp $
 -------------------------------------------------------------------------------
 require "socket"
 
@@ -25,8 +25,7 @@ module "copas"
 -- Meta information is public even begining with an "_"
 _COPYRIGHT   = "Copyright (C) 2004-2005 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_NAME        = "Copas"
-_VERSION     = "1.0"
+_VERSION     = "Copas 1.0"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
