@@ -19,17 +19,13 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.15 2006/02/09 00:46:22 uid20103 Exp $
+-- $Id: copas.lua,v 1.16 2006/02/09 02:28:47 uid20103 Exp $
 -------------------------------------------------------------------------------
 require "socket"
 -- corrotine safe socket module calls
-local function localpcall (f, ...)
-	return xpcall (function () return f(unpack(arg)) end,
-		function(a)return a end)
-end
 function socket.protect(func)
 	protectedFunc = function (...)
-		local ret ={localpcall(func,unpack(arg) ) }
+		local ret ={pcall(func,unpack(arg) ) }
 		local status = table.remove(ret,1)
 		if status then
 			return unpack(ret)
@@ -43,7 +39,7 @@ function socket.newtry(finalizer)
 		local status = arg[1]or false
 		if (status==false)then
 			table.remove(arg,1)
-			local ret={localpcall(finalizer,unpack(arg) ) }
+			local ret={pcall(finalizer,unpack(arg) ) }
 			error(arg[1],0)
 		end
 		return unpack(arg)
@@ -326,8 +322,7 @@ end
 -- main tasks: manage readable and writable socket sets
 -------------------------------------------------------------------------------
 -- a task to check ready to read events
---local 
-_readable_t = {}
+local _readable_t = {}
 function _readable_t:events ()
 	local i = 0
 	return function ()
@@ -348,8 +343,7 @@ addtaskRead (_readable_t)
 
 
 -- a task to check ready to write events
---local 
-_writable_t = {}
+local _writable_t = {}
 function _writable_t:events ()
 	local i = 0
 	return function ()
