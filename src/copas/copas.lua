@@ -19,7 +19,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.17 2006/02/10 16:34:10 uid20002 Exp $
+-- $Id: copas.lua,v 1.18 2006/02/10 20:26:28 uid20103 Exp $
 -------------------------------------------------------------------------------
 require "socket"
 -- corrotine safe socket module calls
@@ -92,8 +92,6 @@ local _writing = _newset() -- sockets currently being written
 -------------------------------------------------------------------------------
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
-local _buffer = {}
-
 -- reads a pattern from a client and yields to the reading set on timeouts
 function receive(client, pattern)
   local s, err, part
