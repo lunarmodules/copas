@@ -19,7 +19,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.16 2006/02/09 02:28:47 uid20103 Exp $
+-- $Id: copas.lua,v 1.17 2006/02/10 16:34:10 uid20002 Exp $
 -------------------------------------------------------------------------------
 require "socket"
 -- corrotine safe socket module calls
@@ -95,7 +95,7 @@ local _writing = _newset() -- sockets currently being written
 local _buffer = {}
 
 -- reads a pattern from a client and yields to the reading set on timeouts
-function receive(client, pattern) --funciona com o xavante
+function receive(client, pattern)
   local s, err, part
   pattern = pattern or "*l"
   repeat
