@@ -19,7 +19,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.18 2006/02/10 20:26:28 uid20103 Exp $
+-- $Id: copas.lua,v 1.19 2006/02/13 12:39:28 jguerra Exp $
 -------------------------------------------------------------------------------
 require "socket"
 -- corrotine safe socket module calls
@@ -57,15 +57,18 @@ _VERSION     = "Copas 1.0"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
+-- adds a FIFO queue for each value in the set
 -------------------------------------------------------------------------------
 local function _newset()
     local reverse = {}
     local set = {}
+    local q = {}
     setmetatable(set, { __index = {
         insert = function(set, value) 
             table.insert(set, value)
             reverse[value] = table.getn(set)
         end,
+
         remove = function(set, value)
             if not reverse[value] then return end
             local last = table.getn(set)
@@ -81,6 +84,18 @@ local function _newset()
             reverse[value] = nil
             set[last] = nil
         end,
+		
+		push = function (set, key, itm)
+			if q[key] == nil then
+				q[key] = {itm}
+			else
+				table.insert (q[key], itm)
+			end
+		end,
+		
+		pop = function (set, key)
+			return q[key] and table.remove (q[key], 1)
+		end,
     }})
     return set
 end
@@ -180,7 +195,22 @@ end
 -- Thread handling
 -------------------------------------------------------------------------------
 
-local _threads = {} -- maps sockets and coroutines
+local function _doTick (co, ...)
+	if not co then return end
+	
+	local status, res, new_q = coroutine.resume(co, unpack (arg))
+	if not status then
+		error(res)
+	end
+	if not res then
+		skt:close()
+	elseif new_q then
+		new_q:insert (res)
+		neq_q:push (res, co)
+	else
+		-- still missing error handling here
+	end
+end
 
 -- accepts a connection on socket input
 local function _accept(input, handler)
@@ -188,7 +218,7 @@ local function _accept(input, handler)
 	if client then 
 		client:settimeout(0)
 		local co = coroutine.create(handler)
-		_firstTick(co,client)
+		_doTick (co, client)
 		--_reading:insert(client)
 	end
 	return client
@@ -196,85 +226,11 @@ end
 
 -- handle threads on a queue
 local function _tickRead (skt)
-	local co = table.remove(_threads[skt].read,1)
-	
-	local status, res, new_q = coroutine.resume(co)
-	if not status then
-		error(res)
-	end
-	if not res then
-		skt:close()
-	elseif new_q then
-		new_q:insert (res)
-		
-		if (new_q == _reading) then
-			if (_threads[res]== nil) then
-				_threads[res]={read={},write={}}
-			end
-			table.insert(_threads[res].read, co)
-		end
-		if (new_q == _writing) then
-			if (_threads[res]== nil) then
-				_threads[res]={read={},write={}}
-			end
-			table.insert(_threads[res].write, co)
-		end
-	else
-		-- still missing error handling here
-	end
+	_doTick (_reading:pop (skt))
 end
+
 local function _tickWrite (skt)
-	local co = table.remove(_threads[skt].write,1)
-	
-	local status, res, new_q = coroutine.resume(co)
-	if not status then
-		error(res)
-	end
-	if not res then
-		skt:close()
-	elseif new_q then
-		new_q:insert (res)
-		
-		if (new_q == _reading) then
-			if (_threads[res]== nil) then
-				_threads[res]={read={},write={}}
-			end
-			table.insert(_threads[res].read, co)
-		end
-		if (new_q == _writing) then
-			if (_threads[res]== nil) then
-				_threads[res]={read={},write={}}
-			end
-			table.insert(_threads[res].write, co)
-		end
-	else
-		-- still missing error handling here
-	end
-end
---local
- function _firstTick (co,...)
-	local status, res, new_q = coroutine.resume(co, unpack(arg))
-	if not status then
-		error(res)
-	end
-	if new_q then
-		new_q:insert (res)
-		
-		if (new_q == _reading) then
-			if (_threads[res]== nil) then
-				_threads[res]={read={},write={}}
-			end
-			table.insert(_threads[res].read, co)
-		end
-		if (new_q == _writing) then
-			if (_threads[res]== nil) then
-				_threads[res]={read={},write={}}
-			end
-			table.insert(_threads[res].write, co)
-		end
-	else
-		-- still missing error handling here
-	end
+	_doTick (_writing:pop (skt))
 end
 
 -------------------------------------------------------------------------------
@@ -289,8 +245,8 @@ end
 -- Adds an new thread to Copas 
 -------------------------------------------------------------------------------
 function execThread(handler,...)
-	co = coroutine.create(handler)
-	_firstTick(co, unpack(arg))
+	local co = coroutine.create(handler)
+	_doTick (co, unpack(arg))
 end
 
 -------------------------------------------------------------------------------
