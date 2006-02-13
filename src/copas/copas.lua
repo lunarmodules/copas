@@ -19,7 +19,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.19 2006/02/13 12:39:28 jguerra Exp $
+-- $Id: copas.lua,v 1.20 2006/02/13 19:59:49 jguerra Exp $
 -------------------------------------------------------------------------------
 require "socket"
 -- corrotine safe socket module calls
@@ -195,18 +195,18 @@ end
 -- Thread handling
 -------------------------------------------------------------------------------
 
-local function _doTick (co, ...)
+local function _doTick (co, skt, ...)
 	if not co then return end
 	
 	local status, res, new_q = coroutine.resume(co, unpack (arg))
 	if not status then
 		error(res)
 	end
-	if not res then
+	if not res and skt then
 		skt:close()
 	elseif new_q then
 		new_q:insert (res)
-		neq_q:push (res, co)
+		new_q:push (res, co)
 	else
 		-- still missing error handling here
 	end
@@ -226,11 +226,11 @@ end
 
 -- handle threads on a queue
 local function _tickRead (skt)
-	_doTick (_reading:pop (skt))
+	_doTick (_reading:pop (skt), skt)
 end
 
 local function _tickWrite (skt)
-	_doTick (_writing:pop (skt))
+	_doTick (_writing:pop (skt), skt)
 end
 
 -------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ end
 -------------------------------------------------------------------------------
 function execThread(handler,...)
 	local co = coroutine.create(handler)
-	_doTick (co, unpack(arg))
+	_doTick (co, nil, unpack(arg))
 end
 
 -------------------------------------------------------------------------------
