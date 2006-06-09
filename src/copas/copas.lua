@@ -19,7 +19,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.20 2006/02/13 19:59:49 jguerra Exp $
+-- $Id: copas.lua,v 1.21 2006/06/09 19:23:03 carregal Exp $
 -------------------------------------------------------------------------------
 require "socket"
 -- corrotine safe socket module calls
@@ -48,12 +48,12 @@ function socket.newtry(finalizer)
 end
 
 -- end of corrotine safe socket module calls
-module "copas"
+module ("copas", package.seeall)
 
--- Meta information is public even begining with an "_"
-_COPYRIGHT   = "Copyright (C) 2004-2005 Kepler Project"
+-- Meta information is public even if begining with an "_"
+_COPYRIGHT   = "Copyright (C) 2004-2006 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_VERSION     = "Copas 1.0"
+_VERSION     = "Copas 1.1"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
@@ -93,9 +93,16 @@ local function _newset()
 			end
 		end,
 		
-		pop = function (set, key)
-			return q[key] and table.remove (q[key], 1)
-		end,
+        pop = function (set, key)
+          local t = q[key]
+          if t ~= nil then
+            local ret = table.remove (t, 1)
+            if t[1] == nil then
+              q[key] = nil
+            end
+            return ret
+          end
+        end
     }})
     return set
 end
@@ -198,7 +205,7 @@ end
 local function _doTick (co, skt, ...)
 	if not co then return end
 	
-	local status, res, new_q = coroutine.resume(co, unpack (arg))
+	local status, res, new_q = coroutine.resume(co, skt, unpack (arg))
 	if not status then
 		error(res)
 	end
