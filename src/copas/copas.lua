@@ -7,24 +7,26 @@
 --    copas.execThread(handler,...) Create a new coroutine and run it with args
 --    copas.loop(timeout) - listens infinetely
 --    copas.step(timeout) - executes one listening step
---    copas.flush - *deprecated* do nothing
 --    copas.receive(pattern or number) - receives data from a socket
 --    copas.settimeout(client, time) if time=0 copas.receive(bufferSize) - receives partial data from a socket were data<=bufferSize
 --    copas.send  - sends data through a socket
 --    copas.wrap  - wraps a LuaSocket socket with Copas methods
 --    copas.connect - blocks only the thread until connection completes
+--    copas.flush - *deprecated* do nothing
 --
 -- Authors: Andre Carregal and Javier Guerra
--- Contributors: Diego Nehab, Mike Pall and David Burgess
+-- Contributors: Diego Nehab, Mike Pall, David Burgess and Leonardo Godinho
 --
--- Copyright 2005 - Kepler Project (www.keplerproject.org)
+-- Copyright 2006 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.21 2006/06/09 19:23:03 carregal Exp $
+-- $Id: copas.lua,v 1.22 2006/07/04 21:21:50 carregal Exp $
 -------------------------------------------------------------------------------
-require "socket"
--- corrotine safe socket module calls
+local socket = require "socket"
+
+-- Redefines LuaSocket functions with coroutine safe versions
+-- (this allows the use of socket.http from within copas)
 function socket.protect(func)
-	protectedFunc = function (...)
+  local protectedFunc = function (...)
 		local ret ={pcall(func,unpack(arg) ) }
 		local status = table.remove(ret,1)
 		if status then
@@ -34,8 +36,9 @@ function socket.protect(func)
 	end
 	return protectedFunc
 end
+
 function socket.newtry(finalizer)
-	tryFunc = function (...)
+	local tryFunc = function (...)
 		local status = arg[1]or false
 		if (status==false)then
 			table.remove(arg,1)
@@ -46,8 +49,8 @@ function socket.newtry(finalizer)
 	end
 	return tryFunc
 end
+-- end of LuaSocket redefinitions
 
--- end of corrotine safe socket module calls
 module ("copas", package.seeall)
 
 -- Meta information is public even if begining with an "_"
@@ -107,7 +110,7 @@ local function _newset()
     return set
 end
 
-local _servers = _newset()
+local _servers = _newset() -- servers being handled
 local _reading = _newset() -- sockets currently being read
 local _writing = _newset() -- sockets currently being written
 
@@ -124,7 +127,8 @@ function receive(client, pattern)
     coroutine.yield(client, _reading)
   until false
 end
--- same as above but with special threatment when reading chunks,
+
+-- same as above but with special treatment when reading chunks,
 -- unblocks on any data received.
 function receivePartial(client, pattern)
   local s, err, part
@@ -137,13 +141,13 @@ function receivePartial(client, pattern)
   until false
 end
 
-
 -- sends data to a client. The operation is buffered and
 -- yields to the writing set on timeouts
 function send(client,data)
   local s, err,sent
   local from = 1
   local sent = 0
+  
   repeat
     from = from + sent
     s, err, sent = client:send(data, from)
@@ -169,29 +173,32 @@ function connect(skt,host, port)
 	end
 	return ret, err
 end
+
 -- flushes a client write buffer (deprecated)
 function flush(client)
-  return 
 end
 
--- wraps a socket to use Copas methods
+-- wraps a socket to use Copas methods (send, receive, flush and settimeout)
 local _skt_mt = {__index = {
 	send = function (self, data)
 			return send (self.socket, data)
-		end,
+	end,
+	
 	receive = function (self, pattern)
 			if (self.timeout==0) then
   				return receivePartial(self.socket, pattern)
   			end
 			return receive (self.socket, pattern)
-		end,
+	end,
+	
 	flush = function (self)
 			return flush (self.socket)
-		end,
+	end,
+	
 	settimeout = function (self,time)
 			self.timeout=time
 			return
-		end,
+	end,
 }}
 
 function wrap (skt)
@@ -248,6 +255,7 @@ function addserver(server, handler, timeout)
   _servers[server] = handler
   _reading:insert(server)
 end
+
 -------------------------------------------------------------------------------
 -- Adds an new thread to Copas 
 -------------------------------------------------------------------------------
@@ -262,13 +270,14 @@ end
 
 local _tasks = {}
 
-function addtaskRead (tsk)
+local function addtaskRead (tsk)
 	-- lets tasks call the default _tick()
 	tsk.def_tick = _tickRead
 	
 	_tasks [tsk] = true
 end
-function addtaskWrite (tsk)
+
+local function addtaskWrite (tsk)
 	-- lets tasks call the default _tick()
 	tsk.def_tick = _tickWrite
 	
@@ -283,39 +292,45 @@ end
 -- main tasks: manage readable and writable socket sets
 -------------------------------------------------------------------------------
 -- a task to check ready to read events
-local _readable_t = {}
-function _readable_t:events ()
-	local i = 0
-	return function ()
-		i = i+1
-		return self._evs [i]
-	end
-end
-function _readable_t:tick (input)
-	local handler = _servers[input]
-	if handler then
-		input = _accept(input, handler)
-	else
-		_reading:remove (input)
-		self.def_tick (input)
-	end
-end
+local _readable_t = {
+  events = function(self)
+  	local i = 0
+  	return function ()
+  		i = i + 1
+  		return self._evs [i]
+  	end
+  end,
+  
+  tick = function (self, input)
+  	local handler = _servers[input]
+  	if handler then
+  		input = _accept(input, handler)
+  	else
+  		_reading:remove (input)
+  		self.def_tick (input)
+  	end
+  end
+}
+
 addtaskRead (_readable_t)
 
 
 -- a task to check ready to write events
-local _writable_t = {}
-function _writable_t:events ()
-	local i = 0
-	return function ()
-		i = i+1
-		return self._evs [i]
-	end
-end
-function _writable_t:tick (output)
-	_writing:remove (output)
-	self.def_tick (output)
-end
+local _writable_t = {
+  events = function (self)
+  	local i = 0
+  	return function ()
+  		i = i+1
+  		return self._evs [i]
+  	end
+  end,
+  
+  tick = function (self, output)
+  	_writing:remove (output)
+  	self.def_tick (output)
+  end
+}
+
 addtaskWrite (_writable_t)
 
 local function _select (timeout)
@@ -330,10 +345,8 @@ end
 -- Listen to client requests and handles them
 -------------------------------------------------------------------------------
 function step(timeout)
-
-    local err = _select (timeout)
-    
-    if err == "timeout" then return end
+  local err = _select (timeout)
+  if err == "timeout" then return end
 
 	if err then
 		error(err)
@@ -347,8 +360,8 @@ function step(timeout)
 end
 
 -------------------------------------------------------------------------------
--- Dispatcher loop.
--- Listen to client requests and handles them
+-- Dispatcher endless loop.
+-- Listen to client requests and handles them forever
 -------------------------------------------------------------------------------
 function loop(timeout)
 	while true do
