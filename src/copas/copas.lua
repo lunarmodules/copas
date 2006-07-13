@@ -4,7 +4,7 @@
 -- Offers a dispatcher and socket operations based on coroutines.
 -- Usage:
 --    copas.addserver(server, handler, timeout)
---    copas.execThread(handler,...) Create a new coroutine and run it with args
+--    copas.addthread(thread, ...) Create a new coroutine thread and run it with args
 --    copas.loop(timeout) - listens infinetely
 --    copas.step(timeout) - executes one listening step
 --    copas.receive(pattern or number) - receives data from a socket
@@ -19,35 +19,33 @@
 --
 -- Copyright 2006 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.22 2006/07/04 21:21:50 carregal Exp $
+-- $Id: copas.lua,v 1.23 2006/07/13 20:43:42 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
 -- Redefines LuaSocket functions with coroutine safe versions
 -- (this allows the use of socket.http from within copas)
 function socket.protect(func)
-  local protectedFunc = function (...)
-		local ret ={pcall(func,unpack(arg) ) }
+  return function (...)
+		local ret = {pcall(func, unpack(arg))}
 		local status = table.remove(ret,1)
 		if status then
 			return unpack(ret)
 		end
 		return nil, unpack(ret)
 	end
-	return protectedFunc
 end
 
 function socket.newtry(finalizer)
-	local tryFunc = function (...)
+	return function (...)
 		local status = arg[1]or false
 		if (status==false)then
 			table.remove(arg,1)
-			local ret={pcall(finalizer,unpack(arg) ) }
-			error(arg[1],0)
+			local ret = {pcall(finalizer, unpack(arg) ) }
+			error(arg[1], 0)
 		end
 		return unpack(arg)
 	end
-	return tryFunc
 end
 -- end of LuaSocket redefinitions
 
@@ -257,10 +255,10 @@ function addserver(server, handler, timeout)
 end
 
 -------------------------------------------------------------------------------
--- Adds an new thread to Copas 
+-- Adds an new courotine thread to Copas dispatcher
 -------------------------------------------------------------------------------
-function execThread(handler,...)
-	local co = coroutine.create(handler)
+function addthread(thrd, ...)
+	local co = coroutine.create(thrd)
 	_doTick (co, nil, unpack(arg))
 end
 
