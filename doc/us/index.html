@@ -28,6 +28,7 @@
             <li><a href="index.html#over">Overview</a></li>
             <li><a href="index.html#status">Status</a></li>
             <li><a href="index.html#download">Download</a></li>
+            <li><a href="index.html#dependencies">Dependencies</a></li>
             <li><a href="index.html#history">History</a></li>
             <li><a href="index.html#credits">Credits</a></li>
             <li><a href="index.html#contact">Contact us</a></li>
@@ -41,6 +42,12 @@
         </ul>
     </li>
     <li><a href="reference.html">Reference</a></li>
+    <li><a href="http://luaforge.net/projects/copas/">Project</a>
+        <ul>
+            <li><a href="http://luaforge.net/tracker/?group_id=100">Bug Tracker</a></li>
+            <li><a href="http://luaforge.net/scm/?group_id=100">CVS</a></li>
+        </ul>
+    </li>
     <li><a href="license.html">License</a></li>
 </ul>
 </div> <!-- id="navigation" -->
@@ -53,52 +60,66 @@
 Copas is a dispatcher based on coroutines that can be used by
 TCP/IP socket request/response servers. It uses
 <a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>
-as the interface with the TCP/IP stack.</p>
+as the interface with the TCP/IP stack.
+</p>
 <p>
 A server registered with Copas should provide a handler for requests and use
 Copas socket functions to send the response. Copas loops through requests and
-invokes the corresponding handlers.</p>
+invokes the corresponding handlers. For a full implementation of a Copas HTTP
+server you can refer to <a href="http://www.keplerproject.org/xavante">Xavante</a>
+as an example.
+</p>
 <p>
 Copas follows the
 <a href="http://www.keplerproject.org/compat">package model</a>
 for Lua 5.1, therefore this package should be "installed".
 In other words, if you are using Lua 5.0, the file <tt>compat-5.1.lua</tt>
 must be installed in the <tt>LUA_PATH</tt>. If you are using Lua 5.1,
-nothing should be done.</p>
+you should not use Compat-5.1.
+</p>
 <p>
 Since Copas is coroutine based, using it within a pcall or xpcall context
-does not work with Lua 5.0 yielding. If you need to use 
+does not work with Lua 5 yielding. If you need to use 
 those functions we strongly suggest using Xavante's 
 <a href="http://luaforge.net/frs/?group_id=6">coxpcall</a>, a coroutine safe
-version of the Lua 5.0 protected calls.</p>
+version of the Lua 5 protected calls.</p>
 
 <p>Copas is free software and uses the same <a href="license.html">license</a>
-as Lua 5.0.</p>
+as Lua 5.</p>
 
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 1.0. It was developed for Lua 5.0 and Lua 5.1.</p>
+<p>Current version is 1.1. It was developed for Lua 5.0 and Lua 5.1.</p>
 
  
 <h2><a name="download"></a>Download</h2>
 
 <p>
 Copas can be downloaded from its
-<a href="http://luaforge.net/frs/?group_id=100">LuaForge</a> page.</p>
+<a href="http://luaforge.net/frs/?group_id=100">LuaForge</a> page.
+</p>
+
 <p>CVS access is also available from LuaForge.</p>
 
+<h2><a name="dependencies"></a>Dependencies</h2>
+
+<p>Copas 1.1 depends only on
+<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket 2.0</a>
+and <a href="http://www.keplerproject.org/compat">Compat-5.1</a> (if you are using Lua 5.0).</p>
 
 <h2><a name="history"></a>History</h2>
 
-<ul>
-    <li>[17/May/2005] Version 1.0 released<br />
-        Copas.step() added
-    </li>
-    <li>[17/Feb/2005] Version 1.0 Beta released<br />
-        First public version
-    </li>
-</ul>
+<dl class="history">
+    <dt><strong>1.1</strong> [06/17/2006]</dt>
+    <dd>Copas.addthread() added</dd>
+
+    <dt><strong><a href="http://www.keplerproject.org/copas/1.0">1.0</a></strong> [05/17/2005]</dt>
+    <dd>Copas.step() added</dd>
+    
+    <dt><strong>1.0 Beta</strong>[02/17/2005]</dt>
+    <dd>First public version</dd>
+</dl>
 
  
 <h2><a name="credits"></a>Credits</h2>
@@ -107,23 +128,26 @@ Copas can be downloaded from its
 Javier Guerra as part of the
 <a href="http://www.keplerproject.org">Kepler Project</a> which
 holds its copyright. Copas development had significative contributions from Diego Nehab,
-Mike Pall and David Burgess</p>
+Mike Pall, David Burgess and Leonardo Godinho.</p>
 
  
 <h2><a name="contact"></a>Contact us</h2>
 
-<p>For more information please <a href=
-"mailto:info-NO-SPAM-THANKS@keplerproject.org">contact us</a>.
+<p>For more information please
+<a href="mailto:info-NO-SPAM-THANKS@keplerproject.org">contact us</a>.
 Comments are welcome!</p>
+
+<p>You can also reach other Kepler developers and users on the Kepler Project
+<a href="http://luaforge.net/mail/?group_id=104">mailing list</a>.</p>
+
 </div> <!-- id="content" -->
 
 </div> <!-- id="main" -->
 
 <div id="about">
-	<p><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
-	<p><small>
-	$Id: index.html,v 1.20 2005/05/24 23:27:31 carregal Exp $
-	</small></p>
+	<p><a href="http://validator.w3.org/check?uri=referer">
+    <img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
+	<p><small>$Id: index.html,v 1.21 2006/07/13 20:44:58 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
