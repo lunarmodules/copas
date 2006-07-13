@@ -70,12 +70,14 @@ are used to register servers and to execute the main loop of Copas:</p>
         <code>handler</code> is a function that receives a LuaSocket client socket
         and handles the communication with that client.<br />
         <code>timeout</code> is the timeout for blocking I/O in seconds.
+        The handler will be executed in parallel with other threads and the
+        registered handlers as long as it uses the Copas socket functions.
     </dd>
 
     <dt><strong><code>copas.addthread(thrd[, ...])</code></strong></dt>
     <dd>Adds a new thread to the dispatcher using optional parameters.<br />
         The thread will be executed in parallel with other threads and the
-        registered handlers.
+        registered handlers as long as it uses the Copas socket functions.
     </dd>
 
     <dt><strong><code>copas.loop(timeout)</code></strong></dt>
@@ -96,24 +98,25 @@ are used to register servers and to execute the main loop of Copas:</p>
 </dl>
 
 <p>The second group is used by the handler functions to exchange data with
-the clients:</p>
+the clients, and by threads registered with <code>addthread</code> to
+exchange data with other services.</p>
 
 <dl class="reference">
     <dt><strong><code>copas.flush(skt)</code></strong></dt>
     <dd>Flushes a client write buffer. <code>copas.flush()</code> is called from time
     to time by <code>copas.loop()</code> but it may be necessary to call it from
-    the handler function.
+    the handler function or one of the threads.
     </dd>
     
     <dt><strong><code>copas.receive(skt, pattern)</code></strong></dt>
     <dd>Reads data from a client socket according to a pattern just like LuaSocket
     <code>socket:receive()</code>. The Copas version does not block and allows
-    the multitasking of the other handlers.
+    the multitasking of the other handlers and threads.
     </dd>
     
     <dt><strong><code>copas.send(skt, data)</code></strong></dt>
     <dd>Sends data to a client socket just like <code>socket:send()</code>. The Copas version
-    is buffered and does not block, allowing the multitasking of the other handlers.
+    is buffered and does not block, allowing the multitasking of the other handlers and threads.
     </dd>
     
     <dt><strong><code>copas.wrap(skt)</code></strong></dt>
@@ -130,7 +133,7 @@ the clients:</p>
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer">
     <img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
-	<p><small>$Id: reference.html,v 1.11 2006/07/13 20:44:58 carregal Exp $</small></p>
+	<p><small>$Id: reference.html,v 1.12 2006/07/13 21:56:19 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
