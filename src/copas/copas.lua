@@ -19,7 +19,7 @@
 --
 -- Copyright 2006 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.23 2006/07/13 20:43:42 carregal Exp $
+-- $Id: copas.lua,v 1.24 2006/08/05 04:23:11 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
@@ -60,30 +60,28 @@ _VERSION     = "Copas 1.1"
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
 -- adds a FIFO queue for each value in the set
 -------------------------------------------------------------------------------
-local function _newset()
+local function newset()
     local reverse = {}
     local set = {}
     local q = {}
     setmetatable(set, { __index = {
-        insert = function(set, value) 
-            table.insert(set, value)
-            reverse[value] = table.getn(set)
+        insert = function(set, value)
+            if not reverse[value] then
+                table.insert(set, value)
+                reverse[value] = table.getn(set)
+            end
         end,
 
         remove = function(set, value)
-            if not reverse[value] then return end
-            local last = table.getn(set)
-            if last > 1 then
-                -- replaces the removed value with the last one
-                local index = reverse[value]
-                local newvalue = set[last]
-                set[index] = newvalue
-                reverse[newvalue] = index
+            local index = reverse[value]
+            if index then
+                reverse[value] = nil
+                local top = table.remove(set)
+                if top ~= value then
+                    reverse[top] = index
+                    set[index] = top
+                end
             end
-            table.setn(set, last - 1)
-            -- cleans up the garbage
-            reverse[value] = nil
-            set[last] = nil
         end,
 		
 		push = function (set, key, itm)
@@ -108,9 +106,9 @@ local function _newset()
     return set
 end
 
-local _servers = _newset() -- servers being handled
-local _reading = _newset() -- sockets currently being read
-local _writing = _newset() -- sockets currently being written
+local _servers = newset() -- servers being handled
+local _reading = newset() -- sockets currently being read
+local _writing = newset() -- sockets currently being written
 
 -------------------------------------------------------------------------------
 -- Coroutine based socket I/O functions.
@@ -257,8 +255,8 @@ end
 -------------------------------------------------------------------------------
 -- Adds an new courotine thread to Copas dispatcher
 -------------------------------------------------------------------------------
-function addthread(thrd, ...)
-	local co = coroutine.create(thrd)
+function addthread(thread, ...)
+	local co = coroutine.create(thread)
 	_doTick (co, nil, unpack(arg))
 end
 
