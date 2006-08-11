@@ -75,8 +75,15 @@ Copas follows the
 for Lua 5.1, therefore this package should be "installed".
 In other words, if you are using Lua 5.0, the file <tt>compat-5.1.lua</tt>
 must be installed in the <tt>LUA_PATH</tt>. If you are using Lua 5.1,
-you should not use Compat-5.1.
+you must not use Compat-5.1.
 </p>
+
+<p>
+You can learn more about the Lua 5.1 package model in
+<a href="http://www.inf.puc-rio.br/~roberto/pil2/chapter15.pdf">chapter 15</a>
+of Programming in Lua (second edition).
+</p>
+
 <p>
 Since Copas is coroutine based, using it within a pcall or xpcall context
 does not work with Lua 5 yielding. If you need to use 
@@ -111,7 +118,7 @@ and <a href="http://www.keplerproject.org/compat">Compat-5.1 Release 5</a> (if y
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
-    <dt><strong>1.1</strong> [06/27/2006]</dt>
+    <dt><strong>1.1</strong> [08/10/2006]</dt>
     <dd><a href="reference.html">copas.addthread()</a> added</dd>
 
     <dt><strong><a href="http://www.keplerproject.org/copas/1.0">1.0</a></strong> [05/17/2005]</dt>
@@ -146,7 +153,7 @@ Comments are welcome!</p>
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer">
     <img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
-	<p><small>$Id: index.html,v 1.23 2006/07/27 18:55:37 carregal Exp $</small></p>
+	<p><small>$Id: index.html,v 1.24 2006/08/11 00:56:53 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
