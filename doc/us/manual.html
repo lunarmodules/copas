@@ -36,9 +36,11 @@
     </li>
     <li><strong>Manual</strong>
         <ul>
+            <li><a href="manual.html#install">Installing</a></li>
             <li><a href="manual.html#introduction">Introduction</a></li>
             <li><a href="manual.html#why">Why use Copas?</a></li>
             <li><a href="manual.html#using">Using Copas</a></li>
+            <li><a href="manual.html#control">Controlling Copas</a></li>
         </ul>
     </li>
     <li><a href="reference.html">Reference</a></li>
@@ -54,24 +56,42 @@
 
 <div id="content">
 
+<h2><a name="install"></a>Installing</h2>
+
+<p>
+Copas follows the
+<a href="http://www.inf.puc-rio.br/~roberto/pil2/chapter15.pdf">package model</a>
+for Lua 5.1, therefore it should be "installed".
+Refer to <a href="http://www.keplerproject.org/compat/manual.html#configuration">
+Compat-5.1 configuration</a> section about how to install the modules properly
+in a Lua 5.0 environment.
+</p>
+
+<p>
+If you are using Kepler Copas is already installed by it, but you may want to
+upgrade manually your Copas version. Be aware that this may cause problems with
+other Kepler modules such as Xavante that depends on Copas.
+</p>
+
 <h2><a name="introduction"></a>Introduction to Copas</h2>
 
 <p>
 Copas is a dispatcher that can help a lot in the creation of servers based on
 <a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>.
+Here we present a quick introduction to Copas and how to implement a server with it.
 </p>
 
 <p>
-Assuming you know how to implement the desired protocol, the first thing you have
-to do is create a server socket to receive the client connections.
-To do this you have to bind a host and a port using
+Assuming you know how to implement the desired server protocol, the first thing you have
+to do in order to create a Copas based server is create a server socket to receive the
+client connections. To do this you have to bind a host and a port using LuaSocket:
 </p>
 
 <pre class="example">
 server = socket.bind(host, port)
 </pre>
 
-<p>Then you have to create a handler function that implements the desired protocol.
+<p>Then you have to create a handler function that implements the server protocol.
 The handler function will be called with a socket for each client connection
 and you can use <code>copas.send()</code> and <code>copas.receive()</code> on that socket to
 exchange data with the client.</p>
@@ -91,7 +111,7 @@ end
 </pre>
 
 <p>If all you will do with the socket is send and receive data, you may alternatively use
-<code>copas.wrap()</code> to let your code more close to the LuaSocket way of life:</p>
+<code>copas.wrap()</code> to let your code more close to a standard LuaSocket use:</p>
 
 <pre class="example">
 function echoHandler(skt)
@@ -106,23 +126,40 @@ function echoHandler(skt)
 end
 </pre>
 
-<p>To register the server socket and associate it with the corresponding handler we do:</p>
+<p>
+To register the server socket with Copas and associate it with the corresponding
+handler we do:
+</p>
+
 <pre class="example">
 copas.addserver(server, echoHandler)
 </pre>
 
-<p>And to start Copas and all the registered servers we call:</p>
+<p>Finally, to start Copas and all the registered servers we just call:</p>
 
 <pre class="example">
 copas.loop()
 </pre>
 
 <p>As long as every handler uses Copas's <code>send</code> and <code>receive</code>,
-simultaneous connections will be handled transparently by Copas.</p>
+simultaneous connections will be handled transparently by Copas for every registered
+server.</p>
+
+<p>
+Since Copas is coroutine based, using it within a Lua <code>pcall</code> or
+<code>xpcall</code> context does not work with Lua 5 yielding. If you need to use 
+any of those functions in your handler we strongly suggest using Xavante's 
+<a href="http://luaforge.net/frs/?group_id=6">coxpcall</a>, a coroutine safe
+version of the Lua 5 protected calls. For an example of this usage please check Xavante.
+</p>
 
 <h2><a name="why"></a>Why use Copas?</h2>
 
-<p>In a basic LuaSocket server usually there is a dispatcher loop like the one below:</p>
+<p>
+For those who already have a server implemented, here is an explanation of why and
+how to migrate to Copas. In a typical LuaSocket server usually there is a dispatcher
+loop like the one below:
+</p>
 
 <pre class="example">
 server = socket.bind(host, port)
@@ -132,7 +169,7 @@ while true
 end
 </pre>
 
-<p>where <code>handle</code> is a function that implements the server protocol using LuaSocket's
+<p>Here <code>handle</code> is a function that implements the server protocol using LuaSocket's
 socket functions:</p>
 
 <pre class="example">
@@ -185,19 +222,24 @@ independently the handler function.</p>
 <p>
 The use of threads in the new loop solves the multitasking problem but may
 create another. Some platforms does not offer multithreading or maybe you
-don't want to use threads at all.</p>
+don't want to use threads at all.
+</p>
+
 <p>
 If that is the case, using Lua's coroutines may help a lot, and that's
 exactly what Copas does. Copas implements the dispatcher loop using coroutines
 so the handlers can multitask without the use of threads.</p>
 
 <h2><a name="using"></a>Using Copas with an existing server</h2>
+
 <p>
 If you already have a running server using some dispatcher like the previous
-ones, migrating to Copas is quite simple, usually consisting of just three
-steps.</p>
+example, migrating to Copas is quite simple, usually consisting of just three
+steps.
+</p>
+
 <p>
-First each server socket and its handler function have to be registered
+First each server socket and its corresponding handler function have to be registered
 with Copas:</p>
 
 <pre class="example">
@@ -205,8 +247,9 @@ server = socket.bind(host, port)
 copas.addserver(server, handle)
 </pre>
 
-<p>Secondly the server handler has to be changed to use Copas. One solution
-is to use Copas <code>send</code> and <code>receive</code> functions:</p>
+<p>Secondly the server handler has to be adapted to use Copas. One solution
+is to use Copas <code>send</code> and <code>receive</code> functions to receive
+and send data to the client:</p>
 
 <pre class="example">
 function handle(skt)
@@ -220,10 +263,12 @@ function handle(skt)
 end
 </pre>
 
-<p>the alternative is to wrap the received socket:</p>
+<p>The other alternative is to wrap the socket in a Copas socket. This
+allows your handler code to remain basically the same:</p>
 
 <pre class="example">
 function handle(skt)
+  -- this line may suffice for your handler to work with Copas
   skt = copas.wrap(skt)
   -- now skt behaves like a LuaSocket socket but uses Copas'
   ...
@@ -245,17 +290,23 @@ copas.loop()
 <p>During the loop Copas' dispatcher accepts connections from clients and
 automatically calls the corresponding handler functions.</p>
 
-<p>If you do not want copas to enter an infinite loop (maybe you have to
+<h2><a name="control"></a>Controlling Copas</h2>
+
+<p>
+If you do not want copas to simply enter an infinite loop (maybe you have to
 respond to events from other sources, such as an user interface), you should
-have your own loop and call <code>copas.step()</code> at each iteration of
-the loop:</p>
+have your own loop and just call <code>copas.step()</code> at each iteration of
+the loop:
+</p>
 
 <pre class="example">
 while condition do
   copas.step()
-  -- processing for other events here
+  -- processing for other events from your system here
 end
 </pre>
+
+
 
 </div> <!-- id="content" -->
 
@@ -264,7 +315,7 @@ end
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer">
     <img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
-	<p><small>$Id: manual.html,v 1.15 2006/08/11 19:30:51 carregal Exp $</small></p>
+	<p><small>$Id: manual.html,v 1.16 2006/08/14 21:37:37 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
