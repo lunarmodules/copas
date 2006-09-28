@@ -19,7 +19,7 @@
 --
 -- Copyright 2006 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.24 2006/08/05 04:23:11 carregal Exp $
+-- $Id: copas.lua,v 1.25 2006/09/28 16:38:10 jguerra Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
@@ -201,6 +201,23 @@ function wrap (skt)
 	return  setmetatable ({socket = skt}, _skt_mt)
 end
 
+--------------------------------------------------
+-- Error handling
+--------------------------------------------------
+
+local _errhandlers = {}   -- error handler per coroutine
+
+function setErrorHandler (err)
+	local co = coroutine.running()
+	if co then
+		_errhandlers [co] = err
+	end
+end
+
+local function _deferror (msg, co, skt)
+	print (msg, co, skt)
+end
+
 -------------------------------------------------------------------------------
 -- Thread handling
 -------------------------------------------------------------------------------
@@ -208,17 +225,15 @@ end
 local function _doTick (co, skt, ...)
 	if not co then return end
 	
-	local status, res, new_q = coroutine.resume(co, skt, unpack (arg))
-	if not status then
-		error(res)
-	end
-	if not res and skt then
-		skt:close()
-	elseif new_q then
+	local ok, res, new_q = coroutine.resume(co, skt, unpack (arg))
+	
+	if ok and res and new_q then
 		new_q:insert (res)
 		new_q:push (res, co)
 	else
-		-- still missing error handling here
+		if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
+		if skt then skt:close() end
+		_errhandlers [co] = nil
 	end
 end
 
