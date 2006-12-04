@@ -1,0 +1,8 @@
+# $Id: Makefile.win,v 1.1 2006/12/04 16:28:29 mascarenhas Exp $
+
+LUA_DIR= c:/lua51/lua
+
+install:
+	copy src/copas/copas.lua $(LUA_DIR)
+
+clean:
