@@ -1,0 +1,28 @@
+#!/bin/sh
+
+if [ -f Makefile.orig ]; then
+  mv Makefile.orig Makefile
+fi
+
+echo "Trying to where you installed Lua..."
+
+if which lua; then
+  lua_bin=`which lua`
+  lua_bin_dir=`dirname $lua_bin`
+else
+  lua_bin=`which lua51`
+  lua_bin_dir=`dirname $lua_bin`
+fi
+
+lua_root=`dirname $lua_bin_dir`
+
+if [ $lua_root != "" ]; then
+  echo "Lua is in $lua_root"
+  echo "Changing Makefile"
+  lua_share=$lua_root/share/lua/5.1
+  sed -i.orig -e "s|LUA_DIR= /usr/local/share/lua/5.1|LUA_DIR= $lua_share|" Makefile
+  echo "Now run 'make install'"
+else
+  echo "Lua not found, please install Lua (and put in your PATH)"
+fi
+
