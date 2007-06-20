@@ -15,36 +15,35 @@
 --    copas.flush - *deprecated* do nothing
 --
 -- Authors: Andre Carregal and Javier Guerra
--- Contributors: Diego Nehab, Mike Pall, David Burgess and Leonardo Godinho
+-- Contributors: Diego Nehab, Mike Pall, David Burgess, Leonardo Godinho
+--               and Thomas Harning Jr.
 --
--- Copyright 2006 - Kepler Project (www.keplerproject.org)
+-- Copyright 2007 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.25 2006/09/28 16:38:10 jguerra Exp $
+-- $Id: copas.lua,v 1.26 2007/06/20 21:57:16 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
 -- Redefines LuaSocket functions with coroutine safe versions
 -- (this allows the use of socket.http from within copas)
+local function statusHandler(status, ...)
+  if status then return ... end
+  return nil, ...
+end
 function socket.protect(func)
   return function (...)
-		local ret = {pcall(func, unpack(arg))}
-		local status = table.remove(ret,1)
-		if status then
-			return unpack(ret)
-		end
-		return nil, unpack(ret)
+		return statusHandler(pcall(func, ...))
 	end
 end
 
 function socket.newtry(finalizer)
 	return function (...)
-		local status = arg[1]or false
+		local status = (...) or false
 		if (status==false)then
-			table.remove(arg,1)
-			local ret = {pcall(finalizer, unpack(arg) ) }
-			error(arg[1], 0)
+			pcall(finalizer, select(2, ...) )
+			error((select(2, ...)), 0)
 		end
-		return unpack(arg)
+		return ...
 	end
 end
 -- end of LuaSocket redefinitions
@@ -52,9 +51,9 @@ end
 module ("copas", package.seeall)
 
 -- Meta information is public even if begining with an "_"
-_COPYRIGHT   = "Copyright (C) 2004-2006 Kepler Project"
+_COPYRIGHT   = "Copyright (C) 2004-2007 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_VERSION     = "Copas 1.1"
+_VERSION     = "Copas 1.1.1"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
@@ -67,8 +66,8 @@ local function newset()
     setmetatable(set, { __index = {
         insert = function(set, value)
             if not reverse[value] then
-                table.insert(set, value)
-                reverse[value] = table.getn(set)
+                set[#set + 1] = value
+                reverse[value] = #set
             end
         end,
 
@@ -76,7 +75,8 @@ local function newset()
             local index = reverse[value]
             if index then
                 reverse[value] = nil
-                local top = table.remove(set)
+                local top = set[#set]
+                set[#set] = nil
                 if top ~= value then
                     reverse[top] = index
                     set[index] = top
@@ -85,10 +85,11 @@ local function newset()
         end,
 		
 		push = function (set, key, itm)
-			if q[key] == nil then
+			local qKey = q[key]
+			if qKey == nil then
 				q[key] = {itm}
 			else
-				table.insert (q[key], itm)
+				qKey[#qKey + 1] = itm
 			end
 		end,
 		
@@ -139,20 +140,19 @@ end
 
 -- sends data to a client. The operation is buffered and
 -- yields to the writing set on timeouts
-function send(client,data)
+function send(client,data, from, to)
   local s, err,sent
-  local from = 1
-  local sent = 0
+  from = from or 1
+  local lastIndex = from - 1
   
   repeat
-    from = from + sent
-    s, err, sent = client:send(data, from)
+    s, err, lastIndex = client:send(data, lastIndex + 1, to)
     -- adds extra corrotine swap
     -- garantees that high throuput dont take other threads to starvation 
     if (math.random(100) > 90) then
     	coroutine.yield(client, _writing)
     end
-    if s or err ~= "timeout" then return s, err,sent end
+    if s or err ~= "timeout" then return s, err,lastIndex end
     coroutine.yield(client, _writing)
   until false
 end
@@ -176,8 +176,8 @@ end
 
 -- wraps a socket to use Copas methods (send, receive, flush and settimeout)
 local _skt_mt = {__index = {
-	send = function (self, data)
-			return send (self.socket, data)
+	send = function (self, data, from, to)
+			return send (self.socket, data, from, to)
 	end,
 	
 	receive = function (self, pattern)
@@ -225,7 +225,7 @@ end
 local function _doTick (co, skt, ...)
 	if not co then return end
 	
-	local ok, res, new_q = coroutine.resume(co, skt, unpack (arg))
+	local ok, res, new_q = coroutine.resume(co, skt, ...)
 	
 	if ok and res and new_q then
 		new_q:insert (res)
@@ -272,7 +272,7 @@ end
 -------------------------------------------------------------------------------
 function addthread(thread, ...)
 	local co = coroutine.create(thread)
-	_doTick (co, nil, unpack(arg))
+	_doTick (co, nil, ...)
 end
 
 -------------------------------------------------------------------------------
