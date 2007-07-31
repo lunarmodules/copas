@@ -15,12 +15,12 @@
 --    copas.flush - *deprecated* do nothing
 --
 -- Authors: Andre Carregal and Javier Guerra
--- Contributors: Diego Nehab, Mike Pall, David Burgess, Leonardo Godinho
---               and Thomas Harning Jr.
+-- Contributors: Diego Nehab, Mike Pall, David Burgess, Leonardo Godinho,
+--               Thomas Harning Jr. and Gary NG
 --
 -- Copyright 2007 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.27 2007/07/31 20:19:23 carregal Exp $
+-- $Id: copas.lua,v 1.28 2007/07/31 20:21:54 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 local WATCH_DOG_TIMEOUT = 120
