@@ -4,7 +4,7 @@ if [ -f Makefile.orig ]; then
   mv Makefile.orig Makefile
 fi
 
-echo "Trying to where you installed Lua..."
+echo "Trying to check where you installed Lua..."
 
 if which lua; then
   lua_bin=`which lua`

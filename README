@@ -1,0 +1,14 @@
+Copas is a dispatcher based on coroutines that can be used by TCP/IP servers.
+It uses LuaSocket as the interface with the TCP/IP stack.
+
+A server registered with Copas should provide a handler for requests
+and use Copas socket functions to send the response. Copas loops through
+requests and invokes the corresponding handlers. For a full implementation
+of a Copas HTTP server you can refer to Xavante as an example.
+
+Copas is free software and uses the same license as Lua 5.
+
+Current version is 1.1.1 and was developed for Lua 5.1.
+
+For more information check the online documentation:
+http://www.keplerproject.org/copas/
