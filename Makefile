@@ -1,6 +1,10 @@
-# $Id: Makefile,v 1.2 2007/08/20 22:27:03 carregal Exp $
+# $Id: Makefile,v 1.3 2007/10/29 22:50:16 carregal Exp $
 
-LUA_DIR= /usr/share/lua/5.1
+# Default prefix
+PREFIX = /usr/local
+
+# System's lua directory (where Lua libraries are installed)
+LUA_DIR= $(PREFIX)/share/lua/5.1
 
 install:
 	mkdir -p $(LUA_DIR)/copas
