@@ -20,7 +20,7 @@
 --
 -- Copyright 2007 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.28 2007/07/31 20:21:54 carregal Exp $
+-- $Id: copas.lua,v 1.29 2008/05/05 17:52:46 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 local WATCH_DOG_TIMEOUT = 120
@@ -120,8 +120,8 @@ local _writing = newset() -- sockets currently being written
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
 -- reads a pattern from a client and yields to the reading set on timeouts
-function receive(client, pattern)
- local s, err, part
+function receive(client, pattern, part)
+ local s, err
  pattern = pattern or "*l"
  repeat
    s, err, part = client:receive(pattern, part)
