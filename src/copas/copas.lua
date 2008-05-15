@@ -18,9 +18,9 @@
 -- Contributors: Diego Nehab, Mike Pall, David Burgess, Leonardo Godinho,
 --               Thomas Harning Jr. and Gary NG
 --
--- Copyright 2007 - Kepler Project (www.keplerproject.org)
+-- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.29 2008/05/05 17:52:46 carregal Exp $
+-- $Id: copas.lua,v 1.30 2008/05/15 19:44:12 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 local WATCH_DOG_TIMEOUT = 120
@@ -53,9 +53,9 @@ end
 module ("copas", package.seeall)
 
 -- Meta information is public even if begining with an "_"
-_COPYRIGHT   = "Copyright (C) 2004-2007 Kepler Project"
+_COPYRIGHT   = "Copyright (C) 2005 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_VERSION     = "Copas 1.1.1"
+_VERSION     = "Copas 1.1.2"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
