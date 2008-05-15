@@ -1,7 +1,7 @@
 package = "Copas"
 version = "1.1.2-1"
 source = {
-   url = "",
+   url = "http://luaforge.net/frs/download.php/3367/copas-1.1.2.tar.gz",
 }
 description = {
    summary = "Coroutine Oriented Portable Asynchronous Services",
