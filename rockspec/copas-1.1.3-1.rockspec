@@ -1,7 +1,7 @@
 package = "Copas"
 version = "1.1.3-1"
 source = {
-   url = "http://luaforge.net/frs/download.php/3367/copas-1.1.2.tar.gz",
+   url = "",
 }
 description = {
    summary = "Coroutine Oriented Portable Asynchronous Services",
@@ -20,7 +20,7 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "luasocket >= 2.0",
-   "coxpcall >= 1.12",
+   "coxpcall >= 1.13",
 }
 build = {
    type = "make",
