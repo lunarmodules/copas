@@ -20,9 +20,12 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.30 2008/05/15 19:44:12 carregal Exp $
+-- $Id: copas.lua,v 1.31 2008/05/19 18:57:13 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
+
+require"coxpcall"
+
 local WATCH_DOG_TIMEOUT = 120
 
 -- Redefines LuaSocket functions with coroutine safe versions
@@ -33,7 +36,7 @@ local function statusHandler(status, ...)
 end
 function socket.protect(func)
  return function (...)
-               return statusHandler(pcall(func, ...))
+               return statusHandler(copcall(func, ...))
        end
 end
 
@@ -41,7 +44,7 @@ function socket.newtry(finalizer)
        return function (...)
                local status = (...) or false
                if (status==false)then
-                       pcall(finalizer, select(2, ...) )
+                       copcall(finalizer, select(2, ...) )
                        error((select(2, ...)), 0)
                end
                return ...
@@ -55,7 +58,7 @@ module ("copas", package.seeall)
 -- Meta information is public even if begining with an "_"
 _COPYRIGHT   = "Copyright (C) 2005 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_VERSION     = "Copas 1.1.2"
+_VERSION     = "Copas 1.1.3"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
@@ -253,7 +256,7 @@ local function _doTick (co, skt, ...)
                new_q:insert (res)
                new_q:push (res, co)
        else
-               if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
+               if not ok then copcall (_errhandlers [co] or _deferror, res, co, skt) end
                if skt then skt:close() end
                _errhandlers [co] = nil
        end
