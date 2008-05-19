@@ -78,7 +78,7 @@ as Lua 5.1</p>
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 1.1.2 and was developed for Lua 5.1.</p>
+<p>Current version is 1.1.3 and was developed for Lua 5.1.</p>
 
 <h2><a name="download"></a>Download</h2>
 
@@ -96,13 +96,20 @@ luarocks install copas
 
 <h2><a name="dependencies"></a>Dependencies</h2>
 
-<p>Copas depends only on
-<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket 2.0</a>.
+<p>Copas depends on
+<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket 2.0</a> and
+<a href="http://coxpcall.luaforge.net/">Coxpcall 1.12</a>.
 </p>
 
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>1.1.2</strong> [19/May/2008]</dt>
+	<dd><ul>
+		<li>Using <code>copcall</code> instead of <code>pcall</code> in <code>socket.protect</code>
+		(feature request <a href="http://luaforge.net/tracker/index.php?func=detail&amp;aid=5274&amp;group_id=100&amp;atid=495">[#5274]</a> by Gary NG)</li>
+	</ul></dd>
+	
     <dt><strong>1.1.2</strong> [15/May/2008]</dt>
 	<dd><ul>
 		<li>Fixed Bug <a href="http://luaforge.net/tracker/index.php?func=detail&amp;aid=4249&amp;group_id=100&amp;atid=492">[#4249]</a>
@@ -162,7 +169,7 @@ You can also reach other Kepler developers and users on the Kepler Project
 
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer">Valid XHTML 1.0!</a></p>
-	<p><small>$Id: index.html,v 1.31 2008/05/15 19:44:12 carregal Exp $</small></p>
+	<p><small>$Id: index.html,v 1.32 2008/05/19 19:58:02 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
