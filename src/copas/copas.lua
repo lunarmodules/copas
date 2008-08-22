@@ -20,7 +20,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.31 2008/05/19 18:57:13 carregal Exp $
+-- $Id: copas.lua,v 1.32 2008/08/22 20:20:49 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
@@ -179,20 +179,19 @@ function send(client,data, from, to)
 end
 
 -- waits until connection is completed
-function connect(skt,host, port)
-       skt:settimeout(0)
-       local ret,err = skt:connect (host, port)
-       if ret or err ~= "timeout" then
-       return ret, err
-   end
-   _writing_log[skt] = os.time()
-       coroutine.yield(skt, _writing)
-       ret,err = skt:connect (host, port)
-   _writing_log[skt] = nil
-       if (err=="already connected") then
-               return 1
-       end
-       return ret, err
+function connect(skt, host, port)
+	skt:settimeout(0)
+	local ret, err
+	repeat
+		ret, err = skt:connect (host, port)
+		if ret or err ~= "timeout" then
+			_writing_log[skt] = nil
+			return ret, err
+		end
+		_writing_log[skt] = os.time()
+		coroutine.yield(skt, _writing)
+	until false
+	return ret, err
 end
 
 -- flushes a client write buffer (deprecated)
