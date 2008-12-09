@@ -1,7 +1,7 @@
 -- Tests Copas with a simple Echo server
 --
--- Run the test file and the connect to the server by telnet on the used port
--- to stop the test just send the command "quit"
+-- Run the test file and the connect to the server using telnet on the used port.
+-- The server should be able to echo any input, to stop the test just send the command "quit"
 
 require"copas"
 

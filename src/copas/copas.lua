@@ -20,7 +20,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.33 2008/12/08 19:21:51 carregal Exp $
+-- $Id: copas.lua,v 1.34 2008/12/09 16:22:26 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
@@ -58,7 +58,7 @@ module ("copas", package.seeall)
 -- Meta information is public even if begining with an "_"
 _COPYRIGHT   = "Copyright (C) 2005 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_VERSION     = "Copas 1.1.3"
+_VERSION     = "Copas 1.1.4"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
