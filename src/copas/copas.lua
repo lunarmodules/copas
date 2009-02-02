@@ -20,7 +20,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.34 2008/12/09 16:22:26 carregal Exp $
+-- $Id: copas.lua,v 1.35 2009/02/02 04:25:11 mascarenhas Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
@@ -131,9 +131,6 @@ function receive(client, pattern, part)
    if s or err ~= "timeout" then
        _reading_log[client] = nil
        return s, err, part
-   end
-   if part and tonumber(pattern) then
-       pattern = pattern - #part
    end
    _reading_log[client] = os.time()
    coroutine.yield(client, _reading)
