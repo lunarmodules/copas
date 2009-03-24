@@ -138,10 +138,10 @@ server.</p>
 
 <p>
 Since Copas is coroutine based, using it within a Lua <code>pcall</code> or
-<code>xpcall</code> context does not work with Lua 5 yielding. If you need to use 
-any of those functions in your handler we strongly suggest using Xavante's 
-<a href="http://luaforge.net/frs/?group_id=6">coxpcall</a>, a coroutine safe
-version of the Lua 5 protected calls. For an example of this usage please check Xavante.
+<code>xpcall</code> context does not work with Lua 5.1 yielding. If you need to use 
+any of those functions in your handler we strongly suggest using  
+<a href="http://coxpcall.luaforge.net/">coxpcall</a>, a coroutine safe
+version of the Lua 5.1 protected calls. For an example of this usage please check Xavante.
 </p>
 
 <h2><a name="why"></a>Why use Copas?</h2>
@@ -154,7 +154,7 @@ loop like the one below:
 
 <pre class="example">
 server = socket.bind(host, port)
-while true
+while true do
   skt = server:accept()
   handle(skt)
 end
@@ -183,7 +183,7 @@ use LuaSocket's <code>socket.select()</code>, like in:</p>
 <pre class="example">
 server = socket.bind(host, port)
 reading = {server}
-while true
+while true do
   input = socket.select(reading)
   skt = input:accept()
   handle(skt)
@@ -199,7 +199,7 @@ multitask, and the solution usually involves some kind of threads.</p>
 <pre class="example">
 server = socket.bind(host, port)
 reading = {server}
-while true
+while true do
   input = socket.select(reading)
   skt = input:accept()
   newthread(handle(skt))
@@ -305,7 +305,7 @@ end
 
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer">Valid XHTML 1.0!</a></p>
-	<p><small>$Id: manual.html,v 1.18 2008/05/15 19:44:12 carregal Exp $</small></p>
+	<p><small>$Id: manual.html,v 1.19 2009/03/24 22:04:26 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
