@@ -10,42 +10,43 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.36 2009/04/07 21:34:53 carregal Exp $
+-- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
-require"coxpcall"
+require "coxpcall"
 
 local WATCH_DOG_TIMEOUT = 120
 
 -- Redefines LuaSocket functions with coroutine safe versions
 -- (this allows the use of socket.http from within copas)
 local function statusHandler(status, ...)
- if status then return ... end
- return nil, ...
+	if status then return ... end
+ 	return nil, ...
 end
+
 function socket.protect(func)
- return function (...)
-               return statusHandler(copcall(func, ...))
-       end
+	return function (...)
+    	return statusHandler(copcall(func, ...))
+	end
 end
 
 function socket.newtry(finalizer)
-       return function (...)
-               local status = (...) or false
-               if (status==false)then
-                       copcall(finalizer, select(2, ...) )
-                       error((select(2, ...)), 0)
-               end
-               return ...
-       end
+	return function (...)
+    	local status = (...) or false
+        if (status==false)then
+			copcall(finalizer, select(2, ...) )
+			error((select(2, ...)), 0)
+		end
+		return ...
+	end
 end
 -- end of LuaSocket redefinitions
 
 
 module ("copas", package.seeall)
 
--- Meta information is public even if begining with an "_"
+-- Meta information is public even if beginning with an "_"
 _COPYRIGHT   = "Copyright (C) 2005 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
 _VERSION     = "Copas 1.1.5"
@@ -79,14 +80,14 @@ local function newset()
            end
        end,
 
-               push = function (set, key, itm)
-                       local qKey = q[key]
-                       if qKey == nil then
-                               q[key] = {itm}
-                       else
-                               qKey[#qKey + 1] = itm
-                       end
-               end,
+       push = function (set, key, itm)
+               local qKey = q[key]
+               if qKey == nil then
+                       q[key] = {itm}
+               else
+                       qKey[#qKey + 1] = itm
+               end
+       end,
 
        pop = function (set, key)
          local t = q[key]
@@ -253,14 +254,14 @@ end
 
 -- accepts a connection on socket input
 local function _accept(input, handler)
-       local client = input:accept()
-       if client then
-               client:settimeout(0)
-               local co = coroutine.create(handler)
-               _doTick (co, client)
-               --_reading:insert(client)
-       end
-       return client
+	local client = input:accept()
+	if client then
+		client:settimeout(0)
+		local co = coroutine.create(handler)
+		_doTick (co, client)
+		--_reading:insert(client)
+	end
+	return client
 end
 
 -- handle threads on a queue
@@ -276,9 +277,9 @@ end
 -- Adds a server/handler pair to Copas dispatcher
 -------------------------------------------------------------------------------
 function addserver(server, handler, timeout)
- server:settimeout(timeout or 0.1)
- _servers[server] = handler
- _reading:insert(server)
+	server:settimeout(timeout or 0.1)
+	_servers[server] = handler
+	_reading:insert(server)
 end
 
 -------------------------------------------------------------------------------
@@ -318,23 +319,23 @@ end
 -------------------------------------------------------------------------------
 -- a task to check ready to read events
 local _readable_t = {
- events = function(self)
-       local i = 0
-       return function ()
-               i = i + 1
-               return self._evs [i]
-       end
- end,
+	events = function(self)
+		local i = 0
+		return function ()
+			i = i + 1
+			return self._evs [i]
+		end
+	end,
 
- tick = function (self, input)
-       local handler = _servers[input]
-       if handler then
-               input = _accept(input, handler)
-       else
-               _reading:remove (input)
-               self.def_tick (input)
-       end
- end
+	tick = function (self, input)
+		local handler = _servers[input]
+		if handler then
+			input = _accept(input, handler)
+		else
+			_reading:remove (input)
+			self.def_tick (input)
+		end
+	end
 }
 
 addtaskRead (_readable_t)
@@ -342,57 +343,63 @@ addtaskRead (_readable_t)
 
 -- a task to check ready to write events
 local _writable_t = {
- events = function (self)
-       local i = 0
-       return function ()
-               i = i+1
-               return self._evs [i]
-       end
- end,
+	events = function (self)
+		local i = 0
+		return function ()
+			i = i + 1
+			return self._evs [i]
+		end
+	end,
 
- tick = function (self, output)
-       _writing:remove (output)
-       self.def_tick (output)
- end
+	tick = function (self, output)
+		_writing:remove (output)
+		self.def_tick (output)
+	end
 }
 
 addtaskWrite (_writable_t)
 
 local last_cleansing = 0
+
+-------------------------------------------------------------------------------
+-- Checks for reads and writes on sockets
+-------------------------------------------------------------------------------
 local function _select (timeout)
-       local err
-   local readable={}
-   local writable={}
-   local r={}
-   local w={}
-   local now = os.time()
-   local duration = os.difftime
+	local err
+	local readable={}
+	local writable={}
+	local r={}
+	local w={}
+	local now = os.time()
+	local duration = os.difftime
 
+	_readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
+	local r_evs, w_evs = _readable_t._evs, _writable_t._evs
 
-       _readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
-       local r_evs, w_evs = _readable_t._evs, _writable_t._evs
+	if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
+		last_cleansing = now
+		for k,v in pairs(_reading_log) do
+			if not r_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
+				_reading_log[k] = nil
+				r_evs[#r_evs + 1] = k
+				r_evs[k] = #r_evs
+			end
+		end
 
-   if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
-       last_cleansing = now
-       for k,v in pairs(_reading_log) do
-           if not r_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-               _reading_log[k] = nil
-               r_evs[#r_evs + 1] = k
-               r_evs[k] = #r_evs
-           end
-       end
+		for k,v in pairs(_writing_log) do
+			if not w_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
+				_writing_log[k] = nil
+				w_evs[#w_evs + 1] = k
+				w_evs[k] = #w_evs
+			end
+		end
+	end
 
-       for k,v in pairs(_writing_log) do
-           if not w_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-               _writing_log[k] = nil
-               w_evs[#w_evs + 1] = k
-               w_evs[k] = #w_evs
-           end
-       end
-   end
-
-   if err == "timeout" and #r_evs + #w_evs > 0 then return nil
-   else return err end
+	if err == "timeout" and #r_evs + #w_evs > 0 then
+		return nil
+	else
+		return err
+	end
 end
 
 
@@ -401,18 +408,18 @@ end
 -- Listen to client requests and handles them
 -------------------------------------------------------------------------------
 function step(timeout)
- local err = _select (timeout)
- if err == "timeout" then return end
+	local err = _select (timeout)
+	if err == "timeout" then return end
 
-       if err then
-               error(err)
-       end
+	if err then
+		error(err)
+	end
 
-       for tsk in tasks() do
-               for ev in tsk:events () do
-                       tsk:tick (ev)
-               end
-       end
+	for tsk in tasks() do
+		for ev in tsk:events() do
+			tsk:tick (ev)
+		end
+	end
 end
 
 -------------------------------------------------------------------------------
