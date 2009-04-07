@@ -1,8 +1,7 @@
 package = "Copas"
-version = "cvs-2"
+version = "1.1.5-1"
 source = {
-   url = "cvs://:pserver:anonymous:@cvs.luaforge.net:/cvsroot/copas",
-   cvs_tag = "HEAD",
+   url = "",
 }
 description = {
    summary = "Coroutine Oriented Portable Asynchronous Services",
@@ -25,5 +24,5 @@ dependencies = {
 }
 build = {
    type = "module",
-   modules = { copas = "src/copas/copas.lua" }
+   modules = { copas = "src/copas/copas.lua" } 
 }
