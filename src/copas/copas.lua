@@ -1,18 +1,8 @@
 -------------------------------------------------------------------------------
 -- Copas - Coroutine Oriented Portable Asynchronous Services
 --
--- Offers a dispatcher and socket operations based on coroutines.
--- Usage:
---    copas.addserver(server, handler, timeout)
---    copas.addthread(thread, ...) Create a new coroutine thread and run it with args
---    copas.loop(timeout) - listens infinetely
---    copas.step(timeout) - executes one listening step
---    copas.receive(pattern or number) - receives data from a socket
---    copas.settimeout(client, time) if time=0 copas.receive(bufferSize) - receives partial data from a socket were data<=bufferSize
---    copas.send  - sends data through a socket
---    copas.wrap  - wraps a LuaSocket socket with Copas methods
---    copas.connect - blocks only the thread until connection completes
---    copas.flush - *deprecated* do nothing
+-- A dispatcher based on coroutines that can be used by TCP/IP servers.
+-- Uses LuaSocket as the interface with the TCP/IP stack.
 --
 -- Authors: Andre Carregal and Javier Guerra
 -- Contributors: Diego Nehab, Mike Pall, David Burgess, Leonardo Godinho,
@@ -20,7 +10,7 @@
 --
 -- Copyright 2005 - Kepler Project (www.keplerproject.org)
 --
--- $Id: copas.lua,v 1.35 2009/02/02 04:25:11 mascarenhas Exp $
+-- $Id: copas.lua,v 1.36 2009/04/07 21:34:53 carregal Exp $
 -------------------------------------------------------------------------------
 local socket = require "socket"
 
@@ -58,7 +48,7 @@ module ("copas", package.seeall)
 -- Meta information is public even if begining with an "_"
 _COPYRIGHT   = "Copyright (C) 2005 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_VERSION     = "Copas 1.1.4"
+_VERSION     = "Copas 1.1.5"
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example

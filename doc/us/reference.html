@@ -87,7 +87,7 @@ are used to register servers and to execute the main loop of Copas:</p>
         registered servers and handling those connections with the corresponding
         handlers. Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
-        <code>accept()</code>. The <code>timeout</code> parameter is optional.
+        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
     </dd>
     
     <dt><strong><code>copas.step(timeout)</code></strong></dt>
@@ -95,7 +95,7 @@ are used to register servers and to execute the main loop of Copas:</p>
         registered servers and handling those connections with the corresponding
         handlers. When a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
-        <code>accept()</code>. The <code>timeout</code> parameter is optional.
+        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
     </dd>
 </dl>
 
@@ -134,7 +134,7 @@ exchange data with other services.</p>
 
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer">Valid XHTML 1.0!</a></p>
-	<p><small>$Id: reference.html,v 1.15 2008/05/15 19:44:12 carregal Exp $</small></p>
+	<p><small>$Id: reference.html,v 1.16 2009/04/07 21:34:52 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
