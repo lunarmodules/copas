@@ -1,8 +1,7 @@
 package = "Copas"
 version = "cvs-2"
 source = {
-   url = "cvs://:pserver:anonymous:@cvs.luaforge.net:/cvsroot/copas",
-   cvs_tag = "HEAD",
+  url = "git://github.com/keplerproject/copas.git"
 }
 description = {
    summary = "Coroutine Oriented Portable Asynchronous Services",
