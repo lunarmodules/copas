@@ -12,6 +12,11 @@
 --
 -- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
+
+if package.loaded["socket.http"] then
+  error("you must require copas before require'ing socket.http")
+end
+
 local socket = require "socket"
 
 require "coxpcall"
