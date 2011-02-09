@@ -297,8 +297,11 @@ end
 -- Adds an new courotine thread to Copas dispatcher
 -------------------------------------------------------------------------------
 function addthread(thread, ...)
-  local co = coroutine.create(thread)
-  _doTick (co, nil, ...)
+  if type(thread) ~= "thread" then
+    thread = coroutine.create(thread)
+  end
+  _doTick (thread, nil, ...)
+  return thread
 end
 
 -------------------------------------------------------------------------------
