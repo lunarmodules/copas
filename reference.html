@@ -97,6 +97,12 @@ are used to register servers and to execute the main loop of Copas:</p>
         associated handler passing the client socket returned by
         <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
     </dd>
+
+    <dt><strong><code>copas.setErrorHandler(func)</code></strong></dt>
+    <dd>Sets the error handling function for the current thread. Any socket
+        errors will be forwarded to the handler, which will receive the
+        error message, the thread, and the socket as arguments.</dd>
+    </dd>
 </dl>
 
 <p>The second group is used by the handler functions to exchange data with
