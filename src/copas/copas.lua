@@ -43,13 +43,13 @@ end
 
 function socket.newtry(finalizer)
   return function (...)
-	   local status = (...)
-	   if not status then
-	     copcall(finalizer, select(2, ...))
-	     error({ (select(2, ...)) }, 0)
-	   end
-	   return ...
-	 end
+           local status = (...)
+           if not status then
+             copcall(finalizer, select(2, ...))
+             error({ (select(2, ...)) }, 0)
+           end
+           return ...
+         end
 end
 
 -- end of LuaSocket redefinitions
@@ -62,6 +62,9 @@ _COPYRIGHT   = "Copyright (C) 2005-2010 Kepler Project"
 _DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
 _VERSION     = "Copas 1.1.7"
 
+-- Close the socket associated with the current connection after the handler finishes
+autoclose = true
+
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
 -- adds a FIFO queue for each value in the set
@@ -71,46 +74,46 @@ local function newset()
   local set = {}
   local q = {}
   setmetatable(set, { __index = {
-			insert = function(set, value)
-				   if not reverse[value] then
-				     set[#set + 1] = value
-				     reverse[value] = #set
-				   end
-				 end,
+                        insert = function(set, value)
+                                   if not reverse[value] then
+                                     set[#set + 1] = value
+                                     reverse[value] = #set
+                                   end
+                                 end,
 
-			remove = function(set, value)
-				   local index = reverse[value]
-				   if index then
-				     reverse[value] = nil
-				     local top = set[#set]
-				     set[#set] = nil
-				     if top ~= value then
-				       reverse[top] = index
-				       set[index] = top
-				     end
-				   end
-				 end,
+                        remove = function(set, value)
+                                   local index = reverse[value]
+                                   if index then
+                                     reverse[value] = nil
+                                     local top = set[#set]
+                                     set[#set] = nil
+                                     if top ~= value then
+                                       reverse[top] = index
+                                       set[index] = top
+                                     end
+                                   end
+                                 end,
 
-			push = function (set, key, itm)
-				 local qKey = q[key]
-				 if qKey == nil then
-				   q[key] = {itm}
-				 else
-				   qKey[#qKey + 1] = itm
-				 end
-			       end,
+                        push = function (set, key, itm)
+                                 local qKey = q[key]
+                                 if qKey == nil then
+                                   q[key] = {itm}
+                                 else
+                                   qKey[#qKey + 1] = itm
+                                 end
+                               end,
 
-			pop = function (set, key)
-				local t = q[key]
-				if t ~= nil then
-				  local ret = table.remove (t, 1)
-				  if t[1] == nil then
-				    q[key] = nil
-				  end
-				  return ret
-				end
-			      end
-		    }})
+                        pop = function (set, key)
+                                local t = q[key]
+                                if t ~= nil then
+                                  local ret = table.remove (t, 1)
+                                  if t[1] == nil then
+                                    q[key] = nil
+                                  end
+                                  return ret
+                                end
+                              end
+                    }})
   return set
 end
 
@@ -202,26 +205,26 @@ end
 
 -- wraps a socket to use Copas methods (send, receive, flush and settimeout)
 local _skt_mt = {__index = {
-		   send = function (self, data, from, to)
-			    return send (self.socket, data, from, to)
-			  end,
+                   send = function (self, data, from, to)
+                            return send (self.socket, data, from, to)
+                          end,
 
-		   receive = function (self, pattern)
-			       if (self.timeout==0) then
-				 return receivePartial(self.socket, pattern)
-			       end
-			       return receive (self.socket, pattern)
-			     end,
+                   receive = function (self, pattern)
+                               if (self.timeout==0) then
+                                 return receivePartial(self.socket, pattern)
+                               end
+                               return receive (self.socket, pattern)
+                             end,
 
-		   flush = function (self)
-			     return flush (self.socket)
-			   end,
+                   flush = function (self)
+                             return flush (self.socket)
+                           end,
 
-		   settimeout = function (self,time)
-				  self.timeout=time
-				  return
-				end,
-	       }}
+                   settimeout = function (self,time)
+                                  self.timeout=time
+                                  return
+                                end,
+               }}
 
 function wrap (skt)
   return  setmetatable ({socket = skt}, _skt_mt)
@@ -258,7 +261,7 @@ local function _doTick (co, skt, ...)
     new_q:push (res, co)
   else
     if not ok then copcall (_errhandlers [co] or _deferror, res, co, skt) end
-    if skt then skt:close() end
+    if skt and autoclose then skt:close() end
     _errhandlers [co] = nil
   end
 end
@@ -334,22 +337,22 @@ end
 -- a task to check ready to read events
 local _readable_t = {
   events = function(self)
-	     local i = 0
-	     return function ()
-		      i = i + 1
-		      return self._evs [i]
-		    end
-	   end,
+             local i = 0
+             return function ()
+                      i = i + 1
+                      return self._evs [i]
+                    end
+           end,
 
   tick = function (self, input)
-	   local handler = _servers[input]
-	   if handler then
-	     input = _accept(input, handler)
-	   else
-	     _reading:remove (input)
-	     self.def_tick (input)
-	   end
-	 end
+           local handler = _servers[input]
+           if handler then
+             input = _accept(input, handler)
+           else
+             _reading:remove (input)
+             self.def_tick (input)
+           end
+         end
 }
 
 addtaskRead (_readable_t)
@@ -358,17 +361,17 @@ addtaskRead (_readable_t)
 -- a task to check ready to write events
 local _writable_t = {
   events = function (self)
-	     local i = 0
-	     return function ()
-		      i = i + 1
-		      return self._evs [i]
-		    end
-	   end,
+             local i = 0
+             return function ()
+                      i = i + 1
+                      return self._evs [i]
+                    end
+           end,
 
   tick = function (self, output)
-	   _writing:remove (output)
-	   self.def_tick (output)
-	 end
+           _writing:remove (output)
+           self.def_tick (output)
+         end
 }
 
 addtaskWrite (_writable_t)
@@ -394,17 +397,17 @@ local function _select (timeout)
     last_cleansing = now
     for k,v in pairs(_reading_log) do
       if not r_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-	_reading_log[k] = nil
-	r_evs[#r_evs + 1] = k
-	r_evs[k] = #r_evs
+        _reading_log[k] = nil
+        r_evs[#r_evs + 1] = k
+        r_evs[k] = #r_evs
       end
     end
 
     for k,v in pairs(_writing_log) do
       if not w_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-	_writing_log[k] = nil
-	w_evs[#w_evs + 1] = k
-	w_evs[k] = #w_evs
+        _writing_log[k] = nil
+        w_evs[#w_evs + 1] = k
+        w_evs[k] = #w_evs
       end
     end
   end
