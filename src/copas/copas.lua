@@ -290,12 +290,26 @@ end
 -------------------------------------------------------------------------------
 -- Adds a server/handler pair to Copas dispatcher
 -------------------------------------------------------------------------------
-function addserver(server, handler, timeout)
+local function addTCPserver(server, handler, timeout)
   server:settimeout(timeout or 0.1)
   _servers[server] = handler
   _reading:insert(server)
 end
 
+local function addUDPserver(server, handler, timeout)
+    server:settimeout(timeout or 0)
+    local co = coroutine.create(handler)
+    _reading:insert(server)
+    _doTick (co, server)
+end
+
+function addserver(server, handler, timeout)
+    if string.sub(tostring(server),1,3) == "udp" then
+        addUDPserver(server, handler, timeout)
+    else
+        addTCPserver(server, handler, timeout)
+    end
+end
 -------------------------------------------------------------------------------
 -- Adds an new courotine thread to Copas dispatcher
 -------------------------------------------------------------------------------
