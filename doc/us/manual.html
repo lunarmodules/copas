@@ -281,6 +281,33 @@ copas.loop()
 <p>During the loop Copas' dispatcher accepts connections from clients and
 automatically calls the corresponding handler functions.</p>
 
+<h2><a name="udp"></a>Using UDP servers</h2>
+<p>Copas may also be used for UDP servers. Here is an example;
+<pre class="example">
+local port = 51034
+local server = socket.udp()
+server:setsockname("*",port)
+
+function handler(skt)
+  skt = copas.wrap(skt)
+  print("UDP connection handler")
+
+  while true do
+    local s, err
+    print("receiving...")
+    s, err = skt:receive(2048)
+    if not s then
+      print("Receive error: ", err)
+      return
+    end
+    print("Received data, bytes:" , #s)
+  end
+end
+
+copas.addserver(server, handler, 1)
+copas.loop()
+</pre>
+
 <h2><a name="control"></a>Controlling Copas</h2>
 
 <p>
