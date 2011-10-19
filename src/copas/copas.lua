@@ -437,10 +437,12 @@ end
 -------------------------------------------------------------------------------
 -- Dispatcher loop step.
 -- Listen to client requests and handles them
+-- Returns false if no data was handled (timeout), or true if there was data
+-- handled (or nil + error message)
 -------------------------------------------------------------------------------
 function step(timeout)
   local err = _select (timeout)
-  if err == "timeout" then return end
+  if err == "timeout" then return false end
 
   if err then
     error(err)
@@ -451,6 +453,7 @@ function step(timeout)
       tsk:tick (ev)
     end
   end
+  return true
 end
 
 -------------------------------------------------------------------------------

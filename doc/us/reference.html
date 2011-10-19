@@ -96,6 +96,9 @@ are used to register servers and to execute the main loop of Copas:</p>
         handlers. When a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
         <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
+				It returns <code>false</code> when no data was handled (timeout) or 
+				<code>true</code> if there was data handled (or alternatively nil + error
+				message in case of errors).
     </dd>
 </dl>
 
