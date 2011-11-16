@@ -22,6 +22,7 @@ local socket = require "socket"
 require "coxpcall"
 
 local WATCH_DOG_TIMEOUT = 120
+local UDP_DATAGRAM_MAX = 8192
 
 -- Redefines LuaSocket functions with coroutine safe versions
 -- (this allows the use of socket.http from within copas)
@@ -128,6 +129,9 @@ local _writing = newset() -- sockets currently being written
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
 -- reads a pattern from a client and yields to the reading set on timeouts
+-- UDP: a UDP socket expects a second argument to be a number, so it MUST
+-- be provided as the 'pattern' below defaults to a string. Will throw a
+-- 'bad argument' error if omitted.
 function receive(client, pattern, part)
   local s, err
   pattern = pattern or "*l"
@@ -136,6 +140,22 @@ function receive(client, pattern, part)
     if s or err ~= "timeout" then
       _reading_log[client] = nil
       return s, err, part
+    end
+    _reading_log[client] = os.time()
+    coroutine.yield(client, _reading)
+  until false
+end
+
+-- receives data from a client over UDP. Not available for TCP.
+-- (this is a copy of receive() method, adapted for receivefrom() use)
+function receivefrom(client, size)
+  local s, err, port
+  size = size or UDP_DATAGRAM_MAX
+  repeat
+    s, err, port = client:receivefrom(size) -- upon success err holds ip address
+    if s or err ~= "timeout" then
+      _reading_log[client] = nil
+      return s, err, port
     end
     _reading_log[client] = os.time()
     coroutine.yield(client, _reading)
@@ -161,6 +181,7 @@ end
 
 -- sends data to a client. The operation is buffered and
 -- yields to the writing set on timeouts
+-- Note: from and to parameters will be ignored by/for UDP sockets
 function send(client,data, from, to)
   local s, err,sent
   from = from or 1
@@ -177,6 +198,28 @@ function send(client,data, from, to)
     if s or err ~= "timeout" then
       _writing_log[client] = nil
       return s, err,lastIndex
+    end
+    _writing_log[client] = os.time()
+    coroutine.yield(client, _writing)
+  until false
+end
+
+-- sends data to a client over UDP. Not available for TCP.
+-- (this is a copy of send() method, adapted for sendto() use)
+function sendto(client,data, ip, port)
+  local s, err,sent
+
+  repeat
+    s, err = client:sendto(data, ip, port)
+    -- adds extra corrotine swap
+    -- garantees that high throuput dont take other threads to starvation
+    if (math.random(100) > 90) then
+      _writing_log[client] = os.time()
+      coroutine.yield(client, _writing)
+    end
+    if s or err ~= "timeout" then
+      _writing_log[client] = nil
+      return s, err
     end
     _writing_log[client] = os.time()
     coroutine.yield(client, _writing)
@@ -203,7 +246,7 @@ end
 function flush(client)
 end
 
--- wraps a socket to use Copas methods (send, receive, flush and settimeout)
+-- wraps a TCP socket to use Copas methods (send, receive, flush and settimeout)
 local _skt_mt = {__index = {
                    send = function (self, data, from, to)
                             return send (self.socket, data, from, to)
@@ -226,8 +269,41 @@ local _skt_mt = {__index = {
                                 end,
                }}
 
+-- wraps a UDP socket, copy of TCP one adapted for UDP.
+-- Mainly adds sendto() and receivefrom()
+local _skt_mt_udp = {__index = {
+                   send = function (self, data)
+                            return send (self.socket, data)
+                          end,
+
+                   sendto = function (self, data, ip, port)
+                            return sendto (self.socket, data, ip, port)
+                          end,
+
+                   receive = function (self, size)
+                               return receive (self.socket, (size or UDP_DATAGRAM_MAX))
+                             end,
+
+                   receivefrom = function (self, size)
+                               return receivefrom (self.socket, (size or UDP_DATAGRAM_MAX))
+                             end,
+
+                   flush = function (self)
+                             return flush (self.socket)
+                           end,
+
+                   settimeout = function (self,time)
+                                  self.timeout=time
+                                  return
+                                end,
+               }}
+
 function wrap (skt)
-  return  setmetatable ({socket = skt}, _skt_mt)
+  if string.sub(tostring(skt),1,3) == "udp" then
+    return  setmetatable ({socket = skt}, _skt_mt_udp)
+  else
+    return  setmetatable ({socket = skt}, _skt_mt)
+  end
 end
 
 --------------------------------------------------

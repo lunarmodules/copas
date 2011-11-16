@@ -282,7 +282,7 @@ copas.loop()
 automatically calls the corresponding handler functions.</p>
 
 <h2><a name="udp"></a>Using UDP servers</h2>
-<p>Copas may also be used for UDP servers. Here is an example;
+<p>Copas may also be used for UDP servers. Here is an example;</p>
 <pre class="example">
 local port = 51034
 local server = socket.udp()
@@ -307,6 +307,13 @@ end
 copas.addserver(server, handler, 1)
 copas.loop()
 </pre>
+<p>For UDP sockets the <code>receivefrom()</code> and <code>sendto()</code> 
+methods are available, both for copas and when the socket is wrapped. These 
+methods cannot be used on TCP sockets.</p>
+<p><strong>NOTE:</strong> When using the <code>copas.receive([size])</code> method
+on a UDP socket, the <code>size</code> parameter is NOT optional as with regular
+luasocket UDP sockets. This limitation is removed when the socket is wrapped 
+(it then defaults to 8192, the max UDP datagram size luasocket supports).</p>
 
 <h2><a name="control"></a>Controlling Copas</h2>
 
