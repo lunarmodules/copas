@@ -315,6 +315,33 @@ on a UDP socket, the <code>size</code> parameter is NOT optional as with regular
 luasocket UDP sockets. This limitation is removed when the socket is wrapped 
 (it then defaults to 8192, the max UDP datagram size luasocket supports).</p>
 
+<h2><a name="thread"></a>Adding threads</h2>
+<p>Additional threads may be added to the scheduler, as long as they use the Copas send and receive methods. Below an example of a thread being added to create an outgoing TCP connection using Copas;</p>
+<pre class="example">
+local socket = require("socket")
+local copas = require("copas.timer")
+
+local host = "127.0.0.1"
+local port = 10000
+
+local skt = socket.connect(host, port)
+
+copas.addthread(function()
+   while true do
+      print("receiving...")
+      local resp = copas.receive(skt, 6)
+      print("received:", resp or "nil")
+      if resp and resp:sub(1,4) == "quit" then
+         skt:close()
+         break
+      end
+   end
+end)
+
+copas.loop()
+</pre>
+<p>The example connects, echoes whatever it receives and exists upon receiving 'quit'.</p>
+
 <h2><a name="control"></a>Controlling Copas</h2>
 
 <p>
