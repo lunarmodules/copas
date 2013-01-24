@@ -183,7 +183,7 @@ end
 -- yields to the writing set on timeouts
 -- Note: from and to parameters will be ignored by/for UDP sockets
 function send(client,data, from, to)
-  local s, err,sent
+  local s, err
   from = from or 1
   local lastIndex = from - 1
 
@@ -207,7 +207,7 @@ end
 -- sends data to a client over UDP. Not available for TCP.
 -- (this is a copy of send() method, adapted for sendto() use)
 function sendto(client,data, ip, port)
-  local s, err,sent
+  local s, err
 
   repeat
     s, err = client:sendto(data, ip, port)
@@ -473,10 +473,6 @@ local last_cleansing = 0
 -------------------------------------------------------------------------------
 local function _select (timeout)
   local err
-  local readable={}
-  local writable={}
-  local r={}
-  local w={}
   local now = os.time()
   local duration = os.difftime
 
