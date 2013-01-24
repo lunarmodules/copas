@@ -1,4 +1,4 @@
-Copas 1.1.6
+Copas 1.2.0
 (http://www.keplerproject.org/copas)
 
 Copas is a dispatcher based on coroutines that can be used by TCP/IP servers.
