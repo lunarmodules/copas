@@ -472,10 +472,6 @@ local last_cleansing = 0
 -------------------------------------------------------------------------------
 local function _select (timeout)
   local err
-  local readable={}
-  local writable={}
-  local r={}
-  local w={}
   local now = os.time()
   local duration = os.difftime
 
