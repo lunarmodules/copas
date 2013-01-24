@@ -5,27 +5,25 @@
 -- 
 -- Written by Leonardo Godinho da Cunha
 -------------------------------------------------------------------------------
-require "copas"
+local copas = require "copas"
 
-module "copas.cosocket"
+local cosocket = {}
 
 -- Meta information is public even begining with an "_"
-_COPYRIGHT   = "Copyright (C) 2004-2006 Kepler Project"
-_DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services Wrapper for socket module"
-_NAME        = "Copas.cosocket"
-_VERSION     = "0.1"
+cosocket._COPYRIGHT   = "Copyright (C) 2004-2006 Kepler Project"
+cosocket._DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services Wrapper for socket module"
+cosocket._NAME        = "Copas.cosocket"
+cosocket._VERSION     = "0.1"
 
-
-function tcp ()
-	skt=socket.tcp()
-	w_skt_mt={__index = skt
-	}
-	ret_skt = setmetatable ({socket = skt}, w_skt_mt)
+function cosocket.tcp ()
+	local skt = socket.tcp()
+	local w_skt_mt = { __index = skt }
+	local ret_skt = setmetatable ({ socket = skt }, w_skt_mt)
 	ret_skt.settimeout = function (self,val)
 				return self.socket:settimeout (val) 
-			end 	
+	   		end 	
 	ret_skt.connect = function (self,host, port)
-				ret,err = copas.connect (self.socket,host, port)
+				local ret,err = copas.connect (self.socket,host, port)
 				local d = copas.wrap(self.socket)
 
 				self.send= function(client, data)

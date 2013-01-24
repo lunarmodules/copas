@@ -3,13 +3,13 @@
 -- Run the test file and the connect to the server using telnet on the used port.
 -- The server should be able to echo any input, to stop the test just send the command "quit"
 
-require"copas"
+local copas = require"copas"
 
 local function echoHandler(skt)
   skt = copas.wrap(skt)
   while true do
     local data = skt:receive()
-    if data == "quit" then
+    if not data or data == "quit" then
       break
     end
     skt:send(data)
