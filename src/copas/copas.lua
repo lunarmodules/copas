@@ -19,7 +19,7 @@ end
 
 local socket = require "socket"
 
-require "coxpcall"
+local coxpcall = require "coxpcall"
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192
@@ -38,7 +38,7 @@ end
 
 function socket.protect(func)
   return function (...)
-           return statusHandler(copcall(func, ...))
+           return statusHandler(coxpcall.pcall(func, ...))
          end
 end
 
@@ -46,7 +46,7 @@ function socket.newtry(finalizer)
   return function (...)
            local status = (...)
            if not status then
-             copcall(finalizer, select(2, ...))
+             coxpcall.pcall(finalizer, select(2, ...))
              error({ (select(2, ...)) }, 0)
            end
            return ...
@@ -55,16 +55,15 @@ end
 
 -- end of LuaSocket redefinitions
 
-
-module ("copas", package.seeall)
+local copas = {}
 
 -- Meta information is public even if beginning with an "_"
-_COPYRIGHT   = "Copyright (C) 2005-2010 Kepler Project"
-_DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-_VERSION     = "Copas 1.1.7"
+copas._COPYRIGHT   = "Copyright (C) 2005-2010 Kepler Project"
+copas._DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
+copas._VERSION     = "Copas 1.1.7"
 
 -- Close the socket associated with the current connection after the handler finishes
-autoclose = true
+copas.autoclose = true
 
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
@@ -132,7 +131,7 @@ local _writing = newset() -- sockets currently being written
 -- UDP: a UDP socket expects a second argument to be a number, so it MUST
 -- be provided as the 'pattern' below defaults to a string. Will throw a
 -- 'bad argument' error if omitted.
-function receive(client, pattern, part)
+function copas.receive(client, pattern, part)
   local s, err
   pattern = pattern or "*l"
   repeat
@@ -148,7 +147,7 @@ end
 
 -- receives data from a client over UDP. Not available for TCP.
 -- (this is a copy of receive() method, adapted for receivefrom() use)
-function receivefrom(client, size)
+function copas.receivefrom(client, size)
   local s, err, port
   size = size or UDP_DATAGRAM_MAX
   repeat
@@ -164,7 +163,7 @@ end
 
 -- same as above but with special treatment when reading chunks,
 -- unblocks on any data received.
-function receivePartial(client, pattern)
+function copas.receivePartial(client, pattern)
   local s, err, part
   pattern = pattern or "*l"
   repeat
@@ -182,7 +181,7 @@ end
 -- sends data to a client. The operation is buffered and
 -- yields to the writing set on timeouts
 -- Note: from and to parameters will be ignored by/for UDP sockets
-function send(client,data, from, to)
+function copas.send(client, data, from, to)
   local s, err,sent
   from = from or 1
   local lastIndex = from - 1
@@ -206,7 +205,7 @@ end
 
 -- sends data to a client over UDP. Not available for TCP.
 -- (this is a copy of send() method, adapted for sendto() use)
-function sendto(client,data, ip, port)
+function copas.sendto(client, data, ip, port)
   local s, err,sent
 
   repeat
@@ -227,7 +226,7 @@ function sendto(client,data, ip, port)
 end
 
 -- waits until connection is completed
-function connect(skt, host, port)
+function copas.connect(skt, host, port)
   skt:settimeout(0)
   local ret, err
   repeat
@@ -243,24 +242,24 @@ function connect(skt, host, port)
 end
 
 -- flushes a client write buffer (deprecated)
-function flush(client)
+function copas.flush(client)
 end
 
 -- wraps a TCP socket to use Copas methods (send, receive, flush and settimeout)
 local _skt_mt = {__index = {
                    send = function (self, data, from, to)
-                            return send (self.socket, data, from, to)
+                            return copas.send (self.socket, data, from, to)
                           end,
 
                    receive = function (self, pattern)
                                if (self.timeout==0) then
-                                 return receivePartial(self.socket, pattern)
+                                 return copas.receivePartial(self.socket, pattern)
                                end
-                               return receive (self.socket, pattern)
+                               return copas.receive(self.socket, pattern)
                              end,
 
                    flush = function (self)
-                             return flush (self.socket)
+                             return copas.flush(self.socket)
                            end,
 
                    settimeout = function (self,time)
@@ -273,23 +272,23 @@ local _skt_mt = {__index = {
 -- Mainly adds sendto() and receivefrom()
 local _skt_mt_udp = {__index = {
                    send = function (self, data)
-                            return send (self.socket, data)
+                            return copas.send (self.socket, data)
                           end,
 
                    sendto = function (self, data, ip, port)
-                            return sendto (self.socket, data, ip, port)
+                            return copas.sendto (self.socket, data, ip, port)
                           end,
 
                    receive = function (self, size)
-                               return receive (self.socket, (size or UDP_DATAGRAM_MAX))
+                               return copas.receive (self.socket, (size or UDP_DATAGRAM_MAX))
                              end,
 
                    receivefrom = function (self, size)
-                               return receivefrom (self.socket, (size or UDP_DATAGRAM_MAX))
+                               return copas.receivefrom (self.socket, (size or UDP_DATAGRAM_MAX))
                              end,
 
                    flush = function (self)
-                             return flush (self.socket)
+                             return copas.flush (self.socket)
                            end,
 
                    settimeout = function (self,time)
@@ -298,7 +297,7 @@ local _skt_mt_udp = {__index = {
                                 end,
                }}
 
-function wrap (skt)
+function copas.wrap (skt)
   if string.sub(tostring(skt),1,3) == "udp" then
     return  setmetatable ({socket = skt}, _skt_mt_udp)
   else
@@ -312,7 +311,7 @@ end
 
 local _errhandlers = {}   -- error handler per coroutine
 
-function setErrorHandler (err)
+function copas.setErrorHandler (err)
   local co = coroutine.running()
   if co then
     _errhandlers [co] = err
@@ -336,8 +335,8 @@ local function _doTick (co, skt, ...)
     new_q:insert (res)
     new_q:push (res, co)
   else
-    if not ok then copcall (_errhandlers [co] or _deferror, res, co, skt) end
-    if skt and autoclose then skt:close() end
+    if not ok then coxpcall.pcall (_errhandlers [co] or _deferror, res, co, skt) end
+    if skt and copas.autoclose then skt:close() end
     _errhandlers [co] = nil
   end
 end
@@ -379,7 +378,7 @@ local function addUDPserver(server, handler, timeout)
     _doTick (co, server)
 end
 
-function addserver(server, handler, timeout)
+function copas.addserver(server, handler, timeout)
     if string.sub(tostring(server),1,3) == "udp" then
         addUDPserver(server, handler, timeout)
     else
@@ -389,7 +388,7 @@ end
 -------------------------------------------------------------------------------
 -- Adds an new courotine thread to Copas dispatcher
 -------------------------------------------------------------------------------
-function addthread(thread, ...)
+function copas.addthread(thread, ...)
   if type(thread) ~= "thread" then
     thread = coroutine.create(thread)
   end
@@ -473,10 +472,6 @@ local last_cleansing = 0
 -------------------------------------------------------------------------------
 local function _select (timeout)
   local err
-  local readable={}
-  local writable={}
-  local r={}
-  local w={}
   local now = os.time()
   local duration = os.difftime
 
@@ -516,7 +511,7 @@ end
 -- Returns false if no data was handled (timeout), or true if there was data
 -- handled (or nil + error message)
 -------------------------------------------------------------------------------
-function step(timeout)
+function copas.step(timeout)
   local err = _select (timeout)
   if err == "timeout" then return false end
 
@@ -536,8 +531,10 @@ end
 -- Dispatcher endless loop.
 -- Listen to client requests and handles them forever
 -------------------------------------------------------------------------------
-function loop(timeout)
+function copas.loop(timeout)
   while true do
-    step(timeout)
+    copas.step(timeout)
   end
 end
+
+return copas
