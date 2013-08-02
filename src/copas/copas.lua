@@ -126,7 +126,7 @@ local _sleeping = {
     , push = function(self, sleeptime, co)
         if not co then return end
         if sleeptime<0 then
-            --sleep until explicit wakeup through coroutine.wakeup
+            --sleep until explicit wakeup through copas.wakeup
             self.lethargy[co] = true
             return
         else
@@ -519,7 +519,7 @@ addtaskWrite (_writable_t)
 --sleeping threads task
 local _sleeping_t = {
     tick = function (self, time, ...)
-       _doTick(_sleeping:pop(time))
+       _doTick(_sleeping:pop(time), ...)
     end
 }
 
