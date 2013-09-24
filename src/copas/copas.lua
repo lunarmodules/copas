@@ -117,6 +117,57 @@ local function newset()
   return set
 end
 
+local fnil = function()end
+local _sleeping = {
+    times = {}, cos = {},
+    lethargy = {} -- потоки в летаргическом сне
+
+    , insert = fnil, remove = fnil
+    , push = function(self, sleeptime, co)
+        if not co then return end
+        if sleeptime<0 then
+            --sleep until explicit wakeup through copas.wakeup
+            self.lethargy[co] = true
+            return
+        else
+            sleeptime = os.time() + sleeptime
+        end
+        local t, c = self.times, self.cos
+        local i, cou = 1, #t
+        --TODO: сделать бинарный поиск
+        while i<=cou and t[i]<sleeptime do i=i+1 end
+        table.insert(t, i, sleeptime)
+        table.insert(c, i, co)
+      end
+        --найти нить, которая должна проснуться ко времени time
+    , pop = function(self, time)
+        local t, c = self.times, self.cos
+        if #t==0 or time<t[1] then return end
+        local co = c[1]
+        table.remove(t, 1)
+        table.remove(c, 1)
+        return co
+      end
+    , wakeup = function(self, co)
+        local let = self.lethargy
+        if let[co] then
+            self:push(0, co)
+            let[co] = nil
+        else
+            let = self.cos
+            for i=1,#let do
+                if let[i]==co then
+                    table.remove(let, i)
+                    local tm = self.times[i]
+                    table.remove(self.times, i)
+                    self:push(0, co)
+                    return
+                end
+            end
+        end
+      end
+} --_sleeping
+
 local _servers = newset() -- servers being handled
 local _reading_log = {}
 local _writing_log = {}
@@ -464,6 +515,21 @@ local _writable_t = {
 }
 
 addtaskWrite (_writable_t)
+--
+--sleeping threads task
+local _sleeping_t = {
+    tick = function (self, time, ...)
+       _doTick(_sleeping:pop(time), ...)
+    end
+}
+
+function copas.sleep(sleeptime)
+    coroutine.yield((sleeptime or 0), _sleeping)
+end
+
+function copas.wakeup(co)
+    _sleeping:wakeup(co)
+end
 
 local last_cleansing = 0
 
@@ -512,6 +578,7 @@ end
 -- handled (or nil + error message)
 -------------------------------------------------------------------------------
 function copas.step(timeout)
+  _sleeping_t:tick(os.time())
   local err = _select (timeout)
   if err == "timeout" then return false end
 
