@@ -135,7 +135,7 @@ local _sleeping = {
         local t, c = self.times, self.cos
         local i, cou = 1, #t
         --TODO: сделать бинарный поиск
-        while i<=cou and t[i]<sleeptime do i=i+1 end
+        while i<=cou and t[i]<=sleeptime do i=i+1 end
         table.insert(t, i, sleeptime)
         table.insert(c, i, co)
       end
