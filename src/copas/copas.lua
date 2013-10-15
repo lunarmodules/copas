@@ -139,6 +139,12 @@ local _sleeping = {
         table.insert(t, i, sleeptime)
         table.insert(c, i, co)
       end
+    , getnext = function(self)
+        local t = self.times
+        local delay = t[1] and t[1] - os.time() or nil
+
+        return delay and math.max(delay, 0) or nil
+      end
         --найти нить, которая должна проснуться ко времени time
     , pop = function(self, time)
         local t, c = self.times, self.cos
@@ -579,6 +585,13 @@ end
 -------------------------------------------------------------------------------
 function copas.step(timeout)
   _sleeping_t:tick(os.time())
+
+  -- Need to wake up the select call it time for the next sleeping event
+  local nextwait = _sleeping:getnext()
+  if nextwait then
+    timeout = timeout and math.min(nextwait, timeout) or nextwait
+  end
+
   local err = _select (timeout)
   if err == "timeout" then return false end
 
