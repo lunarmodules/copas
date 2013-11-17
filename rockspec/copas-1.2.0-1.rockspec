@@ -1,7 +1,8 @@
 package = "Copas"
 version = "1.2.0-1"
 source = {
-   url = "http://www.keplerproject.org/files/copas-1.2.0.tar.gz",
+   url = "https://github.com/keplerproject/copas/archive/v1_2_0.tar.gz",
+   dir = "copas-1_2_0",
 }
 description = {
    summary = "Coroutine Oriented Portable Asynchronous Services",
@@ -18,7 +19,7 @@ description = {
    homepage = "http://www.keplerproject.org/copas/"
 }
 dependencies = {
-   "lua >= 5.1",
+   "lua >= 5.1, < 5.3",
    "luasocket >= 2.1",
    "coxpcall >= 1.14",
 }
