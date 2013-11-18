@@ -18,7 +18,7 @@ if package.loaded["socket.http"] then
 end
 
 local socket = require "socket"
-
+local gettime = socket.gettime
 local coxpcall = require "coxpcall"
 
 local WATCH_DOG_TIMEOUT = 120
@@ -130,7 +130,7 @@ local _sleeping = {
             self.lethargy[co] = true
             return
         else
-            sleeptime = os.time() + sleeptime
+            sleeptime = gettime() + sleeptime
         end
         local t, c = self.times, self.cos
         local i, cou = 1, #t
@@ -141,7 +141,7 @@ local _sleeping = {
       end
     , getnext = function(self)
         local t = self.times
-        local delay = t[1] and t[1] - os.time() or nil
+        local delay = t[1] and t[1] - gettime() or nil
 
         return delay and math.max(delay, 0) or nil
       end
@@ -197,7 +197,7 @@ function copas.receive(client, pattern, part)
       _reading_log[client] = nil
       return s, err, part
     end
-    _reading_log[client] = os.time()
+    _reading_log[client] = gettime()
     coroutine.yield(client, _reading)
   until false
 end
@@ -213,7 +213,7 @@ function copas.receivefrom(client, size)
       _reading_log[client] = nil
       return s, err, port
     end
-    _reading_log[client] = os.time()
+    _reading_log[client] = gettime()
     coroutine.yield(client, _reading)
   until false
 end
@@ -230,7 +230,7 @@ function copas.receivePartial(client, pattern)
     _reading_log[client] = nil
     return s, err, part
   end
-  _reading_log[client] = os.time()
+  _reading_log[client] = gettime()
   coroutine.yield(client, _reading)
 until false
 end
@@ -248,14 +248,14 @@ function copas.send(client, data, from, to)
     -- adds extra corrotine swap
     -- garantees that high throuput dont take other threads to starvation
     if (math.random(100) > 90) then
-      _writing_log[client] = os.time()
+      _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
     end
     if s or err ~= "timeout" then
       _writing_log[client] = nil
       return s, err,lastIndex
     end
-    _writing_log[client] = os.time()
+    _writing_log[client] = gettime()
     coroutine.yield(client, _writing)
   until false
 end
@@ -270,14 +270,14 @@ function copas.sendto(client, data, ip, port)
     -- adds extra corrotine swap
     -- garantees that high throuput dont take other threads to starvation
     if (math.random(100) > 90) then
-      _writing_log[client] = os.time()
+      _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
     end
     if s or err ~= "timeout" then
       _writing_log[client] = nil
       return s, err
     end
-    _writing_log[client] = os.time()
+    _writing_log[client] = gettime()
     coroutine.yield(client, _writing)
   until false
 end
@@ -292,7 +292,7 @@ function copas.connect(skt, host, port)
       _writing_log[skt] = nil
       return ret, err
     end
-    _writing_log[skt] = os.time()
+    _writing_log[skt] = gettime()
     coroutine.yield(skt, _writing)
   until false
   return ret, err
@@ -544,7 +544,7 @@ local last_cleansing = 0
 -------------------------------------------------------------------------------
 local function _select (timeout)
   local err
-  local now = os.time()
+  local now = gettime()
   local duration = os.difftime
 
   _readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
@@ -584,7 +584,7 @@ end
 -- handled (or nil + error message)
 -------------------------------------------------------------------------------
 function copas.step(timeout)
-  _sleeping_t:tick(os.time())
+  _sleeping_t:tick(gettime())
 
   -- Need to wake up the select call it time for the next sleeping event
   local nextwait = _sleeping:getnext()
