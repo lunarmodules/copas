@@ -9,20 +9,23 @@ Copas socket functions to send the response.
 Copas loops through requests and invokes the corresponding handlers.
 For a full implementation of a Copas HTTP server you can refer to Xavante as an example.
 
-Copas is free software and uses the same license as Lua 5.1
+Copas is free software and uses the same license as Lua 5.1 and 5.2
 
-Copas can be downloaded from its LuaForge page.
+Copas can be downloaded from its GitHub page.
 
 You can also install Copas using LuaRocks:
 luarocks install copas
 
 Dependencies
-Copas depends on LuaSocket 2.1 and Coxpcall 1.14.
+Copas depends on LuaSocket and Coxpcall 1.14.
 
 History
 
-Copas 1.2.0 [30/Jan/2013]
+Copas 1.2.0 [2013]
 * Support for Lua 5.2
+* UDP support
+* suspending threads
+* other minor updates
 
 Copas 1.1.6 [18/Mar/2010]
 * Now checks to see if socket.http was required before copas 
