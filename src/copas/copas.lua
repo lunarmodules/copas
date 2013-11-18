@@ -120,7 +120,7 @@ end
 local fnil = function()end
 local _sleeping = {
     times = {}, cos = {},
-    lethargy = {} -- потоки в летаргическом сне
+    lethargy = {} -- flows lethargic
 
     , insert = fnil, remove = fnil
     , push = function(self, sleeptime, co)
@@ -134,7 +134,7 @@ local _sleeping = {
         end
         local t, c = self.times, self.cos
         local i, cou = 1, #t
-        --TODO: сделать бинарный поиск
+        --TODO: do a binary search
         while i<=cou and t[i]<=sleeptime do i=i+1 end
         table.insert(t, i, sleeptime)
         table.insert(c, i, co)
@@ -145,7 +145,7 @@ local _sleeping = {
 
         return delay and math.max(delay, 0) or nil
       end
-        --найти нить, которая должна проснуться ко времени time
+      -- find the thread that should wake up to the time
     , pop = function(self, time)
         local t, c = self.times, self.cos
         if #t==0 or time<t[1] then return end
