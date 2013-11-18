@@ -545,7 +545,7 @@ local last_cleansing = 0
 local function _select (timeout)
   local err
   local now = gettime()
-  local duration = os.difftime
+  local duration = function(t2, t1) return t2-t1 end
 
   _readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
   local r_evs, w_evs = _readable_t._evs, _writable_t._evs
