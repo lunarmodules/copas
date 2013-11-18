@@ -95,6 +95,9 @@ are used to register servers and to execute the main loop of Copas:</p>
         handlers. When a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
         <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
+        It returns <code>false</code> when no data was handled (timeout) or 
+        <code>true</code> if there was data handled (or alternatively nil + error
+        message in case of errors).
     </dd>
 
     <dt><strong><code>copas.setErrorHandler(func)</code></strong></dt>
@@ -109,11 +112,7 @@ the clients, and by threads registered with <code>addthread</code> to
 exchange data with other services.</p>
 
 <dl class="reference">
-    <dt><strong><code>copas.flush(skt)</code></strong></dt>
-    <dd>Flushes a client write buffer. <code>copas.flush()</code> is called from time
-    to time by <code>copas.loop()</code> but it may be necessary to call it from
-    the handler function or one of the threads.
-    </dd>
+    <dt><strong><code>copas.flush(skt)</code></strong> (deprecated)</dt>
     
     <dt><strong><code>copas.receive(skt, pattern)</code></strong></dt>
     <dd>Reads data from a client socket according to a pattern just like LuaSocket
@@ -131,6 +130,15 @@ exchange data with other services.</p>
     but use Copas' methods <code>copas.send()</code> and <code>copas.receive()</code>
     automatically.
     </dd>
+
+    <dt><strong><code>copas.sleep(sleeptime)</code></strong></dt>
+    <dd><code>sleeptime</code> is optional and defaults to 0.
+    </dd>
+
+    <dt><strong><code>copas.wakeup(co)</code></strong></dt>
+    <dd><code>co</code> is the coroutine to wakeup.
+    </dd>
+
 </dl>
 
 </div> <!-- id="content" -->
