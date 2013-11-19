@@ -44,10 +44,9 @@
         </ul>
     </li>
     <li><a href="reference.html">Reference</a></li>
-    <li><a href="http://luaforge.net/projects/copas/">Project</a>
+    <li><a href="http://github.com/keplerproject/copas/">Project</a>
         <ul>
-            <li><a href="http://luaforge.net/tracker/?group_id=100">Bug Tracker</a></li>
-            <li><a href="http://luaforge.net/scm/?group_id=100">CVS</a></li>
+            <li><a href="http://github.com/keplerproject/copas/issues">Bug Tracker</a></li>
         </ul>
     </li>
     <li><a href="license.html">License</a></li>
@@ -140,7 +139,7 @@ server.</p>
 Since Copas is coroutine based, using it within a Lua <code>pcall</code> or
 <code>xpcall</code> context does not work with Lua 5.1 yielding. If you need to use 
 any of those functions in your handler we strongly suggest using  
-<a href="http://coxpcall.luaforge.net/">coxpcall</a>, a coroutine safe
+<a href="http://keplerproject.github.com/coxpcall/">coxpcall</a>, a coroutine safe
 version of the Lua 5.1 protected calls. For an example of this usage please check Xavante.
 </p>
 
@@ -340,7 +339,7 @@ end)
 
 copas.loop()
 </pre>
-<p>The example connects, echoes whatever it receives and exists upon receiving 'quit'.</p>
+<p>The example connects, echoes whatever it receives and exits upon receiving 'quit'.</p>
 
 <h2><a name="control"></a>Controlling Copas</h2>
 

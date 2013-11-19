@@ -44,10 +44,9 @@
         </ul>
     </li>
     <li><a href="reference.html">Reference</a></li>
-    <li><a href="http://luaforge.net/projects/copas/">Project</a>
+    <li><a href="http://github.com/keplerproject/copas/">Project</a>
         <ul>
-            <li><a href="http://luaforge.net/tracker/?group_id=100">Bug Tracker</a></li>
-            <li><a href="http://luaforge.net/scm/?group_id=100">CVS</a></li>
+            <li><a href="http://github.com/keplerproject/copas/issues">Bug Tracker</a></li>
         </ul>
     </li>
     <li><a href="license.html">License</a></li>
@@ -73,18 +72,18 @@ as an example.
 </p>
 
 <p>Copas is free software and uses the same <a href="license.html">license</a>
-as Lua 5.1</p>
+as Lua 5.1 and 5.2</p>
 
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 1.2.0 and supports both Lua 5.1 and Lua 5.2.</p>
+<p>Current version is 1.2.0 and was developed for Lua 5.1 and 5.2.</p>
 
 <h2><a name="download"></a>Download</h2>
 
 <p>
 Copas can be downloaded from its
-<a href="http://github.com/keplerproject/copas">LuaForge</a> page, in
+<a href="http://github.com/keplerproject/copas">Github</a> page, in
   the "Downloads" tab.
 </p>
 
@@ -98,21 +97,21 @@ luarocks install copas
 <h2><a name="dependencies"></a>Dependencies</h2>
 
 <p>Copas depends on
-<a href="http://luasocket.luaforge.net">LuaSocket 2.1</a> and
-<a href="http://coxpcall.luaforge.net/">Coxpcall 1.14</a>.
+LuaSocket and <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a>.
 </p>
 
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
-    <dt><strong>Copas 1.2.0</strong> [30/Jan/2013]</dt>
+    <dt><strong>Copas 1.2.0</strong> [2013]</dt>
 	<dd><ul>
-		<li>Support for Lua 5.2
-		</li>
+		<li>Support for Lua 5.2</li>
+		<li>UDP support</li>
+		<li>suspending threads</li>
+		<li>other minor updates</li>
 	</ul></dd>
 
-
-  <dt><strong>Copas 1.1.6</strong> [18/Mar/2010]</dt>
+    <dt><strong>Copas 1.1.6</strong> [18/Mar/2010]</dt>
 	<dd><ul>
 		<li>Now checks to see if socket.http was required before copas
 		</li>
@@ -121,26 +120,26 @@ luarocks install copas
 	<dt><strong>Copas 1.1.5</strong> [07/Apr/2009]</dt>
 	<dd><ul>
 		<li>Fixed bug reported by Sam Roberts on the
-			<a href="http://lists.luaforge.net/pipermail/kepler-project/2009-February/003095.html">Kepler list</a>
+			Kepler list
 			(found due to Xavante locking up on some POST requests)
 		</li>
 	</ul></dd>
 	
     <dt><strong>Copas 1.1.4</strong> [10/Dec/2008]</dt>
 	<dd><ul>
-		<li>Fixed bug <a href="http://luaforge.net/tracker/?group_id=100&amp;atid=492&amp;func=detail&amp;aid=5372">[#5372]</a>
+		<li>Fixed bug [#5372]
 		- copas.connect is semi-broken (found by Gary NG)</li>
 	</ul></dd>
 	
     <dt><strong>Copas 1.1.3</strong> [19/May/2008]</dt>
 	<dd><ul>
 		<li>Using <code>copcall</code> instead of <code>pcall</code> in <code>socket.protect</code>
-		(feature request <a href="http://luaforge.net/tracker/index.php?func=detail&amp;aid=5274&amp;group_id=100&amp;atid=495">[#5274]</a> by Gary NG)</li>
+		(feature request [#5274] by Gary NG)</li>
 	</ul></dd>
 	
     <dt><strong>Copas 1.1.2</strong> [15/May/2008]</dt>
 	<dd><ul>
-		<li>Fixed Bug <a href="http://luaforge.net/tracker/index.php?func=detail&amp;aid=4249&amp;group_id=100&amp;atid=492">[#4249]</a>
+		<li>Fixed Bug [#4249]
 		- bugs in copas.receive (found by Gary NG)</li>
 	</ul></dd>
 	
@@ -149,7 +148,7 @@ luarocks install copas
     <ul>
         <li>Compatible with Lua 5.1</li>
         <li>Refactored by Thomas Harning Jr. (for more details check
-        <a href="http://luaforge.net/tracker/index.php?func=detail&amp;aid=766&amp;group_id=100&amp;atid=492">Bug 766</a>)</li>
+        Bug 766)</li>
         <li>Patch by Gary NG concerning the handling of stopped sockets</li>
     </ul>
     
@@ -188,7 +187,7 @@ Comments are welcome!</p>
 
 <p>
 You can also reach other Kepler developers and users on the Kepler Project
-<a href="http://luaforge.net/mail/?group_id=104">mailing list</a>.
+<a href="https://groups.google.com/forum/#!forum/kepler-project">mailing list</a>.
 </p>
 
 </div> <!-- id="content" -->
@@ -197,7 +196,6 @@ You can also reach other Kepler developers and users on the Kepler Project
 
 <div id="about">
 	<p><a href="http://validator.w3.org/check?uri=referer">Valid XHTML 1.0!</a></p>
-	<p><small>$Id: index.html,v 1.38 2009/04/07 22:33:34 carregal Exp $</small></p>
 </div> <!-- id="about" -->
 
 </div> <!-- id="container" -->
