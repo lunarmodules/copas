@@ -132,11 +132,13 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>copas.sleep(sleeptime)</code></strong></dt>
-    <dd><code>sleeptime</code> is optional and defaults to 0.
+    <dd><code>sleeptime</code> (in seconds) is optional and defaults to 0. If <code>sleeptime &lt 0</code>
+    then it will sleep until explicitly woken by a call to <code>copas.wakeup()</code>.
     </dd>
 
     <dt><strong><code>copas.wakeup(co)</code></strong></dt>
-    <dd><code>co</code> is the coroutine to wakeup.
+    <dd><code>co</code> is the coroutine to wakeup. Use <code>coroutine.running()</code> inside
+    the handler function to get the value for <code>co</code>.
     </dd>
 
 </dl>

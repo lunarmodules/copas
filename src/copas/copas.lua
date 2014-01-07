@@ -60,7 +60,7 @@ local copas = {}
 -- Meta information is public even if beginning with an "_"
 copas._COPYRIGHT   = "Copyright (C) 2005-2010 Kepler Project"
 copas._DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-copas._VERSION     = "Copas 1.1.7"
+copas._VERSION     = "Copas 1.2.1"
 
 -- Close the socket associated with the current connection after the handler finishes
 copas.autoclose = true
@@ -119,11 +119,13 @@ end
 
 local fnil = function()end
 local _sleeping = {
-    times = {}, cos = {},
-    lethargy = {} -- flows lethargic
+    times = {},  -- list with wake-up times
+    cos = {},    -- list with coroutines, index matches the 'times' list
+    lethargy = {}, -- list of coroutines sleeping without a wakeup time
 
-    , insert = fnil, remove = fnil
-    , push = function(self, sleeptime, co)
+    insert = fnil,
+    remove = fnil,
+    push = function(self, sleeptime, co)
         if not co then return end
         if sleeptime<0 then
             --sleep until explicit wakeup through copas.wakeup
@@ -138,23 +140,23 @@ local _sleeping = {
         while i<=cou and t[i]<=sleeptime do i=i+1 end
         table.insert(t, i, sleeptime)
         table.insert(c, i, co)
-      end
-    , getnext = function(self)
+    end,
+    getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
         local t = self.times
         local delay = t[1] and t[1] - gettime() or nil
 
         return delay and math.max(delay, 0) or nil
-      end
-      -- find the thread that should wake up to the time
-    , pop = function(self, time)
+    end,
+    -- find the thread that should wake up to the time
+    pop = function(self, time)
         local t, c = self.times, self.cos
         if #t==0 or time<t[1] then return end
         local co = c[1]
         table.remove(t, 1)
         table.remove(c, 1)
         return co
-      end
-    , wakeup = function(self, co)
+    end,
+    wakeup = function(self, co)
         local let = self.lethargy
         if let[co] then
             self:push(0, co)
@@ -171,7 +173,7 @@ local _sleeping = {
                 end
             end
         end
-      end
+    end
 } --_sleeping
 
 local _servers = newset() -- servers being handled
@@ -226,13 +228,13 @@ function copas.receivePartial(client, pattern)
   repeat
     s, err, part = client:receive(pattern)
     if s or ( (type(pattern)=="number") and part~="" and part ~=nil ) or
-    err ~= "timeout" then
-    _reading_log[client] = nil
-    return s, err, part
-  end
-  _reading_log[client] = gettime()
-  coroutine.yield(client, _reading)
-until false
+      err ~= "timeout" then
+      _reading_log[client] = nil
+      return s, err, part
+    end
+    _reading_log[client] = gettime()
+    coroutine.yield(client, _reading)
+  until false
 end
 
 -- sends data to a client. The operation is buffered and
@@ -529,10 +531,13 @@ local _sleeping_t = {
     end
 }
 
+-- yields the current coroutine and wakes it after 'sleeptime' seconds.
+-- If sleeptime<0 then it sleeps until explicitly woken up using 'wakeup'
 function copas.sleep(sleeptime)
     coroutine.yield((sleeptime or 0), _sleeping)
 end
 
+-- Wakes up a sleeping coroutine 'co'.
 function copas.wakeup(co)
     _sleeping:wakeup(co)
 end
