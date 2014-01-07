@@ -1,4 +1,4 @@
-Copas 1.2.0
+Copas 1.2.1
 (http://www.keplerproject.org/copas)
 
 Copas is a dispatcher based on coroutines that can be used by TCP/IP servers.
@@ -20,6 +20,11 @@ Dependencies
 Copas depends on LuaSocket and Coxpcall 1.14.
 
 History
+
+Copas 1.2.1 [07/Jan/2014]
+* Fixed bad version constant
+* Fixed timer issue
+* Updated documentation
 
 Copas 1.2.0 [2013]
 * Support for Lua 5.2
