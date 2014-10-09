@@ -1,5 +1,5 @@
 Copas 1.2.1
-(http://www.keplerproject.org/copas)
+(http://keplerproject.github.io/copas)
 
 Copas is a dispatcher based on coroutines that can be used by TCP/IP servers.
 It uses LuaSocket as the interface with the TCP/IP stack.
