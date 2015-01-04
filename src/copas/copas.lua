@@ -183,6 +183,11 @@ local _writing_log = {}
 local _reading = newset() -- sockets currently being read
 local _writing = newset() -- sockets currently being written
 
+local function _add_event(res, new_q)
+  new_q:insert (res)
+  new_q:push (res, coroutine.running())
+end
+
 -------------------------------------------------------------------------------
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
@@ -200,6 +205,7 @@ function copas.receive(client, pattern, part)
       return s, err, part
     end
     _reading_log[client] = gettime()
+    _add_event(client, _reading)
     coroutine.yield(client, _reading)
   until false
 end
@@ -216,6 +222,7 @@ function copas.receivefrom(client, size)
       return s, err, port
     end
     _reading_log[client] = gettime()
+    _add_event(client, _reading)
     coroutine.yield(client, _reading)
   until false
 end
@@ -233,6 +240,7 @@ function copas.receivePartial(client, pattern)
       return s, err, part
     end
     _reading_log[client] = gettime()
+    _add_event(client,_reading)
     coroutine.yield(client, _reading)
   until false
 end
@@ -251,6 +259,7 @@ function copas.send(client, data, from, to)
     -- garantees that high throuput dont take other threads to starvation
     if (math.random(100) > 90) then
       _writing_log[client] = gettime()
+      _add_event(client, _writing)
       coroutine.yield(client, _writing)
     end
     if s or err ~= "timeout" then
@@ -258,6 +267,7 @@ function copas.send(client, data, from, to)
       return s, err,lastIndex
     end
     _writing_log[client] = gettime()
+    _add_event(client, _writing)
     coroutine.yield(client, _writing)
   until false
 end
@@ -273,6 +283,7 @@ function copas.sendto(client, data, ip, port)
     -- garantees that high throuput dont take other threads to starvation
     if (math.random(100) > 90) then
       _writing_log[client] = gettime()
+      _add_event(client, _writing)
       coroutine.yield(client, _writing)
     end
     if s or err ~= "timeout" then
@@ -280,6 +291,7 @@ function copas.sendto(client, data, ip, port)
       return s, err
     end
     _writing_log[client] = gettime()
+    _add_event(client, _writing)
     coroutine.yield(client, _writing)
   until false
 end
@@ -295,6 +307,7 @@ function copas.connect(skt, host, port)
       return ret, err
     end
     _writing_log[skt] = gettime()
+    _add_event(skt, _writing)
     coroutine.yield(skt, _writing)
   until false
   return ret, err
@@ -385,16 +398,13 @@ end
 -- Thread handling
 -------------------------------------------------------------------------------
 
+
 local function _doTick (co, skt, ...)
   if not co then return end
+  local ok = coroutine.resume(co, skt, ...)
 
-  local ok, res, new_q = coroutine.resume(co, skt, ...)
-
-  if ok and res and new_q then
-    new_q:insert (res)
-    new_q:push (res, co)
-  else
-    if not ok then coxpcall.pcall (_errhandlers [co] or _deferror, res, co, skt) end
+  if not ok then
+    coxpcall.pcall (_errhandlers [co] or _deferror, res, co, skt)
     if skt and copas.autoclose then skt:close() end
     _errhandlers [co] = nil
   end
@@ -418,7 +428,8 @@ local function _tickRead (skt)
 end
 
 local function _tickWrite (skt)
-  _doTick (_writing:pop (skt), skt)
+  local co = _writing:pop (skt)
+  _doTick (co, skt)
 end
 
 -------------------------------------------------------------------------------
@@ -527,14 +538,15 @@ addtaskWrite (_writable_t)
 --sleeping threads task
 local _sleeping_t = {
     tick = function (self, time, ...)
-       _doTick(_sleeping:pop(time), ...)
+      _doTick(_sleeping:pop(time), ...)
     end
 }
 
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
 -- If sleeptime<0 then it sleeps until explicitly woken up using 'wakeup'
 function copas.sleep(sleeptime)
-    coroutine.yield((sleeptime or 0), _sleeping)
+  _add_event((sleeptime or 0), _sleeping)
+  coroutine.yield((sleeptime or 0), _sleeping)
 end
 
 -- Wakes up a sleeping coroutine 'co'.
