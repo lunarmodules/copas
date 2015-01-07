@@ -183,9 +183,9 @@ local _writing_log = {}
 local _reading = newset() -- sockets currently being read
 local _writing = newset() -- sockets currently being written
 
-local function _add_event(res, new_q)
+local function _add_event(res, new_q, co)
   new_q:insert (res)
-  new_q:push (res, coroutine.running())
+  new_q:push (res, co or coroutine.running())
 end
 
 -------------------------------------------------------------------------------
@@ -593,6 +593,25 @@ local function _select (timeout)
   end
 end
 
+
+function copas.addev(skt, ev, co)
+  if not ev or not skt then
+    return false
+  end
+  co = co or coroutine.running()
+
+  if ev == "read" then
+    _add_event(skt, _reading, co)
+    print("copas.added to the _reading queue")
+  elseif ev == "write" then
+    _add_event(skt, _writing, co)
+  else
+    return false
+  end
+
+  coroutine.yield(co)
+  return true
+end
 
 -------------------------------------------------------------------------------
 -- Dispatcher loop step.
