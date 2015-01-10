@@ -13,13 +13,15 @@
 -- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
 
+--[[
 if package.loaded["socket.http"] then
   error("you must require copas before require'ing socket.http")
 end
+]]
 
-local socket = require "socket"
+local socket = require "socket" or _G.socket
 local gettime = socket.gettime
-local coxpcall = require "coxpcall"
+local coxpcall = coxpcall or { xpcall = xpcall, pcall=pcall }
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192
@@ -395,7 +397,7 @@ function copas.setErrorHandler (err)
 end
 
 local function _deferror (msg, co, skt)
-  print (msg, co, skt)
+  Msg"[COPAS] Err: "print (msg, co, skt)
 end
 
 -------------------------------------------------------------------------------
@@ -636,14 +638,14 @@ function copas.step(timeout)
   -- Need to wake up the select call it time for the next sleeping event
   local nextwait = _sleeping:getnext()
   if nextwait then
-    timeout = timeout and math.min(nextwait, timeout) or nextwait
+    timeout = math.min(nextwait, timeout or 0)
   end
 
   local err = _select (timeout)
   if err == "timeout" then return false end
 
   if err then
-    error(err)
+    return nil,err
   end
 
   for tsk in tasks() do
@@ -658,10 +660,16 @@ end
 -- Dispatcher endless loop.
 -- Listen to client requests and handles them forever
 -------------------------------------------------------------------------------
-function copas.loop(timeout)
-  while true do
-    copas.step(timeout)
-  end
+function copas.loop()
+	if copas.looping then return end
+	copas.looping = true
+    hook.Add("Think","copas",function()
+		local ok,err = copas.step(0)
+		if ok==nil and err then
+			Msg"[COPAS] Error: "print(err)
+		end
+	end)
 end
 
+_G.copas = copas
 return copas
