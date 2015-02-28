@@ -23,6 +23,9 @@ dependencies = {
    "coxpcall >= 1.13",
 }
 build = {
-   type = "module",
-   modules = { copas = "src/copas/copas.lua" }
+   type = "builtin",
+   modules = { 
+     ["copas"] = "src/copas/copas.lua",
+     ["copas.http"] = "src/copas/copas/http.lua",
+   }
 }
