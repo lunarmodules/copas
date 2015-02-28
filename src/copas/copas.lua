@@ -13,47 +13,51 @@
 -- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
 
-if package.loaded["socket.http"] then
+if package.loaded["socket.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: only for Lua 5.1 compatibility
   error("you must require copas before require'ing socket.http")
 end
 
 local socket = require "socket"
 local gettime = socket.gettime
-local coxpcall = require "coxpcall"
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192
 
--- Redefines LuaSocket functions with coroutine safe versions
--- (this allows the use of socket.http from within copas)
-local function statusHandler(status, ...)
-  if status then return ... end
-  local err = (...)
-  if type(err) == "table" then
-    return nil, err[1]
-  else
-    error(err)
+local pcall = pcall
+if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
+  pcall = require("coxpcall").pcall
+  
+  -- Redefines LuaSocket functions with coroutine safe versions
+  -- (this allows the use of socket.http from within copas)
+  local function statusHandler(status, ...)
+    if status then return ... end
+    local err = (...)
+    if type(err) == "table" then
+      return nil, err[1]
+    else
+      error(err)
+    end
   end
-end
 
-function socket.protect(func)
-  return function (...)
-           return statusHandler(coxpcall.pcall(func, ...))
-         end
-end
-
-function socket.newtry(finalizer)
-  return function (...)
-           local status = (...)
-           if not status then
-             coxpcall.pcall(finalizer, select(2, ...))
-             error({ (select(2, ...)) }, 0)
+  function socket.protect(func)
+    return function (...)
+             return statusHandler(pcall(func, ...))
            end
-           return ...
-         end
-end
+  end
 
--- end of LuaSocket redefinitions
+  function socket.newtry(finalizer)
+    return function (...)
+             local status = (...)
+             if not status then
+               pcall(finalizer, select(2, ...))
+               error({ (select(2, ...)) }, 0)
+             end
+             return ...
+           end
+  end
+
+  -- end of LuaSocket redefinitions
+end
 
 local copas = {}
 
@@ -166,7 +170,6 @@ local _sleeping = {
             for i=1,#let do
                 if let[i]==co then
                     table.remove(let, i)
-                    local tm = self.times[i]
                     table.remove(self.times, i)
                     self:push(0, co)
                     return
@@ -241,14 +244,14 @@ end
 -- yields to the writing set on timeouts
 -- Note: from and to parameters will be ignored by/for UDP sockets
 function copas.send(client, data, from, to)
-  local s, err,sent
+  local s, err
   from = from or 1
   local lastIndex = from - 1
 
   repeat
     s, err, lastIndex = client:send(data, lastIndex + 1, to)
-    -- adds extra corrotine swap
-    -- garantees that high throuput dont take other threads to starvation
+    -- adds extra coroutine swap
+    -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
       _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
@@ -265,12 +268,12 @@ end
 -- sends data to a client over UDP. Not available for TCP.
 -- (this is a copy of send() method, adapted for sendto() use)
 function copas.sendto(client, data, ip, port)
-  local s, err,sent
+  local s, err
 
   repeat
     s, err = client:sendto(data, ip, port)
-    -- adds extra corrotine swap
-    -- garantees that high throuput dont take other threads to starvation
+    -- adds extra coroutine swap
+    -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
       _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
@@ -297,7 +300,6 @@ function copas.connect(skt, host, port)
     _writing_log[skt] = gettime()
     coroutine.yield(skt, _writing)
   until false
-  return ret, err
 end
 
 -- flushes a client write buffer (deprecated)
@@ -394,7 +396,7 @@ local function _doTick (co, skt, ...)
     new_q:insert (res)
     new_q:push (res, co)
   else
-    if not ok then coxpcall.pcall (_errhandlers [co] or _deferror, res, co, skt) end
+    if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
     if skt and copas.autoclose then skt:close() end
     _errhandlers [co] = nil
   end
@@ -445,7 +447,7 @@ function copas.addserver(server, handler, timeout)
     end
 end
 -------------------------------------------------------------------------------
--- Adds an new courotine thread to Copas dispatcher
+-- Adds an new coroutine thread to Copas dispatcher
 -------------------------------------------------------------------------------
 function copas.addthread(thread, ...)
   if type(thread) ~= "thread" then
