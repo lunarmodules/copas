@@ -361,13 +361,9 @@ local _skt_mt_tcp = {__index = {
 -- wraps a UDP socket, copy of TCP one adapted for UDP.
 local _skt_mt_udp = {__index = { }}
 for k,v in pairs(_skt_mt_tcp.__index) do _skt_mt_udp.__index[k] = v end
-_skt_mt_udp.__index.send =        function (self, data)
-                                    return copas.send (self.socket, data)
-                                  end
+_skt_mt_udp.__index.send =        function(self, ...) return self.socket:getpeername(...) end -- UDP does not block
 
-_skt_mt_udp.__index.sendto =      function (self, data, ip, port)
-                                     return copas.sendto (self.socket, data, ip, port)
-                                  end
+_skt_mt_udp.__index.sendto =      function(self, ...) return self.socket:getpeername(...) end -- UDP does not block
 
 _skt_mt_udp.__index.receive =     function (self, size)
                                     return copas.receive (self.socket, (size or UDP_DATAGRAM_MAX))
