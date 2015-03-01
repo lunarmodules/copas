@@ -20,6 +20,7 @@ end
 local socket = require "socket"
 local gettime = socket.gettime
 local coxpcall = require "coxpcall"
+local ssl -- only loaded upon demand
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocket
@@ -195,7 +196,7 @@ function copas.receive(client, pattern, part)
   pattern = pattern or "*l"
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or err ~= "timeout" then
+    if s or (err ~= "timeout" and err ~= "wantwrite") then  -- 'wantwrite' is LuaSec, ssl specific
       _reading_log[client] = nil
       return s, err, part
     end
@@ -253,7 +254,7 @@ function copas.send(client, data, from, to)
       _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
     end
-    if s or err ~= "timeout" then
+    if s or (err ~= "timeout" and err ~= "wantread") then  -- 'wantwrite' is LuaSec, ssl specific
       _writing_log[client] = nil
       return s, err,lastIndex
     end
@@ -306,6 +307,32 @@ function copas.connect(skt, host, port)
   return ret, err
 end
 
+---
+-- Peforms an (async) ssl handshake on a connected TCP client socket.
+-- NOTE: replace all previous socket references, with the returned new ssl wrapped socket
+-- @param skt Regular LuaSocket CLIENT socket object
+-- @param sslt Table with ssl parameters
+-- @return wrapped ssl socket, or nil + errormsg
+function copas.handshake(skt, sslt)
+  ssl = ssl or require("ssl")
+  local nskt = ssl.wrap(skt, sslt)
+  local queue
+  nskt:settimeout(0)
+  repeat
+    local success, err = nskt:dohandshake()
+    if success then
+      return nskt
+    elseif err == "wantread" then
+      queue = _writing
+    elseif err == "wantwrite" then
+      queue = _reading
+    else
+      return nil, err
+    end
+    coroutine.yield(nskt, queue)
+  until false    
+end
+
 -- flushes a client write buffer (deprecated)
 function copas.flush(client)
 end
@@ -333,8 +360,13 @@ local _skt_mt_tcp = {__index = {
                                 end,
 
                    -- TODO: socket.connect is a shortcut, and must be provided with an alternative
+                   -- if ssl parameters are available, it will also include a handshake
                    connect = function(self, ...)
-                     return copas.connect(self.socket, ...)
+                     local res, err = copas.connect(self.socket, ...)
+                     if res and self.ssl_params then
+                       res, err = self:handshake()
+                     end  
+                     return res, err
                    end,
 
                    close = function(self, ...) return self.socket:close(...) end,
@@ -360,6 +392,14 @@ local _skt_mt_tcp = {__index = {
 
                    shutdown = function(self, ...) return self.shutdown:accept(...) end,
 
+                   handshake = function(self, sslt)
+                     sslt = sslt or self.ssl_params
+                     local nskt, err = copas.handshake(self.socket, sslt)
+                     if not nskt then return nil, err end
+                     self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
+                     return true
+                   end,
+                   
                }}
 
 -- wraps a UDP socket, copy of TCP one adapted for UDP.
@@ -382,7 +422,12 @@ _skt_mt_udp.__index.setpeername = function(self, ...) return self.socket:getpeer
 
 _skt_mt_udp.__index.setsockname = function(self, ...) return self.socket:setsockname(...) end
 
-function copas.wrap (skt)
+---
+-- Wraps a LuaSocket socket object in an async Copas based socket object.
+-- @param skt The socket to wrap
+-- @sslt (optional) Table with ssl parameters
+-- @return wrapped socket object
+function copas.wrap (skt, sslt)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then 
     return skt -- already wrapped
   end
@@ -390,7 +435,7 @@ function copas.wrap (skt)
   if string.sub(tostring(skt),1,3) == "udp" then
     return  setmetatable ({socket = skt}, _skt_mt_udp)
   else
-    return  setmetatable ({socket = skt}, _skt_mt_tcp)
+    return  setmetatable ({socket = skt, ssl_params = sslt}, _skt_mt_tcp)
   end
 end
 
