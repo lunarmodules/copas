@@ -7,7 +7,45 @@ local socket = require("socket")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
 
-local create = function() return copas.wrap(socket.tcp()) end
+local create = function()
+  local s = socket.tcp()
+  local skt = copas.wrap(s)
+  local mt = getmetatable(skt)
+  local idx = mt.__index
+  -- add 'close' method
+  idx.close = function(self, ...)
+    return self.socket:close(...)
+  end
+  
+  print("=======")
+  for k,v in pairs(mt.__index) do print (k,v) end
+  print("=======")
+  mt.__index = function (self, key)
+    local res = idx[key]   -- look in wrapper first
+    if res then 
+      print("Looked up     : ", key)
+    else
+      print("Failed to find: ", key, "!!!")
+--[[      
+      res = skt.socket[key]  -- fetch field from original socket
+      if type(res)=="function" then 
+        print("wrapped: ", res)
+        res = function(_, ...) 
+          --print("called: ", key) 
+          return res(skt.socket, ...)
+        end
+        print("... as : ", res)
+      end
+--]]      
+    end
+    
+    print("Requested key: ", key, "Returning: ", res)
+    return res
+  end
+  
+  for k,v in pairs(idx) do print(k,v) end
+  return skt
+end
 
 copas.http = {}
 local _M = copas.http
