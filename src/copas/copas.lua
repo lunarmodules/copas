@@ -285,12 +285,18 @@ function copas.sendto(client, data, ip, port)
 end
 
 -- waits until connection is completed
+-- TODO: this one is missing from the documentation???
 function copas.connect(skt, host, port)
   skt:settimeout(0)
   local ret, err
   repeat
     ret, err = skt:connect (host, port)
-    if ret or err ~= "timeout" then
+--if err then print(nil,err) end
+    if ret or (err ~= "timeout" and err ~= "Operation already in progress") then
+      if (not ret) and (err == "already connected") then
+        ret = 1
+        err = nil
+      end
       _writing_log[skt] = nil
       return ret, err
     end
@@ -328,9 +334,7 @@ local _skt_mt_tcp = {__index = {
 
                    -- TODO: socket.connect is a shortcut, and must be provided with an alternative
                    connect = function(self, ...)
-                     -- TODO: connect can block, so must update this
-                     -- Connect with 0.001 timeout and then 'select' on being writeable
-                     return self.socket:connect(...)
+                     return copas.connect(self.socket, ...)
                    end,
 
                    close = function(self, ...) return self.socket:close(...) end,

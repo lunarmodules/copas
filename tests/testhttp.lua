@@ -10,7 +10,7 @@ end)
 
 copas.addthread(function()
   local n = 0
-  while n<100 do
+  while n<500 do
     copas.sleep(0)
     print(n)
     n = n + 1

@@ -1,5 +1,5 @@
 -------------------------------------------------------------------
--- identical to the socket.http request function except that it uses
+-- identical to the socket.http module except that it uses
 -- async wrapped Copas sockets
 
 local copas = require("copas")
@@ -7,56 +7,8 @@ local socket = require("socket")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
 
-local create = function()
-  return copas.wrap(socket.tcp())
-  
---[[  
-  local s = socket.tcp()
-  local skt = copas.wrap(s)
-print(pcall(s.skip, 1, "a", "b"))
-print(pcall(skt.skip, 1, "a", "b"))
-  print("skipping",skt.skip("a","b","c"))
-  local mt = getmetatable(skt)
-  local idx = mt.__index
-  -- add 'missing' methods
-  print("timeout: ", skt.timeout)
-  skt:settimeout(0)
-  print("timeout: ", skt.timeout, skt)
-  idx.close = function(self, ...)
-    return self.socket:close(...)
-  end
-  idx.connect = function(self, ...)
-    return self.socket:connect(...)
-  end
-  
-  print("=======")
-  for k,v in pairs(mt.__index) do print (k,v) end
-  print("=======")
-  mt.__index = function (self, key)
-    print("Rawget: ", key, rawget(skt, key),"in: ", skt)
-    local res = rawget(skt, key) or idx[key]   -- look in wrapper first
-    if res then 
-      print("Looked up     : ", key)
-    else
-      print("Failed to find: ", key, "!!!")
-      --print(debug.traceback())
-      res = skt.socket[key]  -- fetch field from original socket
-      if type(res)=="function" then 
-        print("wrapped: ", res)
-        res = function(_, ...) 
-          --print("called: ", key) 
-          return res(skt.socket, ...)
-        end
-        print("... as : ", res)
-      end
-    end
-    return res
-  end
-  
-  for k,v in pairs(idx) do print(k,v) end
-  return skt
---]]      
-end
+
+local create = function() return copas.wrap(socket.tcp()) end
 
 copas.http = {}
 local _M = copas.http
