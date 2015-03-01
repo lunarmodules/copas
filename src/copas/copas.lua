@@ -305,7 +305,7 @@ function copas.flush(client)
 end
 
 -- wraps a TCP socket to use Copas methods (send, receive, flush and settimeout)
-local _skt_mt = {__index = {
+local _skt_mt_tcp = {__index = {
                    send = function (self, data, from, to)
                             return copas.send (self.socket, data, from, to)
                           end,
@@ -360,7 +360,7 @@ local _skt_mt = {__index = {
 
 -- wraps a UDP socket, copy of TCP one adapted for UDP.
 local _skt_mt_udp = {__index = { }}
-for k,v in pairs(_skt_mt.__index) do _skt_mt_udp.__index[k] = v end
+for k,v in pairs(_skt_mt_tcp.__index) do _skt_mt_udp.__index[k] = v end
 _skt_mt_udp.__index.send =        function (self, data)
                                     return copas.send (self.socket, data)
                                   end
@@ -383,10 +383,14 @@ _skt_mt_udp.__index.setpeername = function(self, ...) return self.socket:getpeer
 _skt_mt_udp.__index.setsockname = function(self, ...) return self.socket:setsockname(...) end
 
 function copas.wrap (skt)
+  if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then 
+    return skt -- already wrapped
+  end
+  skt:settimeout(0.001)
   if string.sub(tostring(skt),1,3) == "udp" then
     return  setmetatable ({socket = skt}, _skt_mt_udp)
   else
-    return  setmetatable ({socket = skt}, _skt_mt)
+    return  setmetatable ({socket = skt}, _skt_mt_tcp)
   end
 end
 
@@ -451,13 +455,13 @@ end
 -- Adds a server/handler pair to Copas dispatcher
 -------------------------------------------------------------------------------
 local function addTCPserver(server, handler, timeout)
-  server:settimeout(timeout or 0.1)
+  server:settimeout(timeout or 0.001)
   _servers[server] = handler
   _reading:insert(server)
 end
 
 local function addUDPserver(server, handler, timeout)
-    server:settimeout(timeout or 0)
+    server:settimeout(timeout or 0.001)
     local co = coroutine.create(handler)
     _reading:insert(server)
     _doTick (co, server)
