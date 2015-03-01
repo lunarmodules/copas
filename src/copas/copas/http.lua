@@ -8,25 +8,38 @@ local http = require("socket.http")
 local ltn12 = require("ltn12")
 
 local create = function()
+  return copas.wrap(socket.tcp())
+  
+--[[  
   local s = socket.tcp()
   local skt = copas.wrap(s)
+print(pcall(s.skip, 1, "a", "b"))
+print(pcall(skt.skip, 1, "a", "b"))
+  print("skipping",skt.skip("a","b","c"))
   local mt = getmetatable(skt)
   local idx = mt.__index
-  -- add 'close' method
+  -- add 'missing' methods
+  print("timeout: ", skt.timeout)
+  skt:settimeout(0)
+  print("timeout: ", skt.timeout, skt)
   idx.close = function(self, ...)
     return self.socket:close(...)
+  end
+  idx.connect = function(self, ...)
+    return self.socket:connect(...)
   end
   
   print("=======")
   for k,v in pairs(mt.__index) do print (k,v) end
   print("=======")
   mt.__index = function (self, key)
-    local res = idx[key]   -- look in wrapper first
+    print("Rawget: ", key, rawget(skt, key),"in: ", skt)
+    local res = rawget(skt, key) or idx[key]   -- look in wrapper first
     if res then 
       print("Looked up     : ", key)
     else
       print("Failed to find: ", key, "!!!")
---[[      
+      --print(debug.traceback())
       res = skt.socket[key]  -- fetch field from original socket
       if type(res)=="function" then 
         print("wrapped: ", res)
@@ -36,15 +49,13 @@ local create = function()
         end
         print("... as : ", res)
       end
---]]      
     end
-    
-    print("Requested key: ", key, "Returning: ", res)
     return res
   end
   
   for k,v in pairs(idx) do print(k,v) end
   return skt
+--]]      
 end
 
 copas.http = {}
@@ -56,8 +67,7 @@ local function srequest(u, b)
     local t = {}
     local reqt = {
         url = u,
-        sink = ltn12.sink.table(t),
-        create = create
+        sink = ltn12.sink.table(t)
     }
     if b then
         reqt.source = ltn12.source.string(b)
@@ -67,13 +77,17 @@ local function srequest(u, b)
         }
         reqt.method = "POST"
     end
-    local code, headers, status = socket.skip(1, http.request(reqt))
+    local code, headers, status = socket.skip(1, _M.request(reqt))
     return table.concat(t), code, headers, status
 end
 
 _M.request = socket.protect(function(reqt, body)
-    if type(reqt) == "string" then return srequest(reqt, body)
-    else return http.request(reqt) end
+  if type(reqt) == "string" then
+    return srequest(reqt, body)
+  else 
+    reqt.create = create  -- insert our own create function here
+    return http.request(reqt)
+  end
 end)
 
 return _M

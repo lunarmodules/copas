@@ -8,5 +8,14 @@ copas.addthread(function()
   print("Finished request...")
 end)
 
+copas.addthread(function()
+  local n = 0
+  while n<100 do
+    copas.sleep(0)
+    print(n)
+    n = n + 1
+  end
+end)
+
 print("starting loop")
 copas.loop()

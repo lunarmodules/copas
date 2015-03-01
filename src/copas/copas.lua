@@ -22,7 +22,7 @@ local gettime = socket.gettime
 local coxpcall = require "coxpcall"
 
 local WATCH_DOG_TIMEOUT = 120
-local UDP_DATAGRAM_MAX = 8192
+local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocket
 
 -- Redefines LuaSocket functions with coroutine safe versions
 -- (this allows the use of socket.http from within copas)
@@ -326,39 +326,61 @@ local _skt_mt = {__index = {
                                   return true
                                 end,
 
-                   skip = function(self, ...) return self.socket:skip(...) end,
+                   -- TODO: socket.connect is a shortcut, and must be provided with an alternative
+                   connect = function(self, ...)
+                     -- TODO: connect can block, so must update this
+                     -- Connect with 0.001 timeout and then 'select' on being writeable
+                     return self.socket:connect(...)
+                   end,
 
                    close = function(self, ...) return self.socket:close(...) end,
+
+                   -- TODO: socket.bind is a shortcut, and must be provided with an alternative
+                   bind = function(self, ...) return self.socket:bind(...) end,
+
+                   -- TODO: is this DNS related? hence blocking?
+                   getsockname = function(self, ...) return self.socket:getsockname(...) end,
+
+                   getstats = function(self, ...) return self.socket:getstats(...) end,
+
+                   setstats = function(self, ...) return self.socket:setstats(...) end,
+
+                   listen = function(self, ...) return self.socket:listen(...) end,
+
+                   accept = function(self, ...) return self.socket:accept(...) end,
+
+                   setoption = function(self, ...) return self.setoption:accept(...) end,
+                   
+                   -- TODO: is this DNS related? hence blocking?
+                   getpeername = function(self, ...) return self.socket:getpeername(...) end,
+
+                   shutdown = function(self, ...) return self.shutdown:accept(...) end,
+
                }}
 
 -- wraps a UDP socket, copy of TCP one adapted for UDP.
--- Mainly adds sendto() and receivefrom()
-local _skt_mt_udp = {__index = {
-                   send = function (self, data)
-                            return copas.send (self.socket, data)
-                          end,
+local _skt_mt_udp = {__index = { }}
+for k,v in pairs(_skt_mt.__index) do _skt_mt_udp.__index[k] = v end
+_skt_mt_udp.__index.send =        function (self, data)
+                                    return copas.send (self.socket, data)
+                                  end
 
-                   sendto = function (self, data, ip, port)
-                            return copas.sendto (self.socket, data, ip, port)
-                          end,
+_skt_mt_udp.__index.sendto =      function (self, data, ip, port)
+                                     return copas.sendto (self.socket, data, ip, port)
+                                  end
 
-                   receive = function (self, size)
-                               return copas.receive (self.socket, (size or UDP_DATAGRAM_MAX))
-                             end,
+_skt_mt_udp.__index.receive =     function (self, size)
+                                    return copas.receive (self.socket, (size or UDP_DATAGRAM_MAX))
+                                  end
 
-                   receivefrom = function (self, size)
-                               return copas.receivefrom (self.socket, (size or UDP_DATAGRAM_MAX))
-                             end,
+_skt_mt_udp.__index.receivefrom = function (self, size)
+                                    return copas.receivefrom (self.socket, (size or UDP_DATAGRAM_MAX))
+                                  end
+                   
+                                  -- TODO: is this DNS related? hence blocking?
+_skt_mt_udp.__index.setpeername = function(self, ...) return self.socket:getpeername(...) end
 
-                   flush = function (self)
-                             return copas.flush (self.socket)
-                           end,
-
-                   settimeout = function (self,time)
-                                  self.timeout=time
-                                  return true
-                                end,
-               }}
+_skt_mt_udp.__index.setsockname = function(self, ...) return self.socket:setsockname(...) end
 
 function copas.wrap (skt)
   if string.sub(tostring(skt),1,3) == "udp" then
