@@ -446,6 +446,13 @@ function copas.addserver(server, handler, timeout)
         addTCPserver(server, handler, timeout)
     end
 end
+
+function copas.removeserver(server)
+  _servers[server] = nil
+  _reading:remove(server)
+  return server:close()
+end
+
 -------------------------------------------------------------------------------
 -- Adds an new coroutine thread to Copas dispatcher
 -------------------------------------------------------------------------------
