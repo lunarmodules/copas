@@ -210,6 +210,7 @@ function copas.receive(client, pattern, part)
 if err then print("copas.receive:", err) end     -- debugline
       return s, err, part
     end
+print("     receive", err)                  --debugline
     if err == "wantread" then
       current_log = _writing_log
       current_log[client] = gettime()
@@ -251,6 +252,7 @@ function copas.receivePartial(client, pattern, part)
 if err then print("copas.receivePartial:", err) end      -- debugline
       return s, err, part
     end
+print("     receivePartial", err)                  --debugline
     if err == "wantread" then
       current_log = _writing_log
       current_log[client] = gettime()
@@ -324,16 +326,22 @@ function copas.sendto(client, data, ip, port)
 end
 
 -- waits until connection is completed
--- TODO: this one is missing from the documentation???
 function copas.connect(skt, host, port)
 print("start connecting...", host, port)     --debugline
   skt:settimeout(0)
-  local ret, err
+  local ret, err, tried_more_than_once
   repeat
     ret, err = skt:connect (host, port)
 if err then print(nil,err) end               --debugline
+    -- non-blocking connect on Windows results in error "Operation already
+    -- in progress" to indicate that it is completing the request async. So essentially
+    -- it is the same as "timeout"
     if ret or (err ~= "timeout" and err ~= "Operation already in progress") then
-      if (not ret) and (err == "already connected") then
+      -- Once the async connect completes, Windows returns the error "already connected"
+      -- to indicate it is done, so that error should be ignored. Except when it is the 
+      -- first call to connect, then it was already connected to something else and the 
+      -- error should be returned
+      if (not ret) and (err == "already connected" and tried_more_than_once) then
         ret = 1
         err = nil
       end
@@ -341,6 +349,7 @@ if err then print(nil,err) end               --debugline
 print("done connecting...", ret, err)        --debugline
       return ret, err
     end
+    tried_more_than_once = tried_more_than_once or true
     _writing_log[skt] = gettime()
     coroutine.yield(skt, _writing)
   until false
