@@ -201,6 +201,7 @@ function copas.receive(client, pattern, part)
     s, err, part = client:receive(pattern, part)
     if s or (err ~= "timeout" and err ~= "wantwrite") then  -- 'wantwrite' is LuaSec, ssl specific
       _reading_log[client] = nil
+if err then print("copas.receive:", err) end     -- debugline
       return s, err, part
     end
     _reading_log[client] = gettime()
@@ -234,6 +235,7 @@ function copas.receivePartial(client, pattern, part)
     if s or ( (type(pattern)=="number") and part~="" and part ~=nil ) or
       err ~= "timeout" then
       _reading_log[client] = nil
+if err then print("copas.receivePartial:", err) end      -- debugline
       return s, err, part
     end
     _reading_log[client] = gettime()
@@ -259,6 +261,7 @@ function copas.send(client, data, from, to)
     end
     if s or (err ~= "timeout" and err ~= "wantread") then  -- 'wantwrite' is LuaSec, ssl specific
       _writing_log[client] = nil
+if err then print("copas.send:", err) end     -- debugline
       return s, err,lastIndex
     end
     _writing_log[client] = gettime()
@@ -291,17 +294,19 @@ end
 -- waits until connection is completed
 -- TODO: this one is missing from the documentation???
 function copas.connect(skt, host, port)
+print("start connecting...", host, port)     --debugline
   skt:settimeout(0)
   local ret, err
   repeat
     ret, err = skt:connect (host, port)
---if err then print(nil,err) end
+if err then print(nil,err) end               --debugline
     if ret or (err ~= "timeout" and err ~= "Operation already in progress") then
       if (not ret) and (err == "already connected") then
         ret = 1
         err = nil
       end
       _writing_log[skt] = nil
+print("done connecting...", ret, err)        --debugline
       return ret, err
     end
     _writing_log[skt] = gettime()
@@ -315,20 +320,25 @@ end
 -- @param skt Regular LuaSocket CLIENT socket object
 -- @param sslt Table with ssl parameters
 -- @return wrapped ssl socket, or nil + errormsg
-function copas.handshake(skt, sslt)
+function copas.handshake(skt, sslt)  
   ssl = ssl or require("ssl")
   local nskt = ssl.wrap(skt, sslt)
   local queue
+print("Start handshake")                      --debugline
   nskt:settimeout(0)
   repeat
     local success, err = nskt:dohandshake()
     if success then
+print("Done handshake", "success")            --debugline
       return nskt
     elseif err == "wantread" then
+print("     handshake", err)                  --debugline
       queue = _writing
     elseif err == "wantwrite" then
+print("     handshake", err)                  --debugline
       queue = _reading
     else
+print("Done handshake", nil, err)             --debugline
       return nil, err
     end
     coroutine.yield(nskt, queue)
@@ -366,6 +376,7 @@ local _skt_mt_tcp = {__index = {
                    connect = function(self, ...)
                      local res, err = copas.connect(self.socket, ...)
                      if res and self.ssl_params then
+print("While connecting, also going for a handshake...")   --debugline
                        res, err = self:handshake()
                      end  
                      return res, err
@@ -395,8 +406,8 @@ local _skt_mt_tcp = {__index = {
                    shutdown = function(self, ...) return self.shutdown:accept(...) end,
 
                    handshake = function(self, sslt)
-                     sslt = sslt or self.ssl_params
-                     local nskt, err = copas.handshake(self.socket, sslt)
+                     self.ssl_params = sslt or self.ssl_params
+                     local nskt, err = copas.handshake(self.socket, self.ssl_params)
                      if not nskt then return nil, err end
                      self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
                      return true

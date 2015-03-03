@@ -27,5 +27,8 @@ build = {
    modules = { 
      ["copas"] = "src/copas/copas.lua",
      ["copas.http"] = "src/copas/copas/http.lua",
+     ["copas.ftp"] = "src/copas/copas/ftp.lua",
+     ["copas.smtp"] = "src/copas/copas/smtp.lua",
+     ["copas.https"] = "src/copas/copas/https.lua",
    }
 }

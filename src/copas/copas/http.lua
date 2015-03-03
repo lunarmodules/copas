@@ -1,5 +1,5 @@
 -------------------------------------------------------------------
--- identical to the socket.http module except that it uses
+-- identical to the luasec.https module except that it uses
 -- async wrapped Copas sockets
 
 local copas = require("copas")
@@ -15,11 +15,12 @@ local _M = copas.http
 
 -- mostly a copy of the version in LuaSockets' http.lua 
 -- no 'create' can be passed in the string form, hence a local copy here
-local function srequest(u, b)
+local function srequest(u, b, userc)
     local t = {}
     local reqt = {
         url = u,
-        sink = ltn12.sink.table(t)
+        sink = ltn12.sink.table(t),
+        create = userc
     }
     if b then
         reqt.source = ltn12.source.string(b)
@@ -33,11 +34,13 @@ local function srequest(u, b)
     return table.concat(t), code, headers, status
 end
 
-_M.request = socket.protect(function(reqt, body)
+-- userc = is a user specified 'create' function, instead of the default copas one
+-- used in string version, for advanced supply one in the parameter table
+_M.request = socket.protect(function(reqt, body, userc)
   if type(reqt) == "string" then
-    return srequest(reqt, body)
+    return srequest(reqt, body, userc)
   else 
-    reqt.create = create  -- insert our own create function here
+    reqt.create = reqt.create or create  -- insert our own create function here
     return http.request(reqt)
   end
 end)
