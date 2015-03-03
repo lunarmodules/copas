@@ -207,10 +207,8 @@ function copas.receive(client, pattern, part)
     s, err, part = client:receive(pattern, part)
     if s or (not _isTimeout[err]) then 
       current_log[client] = nil
-if err then print("copas.receive:", err) end     -- debugline
       return s, err, part
     end
-print("     receive", err)                  --debugline
     if err == "wantread" then
       current_log = _writing_log
       current_log[client] = gettime()
@@ -249,10 +247,8 @@ function copas.receivePartial(client, pattern, part)
     s, err, part = client:receive(pattern, part)
     if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout(err)) then
       current_log[client] = nil
-if err then print("copas.receivePartial:", err) end      -- debugline
       return s, err, part
     end
-print("     receivePartial", err)                  --debugline
     if err == "wantread" then
       current_log = _writing_log
       current_log[client] = gettime()
@@ -287,7 +283,6 @@ function copas.send(client, data, from, to)
     end
     if s or (not _isTimeout[err]) then 
       current_log[client] = nil
-if err then print("copas.send:", err) end     -- debugline
       return s, err,lastIndex
     end
     _writing_log[client] = gettime()
@@ -327,12 +322,10 @@ end
 
 -- waits until connection is completed
 function copas.connect(skt, host, port)
-print("start connecting...", host, port)     --debugline
   skt:settimeout(0)
   local ret, err, tried_more_than_once
   repeat
     ret, err = skt:connect (host, port)
-if err then print(nil,err) end               --debugline
     -- non-blocking connect on Windows results in error "Operation already
     -- in progress" to indicate that it is completing the request async. So essentially
     -- it is the same as "timeout"
@@ -346,7 +339,6 @@ if err then print(nil,err) end               --debugline
         err = nil
       end
       _writing_log[skt] = nil
-print("done connecting...", ret, err)        --debugline
       return ret, err
     end
     tried_more_than_once = tried_more_than_once or true
@@ -365,21 +357,16 @@ function copas.handshake(skt, sslt)
   ssl = ssl or require("ssl")
   local nskt = ssl.wrap(skt, sslt)
   local queue
-print("Start handshake")                      --debugline
   nskt:settimeout(0)
   repeat
     local success, err = nskt:dohandshake()
     if success then
-print("Done handshake", "success")            --debugline
       return nskt
     elseif err == "wantread" then
-print("     handshake", err)                  --debugline
       queue = _writing
     elseif err == "wantwrite" then
-print("     handshake", err)                  --debugline
       queue = _reading
     else
-print("Done handshake", nil, err)             --debugline
       return nil, err
     end
     coroutine.yield(nskt, queue)
@@ -417,7 +404,6 @@ local _skt_mt_tcp = {__index = {
                    connect = function(self, ...)
                      local res, err = copas.connect(self.socket, ...)
                      if res and self.ssl_params then
-print("While connecting, also going for a handshake...")   --debugline
                        res, err = self:handshake()
                      end  
                      return res, err
