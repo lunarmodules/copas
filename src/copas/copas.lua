@@ -186,6 +186,11 @@ local _writing_log = {}
 
 local _reading = newset() -- sockets currently being read
 local _writing = newset() -- sockets currently being written
+local _isTimeout = {      -- set of errors indicating a timeout
+  ["timeout"] = true,     -- default LuaSocket timeout
+  ["wantread"] = true,    -- LuaSec specific timeout
+  ["wantwrite"] = true,   -- LuaSec specific timeout
+}
 
 -------------------------------------------------------------------------------
 -- Coroutine based socket I/O functions.
@@ -199,13 +204,17 @@ function copas.receive(client, pattern, part)
   pattern = pattern or "*l"
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or (err ~= "timeout" and err ~= "wantwrite") then  -- 'wantwrite' is LuaSec, ssl specific
+    if s or (not _isTimeout[err]) then 
       _reading_log[client] = nil
 if err then print("copas.receive:", err) end     -- debugline
       return s, err, part
     end
     _reading_log[client] = gettime()
-    coroutine.yield(client, _reading)
+    if err == "wantread" then
+      coroutine.yield(client, _writing)  -- TODO: shouldn't this be in the _writing_log???
+    else
+      coroutine.yield(client, _reading)
+    end
   until false
 end
 
@@ -232,14 +241,17 @@ function copas.receivePartial(client, pattern, part)
   pattern = pattern or "*l"
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or ( (type(pattern)=="number") and part~="" and part ~=nil ) or
-      err ~= "timeout" then
+    if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout(err)) then
       _reading_log[client] = nil
 if err then print("copas.receivePartial:", err) end      -- debugline
       return s, err, part
     end
     _reading_log[client] = gettime()
-    coroutine.yield(client, _reading)
+    if err == "wantread" then
+      coroutine.yield(client, _writing)  -- TODO: shouldn't this be in the _writing_log???
+    else
+      coroutine.yield(client, _reading)
+    end
   until false
 end
 
@@ -259,13 +271,17 @@ function copas.send(client, data, from, to)
       _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
     end
-    if s or (err ~= "timeout" and err ~= "wantread") then  -- 'wantwrite' is LuaSec, ssl specific
+    if s or (not _isTimeout[err]) then 
       _writing_log[client] = nil
 if err then print("copas.send:", err) end     -- debugline
       return s, err,lastIndex
     end
     _writing_log[client] = gettime()
-    coroutine.yield(client, _writing)
+    if err == "wantwrite" then
+      coroutine.yield(client, _reading)  -- TODO: should this be in the _reading_log???
+    else
+      coroutine.yield(client, _writing)
+    end
   until false
 end
 
@@ -535,7 +551,7 @@ end
 
 function copas.removeserver(server)
   local s, mt = server, getmetatable(server)
-  if mt == _skt_mt or mt == _skt_mt_udp then
+  if mt == _skt_mt_tcp or mt == _skt_mt_udp then
     s = server.socket
   end
   _servers[s] = nil 
@@ -656,19 +672,19 @@ local function _select (timeout)
 
   if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
     last_cleansing = now
-    for k,v in pairs(_reading_log) do
-      if not r_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-        _reading_log[k] = nil
-        r_evs[#r_evs + 1] = k
-        r_evs[k] = #r_evs
+    for skt,time in pairs(_reading_log) do
+      if not r_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+        _reading_log[skt] = nil
+        r_evs[#r_evs + 1] = skt
+        r_evs[skt] = #r_evs
       end
     end
 
-    for k,v in pairs(_writing_log) do
-      if not w_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-        _writing_log[k] = nil
-        w_evs[#w_evs + 1] = k
-        w_evs[k] = #w_evs
+    for skt,time in pairs(_writing_log) do
+      if not w_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+        _writing_log[skt] = nil
+        w_evs[#w_evs + 1] = skt
+        w_evs[skt] = #w_evs
       end
     end
   end
