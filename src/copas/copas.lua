@@ -202,17 +202,21 @@ local _isTimeout = {      -- set of errors indicating a timeout
 function copas.receive(client, pattern, part)
   local s, err
   pattern = pattern or "*l"
+  local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
     if s or (not _isTimeout[err]) then 
-      _reading_log[client] = nil
+      current_log[client] = nil
 if err then print("copas.receive:", err) end     -- debugline
       return s, err, part
     end
-    _reading_log[client] = gettime()
     if err == "wantread" then
-      coroutine.yield(client, _writing)  -- TODO: shouldn't this be in the _writing_log???
+      current_log = _writing_log
+      current_log[client] = gettime()
+      coroutine.yield(client, _writing)
     else
+      current_log = _reading_log
+      current_log[client] = gettime()
       coroutine.yield(client, _reading)
     end
   until false
@@ -239,17 +243,21 @@ end
 function copas.receivePartial(client, pattern, part)
   local s, err
   pattern = pattern or "*l"
+  local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
     if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout(err)) then
-      _reading_log[client] = nil
+      current_log[client] = nil
 if err then print("copas.receivePartial:", err) end      -- debugline
       return s, err, part
     end
-    _reading_log[client] = gettime()
     if err == "wantread" then
-      coroutine.yield(client, _writing)  -- TODO: shouldn't this be in the _writing_log???
+      current_log = _writing_log
+      current_log[client] = gettime()
+      coroutine.yield(client, _writing)
     else
+      current_log = _reading_log
+      current_log[client] = gettime()
       coroutine.yield(client, _reading)
     end
   until false
@@ -262,24 +270,32 @@ function copas.send(client, data, from, to)
   local s, err
   from = from or 1
   local lastIndex = from - 1
-
+  local current_log = _writing_log
   repeat
     s, err, lastIndex = client:send(data, lastIndex + 1, to)
     -- adds extra coroutine swap
     -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
-      _writing_log[client] = gettime()
-      coroutine.yield(client, _writing)
+      current_log[client] = gettime()   -- TODO: how to handle this?? 
+      if current_log == _writing_log then
+        coroutine.yield(client, _writing)
+      else
+        coroutine.yield(client, _reading)
+      end
     end
     if s or (not _isTimeout[err]) then 
-      _writing_log[client] = nil
+      current_log[client] = nil
 if err then print("copas.send:", err) end     -- debugline
       return s, err,lastIndex
     end
     _writing_log[client] = gettime()
     if err == "wantwrite" then
-      coroutine.yield(client, _reading)  -- TODO: should this be in the _reading_log???
+      current_log = _reading_log
+      current_log[client] = gettime()
+      coroutine.yield(client, _reading)
     else
+      current_log = _writing_log
+      current_log[client] = gettime()
       coroutine.yield(client, _writing)
     end
   until false
