@@ -84,12 +84,22 @@ are used to register servers and to execute the main loop of Copas:</p>
         registered handlers as long as it uses the Copas socket functions.
     </dd>
 
+    <dt><strong><code>copas.finished()</code></strong></dt>
+    <dd>Checks whether anything remains to be done.<br />
+        Returns <code>false</code> when the sockets lists for reading and writing
+        are empty and there is no other (sleeping) task to execute. Calling 
+        <code>copas.step(timeout)</code> when <code>copas.finished() == true</code>
+        will lock the system for the timeout period, or never return at all if no 
+        timeout is provided.
+    </dd>
+
     <dt><strong><code>copas.loop(timeout)</code></strong></dt>
-    <dd>Starts the Copas infinite loop accepting client connections for the 
+    <dd>Starts the Copas loop accepting client connections for the 
         registered servers and handling those connections with the corresponding
         handlers. Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
         <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
+        The loop returns when <code>copas.finished() == true</code>.
     </dd>
     
     <dt><strong><code>copas.removeserver(skt)</code></strong></dt>
