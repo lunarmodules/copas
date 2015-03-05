@@ -87,10 +87,7 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dt><strong><code>copas.finished()</code></strong></dt>
     <dd>Checks whether anything remains to be done.<br />
         Returns <code>false</code> when the sockets lists for reading and writing
-        are empty and there is no other (sleeping) task to execute. Calling 
-        <code>copas.step(timeout)</code> when <code>copas.finished() == true</code>
-        will lock the system for the timeout period, or never return at all if no 
-        timeout is provided.
+        are empty and there is no other (sleeping) task to execute.
     </dd>
 
     <dt><strong><code>copas.loop(timeout)</code></strong></dt>
