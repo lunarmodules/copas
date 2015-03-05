@@ -510,7 +510,7 @@ local function _doTick (co, skt, ...)
     new_q:push (res, co)
   else
     if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
-    if skt and copas.autoclose then skt:close() end
+    if skt and copas.autoclose then skt:close() end --TODO: should UDP socket be closed???? will close server!, should then also be removed from the _servers and _reading list!
     _errhandlers [co] = nil
   end
 end
@@ -683,14 +683,21 @@ local function _select (timeout)
 
   if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
     last_cleansing = now
+    
+    -- Check all sockets selected for reading, and check how long they have been waiting
+    -- for data already, without select returning them as readable
     for skt,time in pairs(_reading_log) do
       if not r_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+        -- This one timedout while waiting to become readable, so move
+        -- it in the readable list and try and read anyway, despite not 
+        -- having been returned by select
         _reading_log[skt] = nil
         r_evs[#r_evs + 1] = skt
         r_evs[skt] = #r_evs
       end
     end
 
+    -- Do the same for writing
     for skt,time in pairs(_writing_log) do
       if not w_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
         _writing_log[skt] = nil
@@ -721,13 +728,16 @@ function copas.step(timeout)
   local nextwait = _sleeping:getnext()
   if nextwait then
     timeout = timeout and math.min(nextwait, timeout) or nextwait
+  else
+    if copas.finished() then
+      return false
+  end
   end
 
   local err = _select (timeout)
-  if err == "timeout" then return false end
-
   if err then
-    error(err)
+  if err == "timeout" then return false end
+    return nil, err
   end
 
   for tsk in tasks() do
@@ -739,13 +749,20 @@ function copas.step(timeout)
 end
 
 -------------------------------------------------------------------------------
+-- Check whether there is something to do.
+-- returns false if there are no sockets for read/write nor tasks scheduled
+-- (which means Copas is in an empty spin)
+-------------------------------------------------------------------------------
+function copas.finished()
+  return not (next(_reading) or next(_writing) or _sleeping:getnext())
+end
+
+-------------------------------------------------------------------------------
 -- Dispatcher endless loop.
 -- Listen to client requests and handles them forever
 -------------------------------------------------------------------------------
 function copas.loop(timeout)
-  while true do
-    copas.step(timeout)
-  end
+  while not copas.finished() do copas.step(timeout) end
 end
 
 return copas
