@@ -84,6 +84,13 @@ are used to register servers and to execute the main loop of Copas:</p>
         registered handlers as long as it uses the Copas socket functions.
     </dd>
 
+    <dt><strong><code>copas.autoclose</code></strong></dt>
+    <dd>Constant that controls whether sockets are automatically closed.<br />
+        When a TCP handler function completes and terminates, then the client
+        socket will be automatically closed when <code>copas.autoclose</code> is 
+        truthy (neither <code>nil</code> nor <code>false</code>).
+    </dd>
+
     <dt><strong><code>copas.finished()</code></strong></dt>
     <dd>Checks whether anything remains to be done.<br />
         Returns <code>false</code> when the sockets lists for reading and writing
