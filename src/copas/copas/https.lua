@@ -29,6 +29,9 @@ _M.SSLDEFAULTS = {   -- default parameters
 -- @param sslparams optional (table)
 -- @return (string if url == string or 1), code, headers, status
 function _M.request(requrl, body, sslparams)
+  if type(body)=="table" and sslparams == nil then
+    sslparams, body = body, nil
+  end
   if type(requrl) == "string" then
     sslparams = sslparams or {}
     requrl = url.build(url.parse(requrl, {port = _M.PORT}))  -- set port if not specified in url

@@ -364,6 +364,39 @@ copas.loop()
 </pre>
 <p>The example simply prints a message once every second.</p>
 
+<h2><a name="ssl"></a>Ssl support</h2>
+<p>LuaSec is transparently integrated in the Copas scheduler.</p>
+<p>
+Here's an example for an incoming connection in a server scenario;
+</p>
+<pre class="example">
+function handler(skt)
+  skt = copas.wrap(skt)
+  skt:handshake(sslparams)
+
+  while true do
+
+    -- perform the regular reading/writing ops on skt
+
+  end
+end
+</pre>
+<p>
+Here's an example for an outgoing request;
+</p>
+<pre class="example">
+copas.addhandler(function()
+  local skt = copas.wrap(socket.tcp(), sslparams)
+  skt:connect(host, port)  -- connecting will also perform the handshake on a wrapped socket
+
+  while true do
+
+    -- perform the regular reading/writing ops on skt
+
+  end
+end
+</pre>
+
 <h2><a name="control"></a>Controlling Copas</h2>
 
 <p>

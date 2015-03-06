@@ -60,9 +60,16 @@
 <h2>Reference</h2>
 
 <p>
-Copas functions are separated in two groups.</p>
+<strong>NOTE:</strong> Some functions require DNS lookups, which is handled internally 
+by LuaSocket. This is being done in a <strong>blocking</strong> manner. Hence every function 
+that accepts a hostname as an argument (e.g. <code>tcp:connect()</code>, 
+<code>udp:sendto()</code>, etc.) is potentially blocking on the DNS resolving part.
+So either provide IP addresses (assuming the underlying OS will detect those and resolve 
+locally, non-blocking) or accept that the lookup might block.
+</p>
+<h3>Copas dispatcher main functions</h3>
 <p>
-The first group is relative to the use of the dispatcher itself and
+The group of functions is relative to the use of the dispatcher itself and
 are used to register servers and to execute the main loop of Copas:</p>
 
 <dl class="reference">
@@ -97,12 +104,13 @@ are used to register servers and to execute the main loop of Copas:</p>
         are empty and there is no other (sleeping) task to execute.
     </dd>
 
-    <dt><strong><code>copas.loop(timeout)</code></strong></dt>
+    <dt><strong><code>copas.loop([timeout])</code></strong></dt>
     <dd>Starts the Copas loop accepting client connections for the 
         registered servers and handling those connections with the corresponding
         handlers. Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
-        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
+        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional,
+        and is passed to the <code>copas.step()</code> function.
         The loop returns when <code>copas.finished() == true</code>.
     </dd>
     
@@ -111,7 +119,7 @@ are used to register servers and to execute the main loop of Copas:</p>
     The socket will be closed to allow the socket to be reused right away after removing the server.
     </dd>
 
-    <dt><strong><code>copas.step(timeout)</code></strong></dt>
+    <dt><strong><code>copas.step([timeout])</code></strong></dt>
     <dd>Executes one copas iteration accepting client connections for the 
         registered servers and handling those connections with the corresponding
         handlers. When a server accepts a connection, Copas calls the
@@ -129,7 +137,9 @@ are used to register servers and to execute the main loop of Copas:</p>
     </dd>
 </dl>
 
-<p>The second group is used by the handler functions to exchange data with
+<h3>Non-blocking data exchange and timer/sleep functions</h3>
+
+<p>These are used by the handler functions to exchange data with
 the clients, and by threads registered with <code>addthread</code> to
 exchange data with other services.</p>
 
@@ -139,20 +149,45 @@ exchange data with other services.</p>
     <code>socket:connect()</code>. The Copas version does not block and allows
     the multitasking of the other handlers and threads.
     </dd>
-    <dt><strong><code>copas.flush(skt)</code></strong> (deprecated)</dt>
+
+    <dt><strong><code>copas.handshake(skt, sslparams)</code></strong></dt>
+    <dd>Performs an ssl handshake on an already connected TCP client socket.
+    </dd>
+
+    <dt><strong><code>copas.flush(skt)</code></strong></br></dt>
+    <dd>(deprecated)</dd>
     
-    <dt><strong><code>copas.receive(skt, pattern)</code></strong></dt>
+    <dt><strong><code>copas.receive(skt [, pattern])</code></strong> (TCP) or</br>
+    <strong><code>copas.receive(size)</code></strong> (UDP) 
+    </dt>
     <dd>Reads data from a client socket according to a pattern just like LuaSocket
     <code>socket:receive()</code>. The Copas version does not block and allows
+    the multitasking of the other handlers and threads.</br>
+    <strong>Note:</strong> for UDP sockets the <code>size</code> parameter is NOT
+    optional. For the wrapped function <code>socket:receive([size])</code> it is
+    optional again.
+    </dd>
+
+    <dt><strong><code>copas.receivefrom(skt [, size])</code></strong></dt>
+    <dd>Reads data from a UDP socket just like LuaSocket
+    <code>socket:receivefrom()</code>. The Copas version does not block and allows
     the multitasking of the other handlers and threads.
     </dd>
     
-    <dt><strong><code>copas.send(skt, data)</code></strong></dt>
+    <dt><strong><code>copas.send(skt, data [, i [, j]])</code></strong> (TCP) or</br>
+    <strong><code>copas.send(skt, datagram)</code></strong> (UDP)
+    </dt>
     <dd>Sends data to a client socket just like <code>socket:send()</code>. The Copas version
     is buffered and does not block, allowing the multitasking of the other handlers and threads.
     </dd>
-    
-    <dt><strong><code>copas.sleep(sleeptime)</code></strong></dt>
+
+    <dt><strong><code>copas.sendto(skt, datagram, ip, port)</code></strong></dt>
+    <dd>Sends data over a UDP socket just like LuaSocket
+    <code>socket:sendto()</code>. The Copas version does not block and allows
+    the multitasking of the other handlers and threads.
+    </dd>
+        
+    <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>
     <dd>Pauses the current co-routine. Parameter <code>sleeptime</code> (in seconds) is optional 
     and defaults to 0. If <code>sleeptime &lt 0</code>
     then it will sleep until explicitly woken by a call to <code>copas.wakeup()</code>.
@@ -163,12 +198,58 @@ exchange data with other services.</p>
     the handler function to get the value for <code>co</code>.
     </dd>
 
-    <dt><strong><code>copas.wrap(skt)</code></strong></dt>
+    <dt><strong><code>copas.wrap(skt [, sslparams] )</code></strong></dt>
     <dd>Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
-    but use Copas' methods <code>copas.send()</code> and <code>copas.receive()</code>
-    automatically.
+    but use Copas' methods like <code>copas.send()</code> and <code>copas.receive()</code>
+    automatically. If the <code>sslparams</code> is provided, then a call to the wrapped
+    <code>skt:connect()</code> method will automatically include the handshake.
     </dd>
 
+</dl>
+
+<h3>High level request functions</h3>
+
+<p>The last ones are the higher level client functions to perform requests to (remote) 
+servers.</br>
+</p>
+    <dt><strong><code>copas.http.request(url [, body])</code></strong> or</br> 
+        <strong><code>copas.http.request(requestparams)</code></strong></dt>
+    <dd>Performs an http request, identical to the LuaSocket implementation, but wrapped in
+    an async operation.
+    </dd>
+
+    <dt><strong><code>copas.https.request(url [, body] [,sslparams])</code></strong> or</br> 
+        <strong><code>copas.https.request(requestparams)</code></strong></dt>
+    <dd>Performs an https request, compatible with the LuaSec implementation, but wrapped in
+    async operation. In the short form, the <code>sslparams</code> parameter allows the passing
+    of the ssl settings, which is additional to the LuaSec implementation. In the advanced form,
+    as with LuaSec, both the http parameters and the ssl parameters must be in the 
+    <code>requestparams</code> table.
+    </dd>
+
+    <dt><strong><code>copas.ftp.put(url, content)</code></strong> or</br> 
+        <strong><code>copas.ftp.put(requestparams)</code></strong></dt>
+    <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
+    an async operation.
+    </dd>
+
+    <dt><strong><code>copas.ftp.get(url)</code></strong> or</br> 
+        <strong><code>copas.ftp.get(requestparams)</code></strong></dt>
+    <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
+    an async operation.
+    </dd>
+
+    <dt><strong><code>copas.smtp.send(msgparams)</code></strong></dt>
+    <dd>Sends an smtp request, identical to the LuaSocket implementation, but wrapped in
+    an async operation.
+    </dd>
+
+    <dt><strong><code>copas.smtp.message(msgt)</code></strong></dt>
+    <dd>Just points to <code>socket.smtp.message</code>, provided so the <code>copas.smtp</code> 
+    module is a drop-in replacement for the <code>socket.smtp</code> module
+    </dd>
+
+<dl class="reference">
 </dl>
 
 </div> <!-- id="content" -->

@@ -1,5 +1,5 @@
 package = "Copas"
-version = "cvs-2"
+version = "cvs-3"
 source = {
   url = "git://github.com/keplerproject/copas.git"
 }

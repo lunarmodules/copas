@@ -383,7 +383,12 @@ function copas.flush(client)
 end
 
 -- wraps a TCP socket to use Copas methods (send, receive, flush and settimeout)
-local _skt_mt_tcp = {__index = {
+local _skt_mt_tcp = {
+                   __tostring = function(self)
+                                  return tostring(self.socket).." (copas wrapped)"
+                                end,
+                   __index = {
+                              
                    send = function (self, data, from, to)
                             return copas.send (self.socket, data, from, to)
                           end,
@@ -449,10 +454,13 @@ local _skt_mt_tcp = {__index = {
 
 -- wraps a UDP socket, copy of TCP one adapted for UDP.
 local _skt_mt_udp = {__index = { }}
+for k,v in pairs(_skt_mt_tcp) do _skt_mt_udp[k] = _skt_mt_udp[k] or v end
 for k,v in pairs(_skt_mt_tcp.__index) do _skt_mt_udp.__index[k] = v end
-_skt_mt_udp.__index.send =        function(self, ...) return self.socket:getpeername(...) end -- UDP does not block
 
-_skt_mt_udp.__index.sendto =      function(self, ...) return self.socket:getpeername(...) end -- UDP does not block
+_skt_mt_udp.__index.sendto =      function (self, ...)
+                                    -- UDP sending is non-blocking, but we provide starvation prevention...
+                                    return copas.sendto (self.socket, ...)
+                                  end
 
 _skt_mt_udp.__index.receive =     function (self, size)
                                     return copas.receive (self.socket, (size or UDP_DATAGRAM_MAX))
