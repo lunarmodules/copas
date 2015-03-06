@@ -44,6 +44,7 @@
             <li><a href="manual.html#tasks">Adding tasks</a></li>
             <li><a href="manual.html#timers">Creating timers</a></li>
             <li><a href="manual.html#ssl">Ssl support</a></li>
+            <li><a href="manual.html#highlevel">http(s), ftp & smtp</a></li>
             <li><a href="manual.html#control">Controlling Copas</a></li>
         </ul>
     </li>
@@ -118,7 +119,8 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 		<li>Added removeserver() function to remove servers from the scheduler (by Paul Kulchenko)</li>
 		<li>Added client requests for http, https, ftp, and smtp (like LuaSocket/LuaSec, but async)</li>
 		<li>Added transparent async support (handshake, and transmit/receive) for ssl using LuaSec</li>
-                <li>Added the loop now exits when there is nothing more to do.</li>
+                <li>Change the loop now exits when there is nothing more to do</li>
+                <li>Change dummy first argument to new tasks removed</li>
                 <li>Fixed completed the socket wrappers, missing functions were added</li>
                 <li>Fixed connect issue, step() errorring out instead of returning nil + error</li>
 		<li>Fixed UDP sockets being auto closed</li>

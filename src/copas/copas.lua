@@ -588,10 +588,10 @@ function copas.removeserver(server)
 -------------------------------------------------------------------------------
 -- Adds an new coroutine thread to Copas dispatcher
 -------------------------------------------------------------------------------
-function copas.addthread(thread, ...)
-  if type(thread) ~= "thread" then
-    thread = coroutine.create(thread)
-  end
+function copas.addthread(handler, ...)
+  -- create a coroutine that skips the first argument, which is always the socket
+  -- passed by the scheduler, but `nil` in case of a task/thread
+  thread = coroutine.create(function(_, ...) return handler(...) end)
   _doTick (thread, nil, ...)
   return thread
 end

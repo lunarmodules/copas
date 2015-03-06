@@ -22,7 +22,7 @@ local function sync(list)
   end
 end
 
-local handler = function(skt, host)
+local handler = function(host)
   res, err = asynchttp(host)
   if not res then
     print("Error async: "..host.." failed, rerun test!")

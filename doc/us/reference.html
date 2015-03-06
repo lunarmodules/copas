@@ -44,6 +44,7 @@
             <li><a href="manual.html#tasks">Adding tasks</a></li>
             <li><a href="manual.html#timers">Creating timers</a></li>
             <li><a href="manual.html#ssl">Ssl support</a></li>
+            <li><a href="manual.html#highlevel">http(s), ftp & smtp</a></li>
             <li><a href="manual.html#control">Controlling Copas</a></li>
         </ul>
     </li>
@@ -86,10 +87,11 @@ are used to register servers and to execute the main loop of Copas:</p>
         registered handlers as long as it uses the Copas socket functions.
     </dd>
 
-    <dt><strong><code>copas.addthread(thrd[, ...])</code></strong></dt>
-    <dd>Adds a new thread to the dispatcher using optional parameters.<br />
+    <dt><strong><code>copas.addthread(func [, ...])</code></strong></dt>
+    <dd>Adds a function as a new coroutine/thread to the dispatcher using 
+        optional parameters.<br />
         The thread will be executed in parallel with other threads and the
-        registered handlers as long as it uses the Copas socket functions.
+        registered handlers as long as it uses the Copas socket/sleep functions.
     </dd>
 
     <dt><strong><code>copas.autoclose</code></strong></dt>
