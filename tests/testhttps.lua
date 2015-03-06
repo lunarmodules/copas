@@ -15,7 +15,7 @@ copas.addthread(function()
     print(count)
     count = count + 1
   end
-  os.exit()
+  --os.exit()  -- causes ugly error due to LuaSec not be closed properly
 end)
 
 copas.addthread(function()
