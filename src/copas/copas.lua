@@ -189,6 +189,11 @@ local _writing = newset() -- sockets currently being written
 -------------------------------------------------------------------------------
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
+
+local function isTCP(socket)
+  return string.sub(tostring(socket),1,3) ~= "udp"
+end
+
 -- reads a pattern from a client and yields to the reading set on timeouts
 -- UDP: a UDP socket expects a second argument to be a number, so it MUST
 -- be provided as the 'pattern' below defaults to a string. Will throw a
@@ -397,7 +402,9 @@ local function _doTick (co, skt, ...)
     new_q:push (res, co)
   else
     if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
-    if skt and copas.autoclose then skt:close() end --TODO: should UDP socket be closed???? will close server!, should then also be removed from the _servers and _reading list!
+    if skt and copas.autoclose and isTCP(skt) then 
+      skt:close() -- do not auto-close UDP sockets, as the handler socket is also the server socket
+    end
     _errhandlers [co] = nil
   end
 end
@@ -440,10 +447,10 @@ local function addUDPserver(server, handler, timeout)
 end
 
 function copas.addserver(server, handler, timeout)
-    if string.sub(tostring(server),1,3) == "udp" then
-        addUDPserver(server, handler, timeout)
-    else
+    if isTCP(server) then
         addTCPserver(server, handler, timeout)
+    else
+        addUDPserver(server, handler, timeout)
     end
 end
 
