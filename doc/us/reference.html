@@ -205,7 +205,8 @@ exchange data with other services.</p>
     <dd>Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
     but use Copas' methods like <code>copas.send()</code> and <code>copas.receive()</code>
     automatically. If the <code>sslparams</code> is provided, then a call to the wrapped
-    <code>skt:connect()</code> method will automatically include the handshake.
+    <code>skt:connect()</code> method will automatically include the handshake. To use ssl
+    with defaults; provide an empty table.
     </dd>
 
 </dl>

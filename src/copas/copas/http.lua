@@ -1,5 +1,5 @@
 -------------------------------------------------------------------
--- identical to the luasec.https module except that it uses
+-- identical to the socket.http module except that it uses
 -- async wrapped Copas sockets
 
 local copas = require("copas")
@@ -10,7 +10,18 @@ local ltn12 = require("ltn12")
 
 local create = function() return copas.wrap(socket.tcp()) end
 
-copas.http = {}
+copas.http = setmetatable({}, { 
+    -- use original module as metatable, to lookup constants like socket.PROXY, etc.
+    __index = require("socket.http"),
+    -- Setting constants is forwarded to the luasocket.http module.
+    __newindex = function(self, key, value)
+        if key == "PORT" then http.PORT = value return end
+        if key == "PROXY" then http.PROXY = value return end
+        if key == "TIMEOUT" then http.TIMEOUT = value return end
+        if key == "USERAGENT" then http.USERAGENT = value return end
+        return rawset(self, key, value)
+      end,
+    })
 local _M = copas.http
 
 -- mostly a copy of the version in LuaSockets' http.lua 

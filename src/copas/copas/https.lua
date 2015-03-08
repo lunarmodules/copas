@@ -35,6 +35,7 @@ function _M.request(requrl, body, sslparams)
   if type(requrl) == "string" then
     sslparams = sslparams or {}
     requrl = url.build(url.parse(requrl, {port = _M.PORT}))  -- set port if not specified in url
+    requrl.redirect = false
   else
     sslparams = requrl  -- in table format, the ssl parameters must be provided in the table
     requrl.url = url.build(url.parse(requrl.url, {port = _M.PORT}))  -- set port if not specified in url
@@ -42,6 +43,11 @@ function _M.request(requrl, body, sslparams)
   sslparams.mode = "client"                -- force client mode
   for k, v in pairs(_M.SSLDEFAULTS) do     -- insert default settings where omitted
     sslparams[k] = sslparams[k] or v
+  end
+  if http.PROXY or requrl.proxy then
+    return nil, "proxy not supported"
+  elseif requrl.redirect ~= false then
+    return nil, "redirect not supported"
   end
   local create = function() return copas.wrap(socket.tcp(), sslparams) end
   if type(requrl) == "string" then

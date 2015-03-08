@@ -478,7 +478,7 @@ _skt_mt_udp.__index.setsockname = function(self, ...) return self.socket:setsock
 ---
 -- Wraps a LuaSocket socket object in an async Copas based socket object.
 -- @param skt The socket to wrap
--- @sslt (optional) Table with ssl parameters
+-- @sslt (optional) Table with ssl parameters, use an empty table to use ssl with defaults
 -- @return wrapped socket object
 function copas.wrap (skt, sslt)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then 
@@ -591,7 +591,7 @@ function copas.removeserver(server)
 function copas.addthread(handler, ...)
   -- create a coroutine that skips the first argument, which is always the socket
   -- passed by the scheduler, but `nil` in case of a task/thread
-  thread = coroutine.create(function(_, ...) return handler(...) end)
+  local thread = coroutine.create(function(_, ...) return handler(...) end)
   _doTick (thread, nil, ...)
   return thread
 end
