@@ -254,6 +254,21 @@ servers.</br>
     module is a drop-in replacement for the <code>socket.smtp</code> module
     </dd>
 
+    <dt><strong><code>copas.limit.new(max)</code></strong></dt>
+    <dd>Creates and returns a `limitset` that limits the concurrent tasks to <code>max</code> number
+    of running tasks. Eg. 100 http requests, in a set with <code>max == 10</code>, then no more than
+    10 requests will be performed simultaneously. Only when a request finishes, the next will be started.
+    </dd>
+
+    <dt><strong><code>limitset:addthread(func [, ...])</code></strong></dt>
+    <dd>Identical to <code>copas.addthread</code>, except that it operates within the limits of
+    the set of running tasks.
+    </dd>
+
+    <dt><strong><code>limitset:wait()</code></strong></dt>
+    <dd>Will yield until all tasks in the set have finished.
+    </dd>
+
 <dl class="reference">
 </dl>
 
