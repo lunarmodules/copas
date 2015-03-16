@@ -12,11 +12,9 @@ local _M = copas.https
 
 _M.PORT = 443   -- default port
 
-_M.SSLDEFAULTS = {   -- default parameters
-  protocol = "tlsv1",
-  options  = "all",
-  verify   = "none",
-}
+_M.SSLPROTOCOL = "tlsv1"
+_M.SSLOPTIONS  = "all"
+_M.SSLVERIFY   = "none"
 
 
 --------------------------------------------------------------------
@@ -28,34 +26,36 @@ _M.SSLDEFAULTS = {   -- default parameters
 -- @param body optional (string)
 -- @param sslparams optional (table)
 -- @return (string if url == string or 1), code, headers, status
-function _M.request(requrl, body, sslparams)
-  if type(body)=="table" and sslparams == nil then
+function _M.request(reqt, body, sslparams)
+  if type(body)=="table" and sslparams == nil then  -- shift params if 'body' is omitted
     sslparams, body = body, nil
   end
-  if type(requrl) == "string" then
-    sslparams = sslparams or {}
-    requrl = url.build(url.parse(requrl, {port = _M.PORT}))  -- set port if not specified in url
-    requrl.redirect = false
-  else
-    sslparams = requrl  -- in table format, the ssl parameters must be provided in the table
-    requrl.url = url.build(url.parse(requrl.url, {port = _M.PORT}))  -- set port if not specified in url
+  
+  if type(reqt) == "string" then  -- parse to table and recursive call ourselves
+    reqt = http.parseRequest(reqt, body)
+--    reqt.redirect = false
+    local code, headers, status = socket.skip(1, _M.request(reqt))
+    return table.concat(reqt.target), code, headers, status
   end
-  sslparams.mode = "client"                -- force client mode
-  for k, v in pairs(_M.SSLDEFAULTS) do     -- insert default settings where omitted
-    sslparams[k] = sslparams[k] or v
-  end
-  if http.PROXY or requrl.proxy then
+  
+  sslparams = reqt                    -- in table format, the ssl parameters must be provided in the table
+  sslparams.mode = "client"           -- force client mode
+  reqt.create = function() return copas.wrap(socket.tcp(), sslparams) end
+  reqt.url = url.build(url.parse(reqt.url, {port = _M.PORT}))  -- set port if not specified in url
+  
+  -- insert default settings where omitted
+  sslparams.protocol = sslparams.protocol or _M.SSLPROTOCOL
+  sslparams.options  = sslparams.options  or _M.SSLOPTIONS
+  sslparams.verify   = sslparams.verify   or _M.SSLVERIFY
+  
+  -- Sanity checks
+  if http.PROXY or reqt.proxy then
     return nil, "proxy not supported"
-  elseif requrl.redirect ~= false then
+  elseif reqt.redirect then --~= false then
     return nil, "redirect not supported"
   end
-  local create = function() return copas.wrap(socket.tcp(), sslparams) end
-  if type(requrl) == "string" then
-    return http.request(requrl, body, create)
-  else
-    requrl.create = create
-    return http.request(requrl, body)
-  end
+  
+  return http.request(reqt)
 end
 
 return _M

@@ -1,7 +1,7 @@
 local copas = require("copas")
 local http = require("copas.http")
 
-local count, countto = 0, 500
+local count, countto = 0, 999999
 
 copas.addthread(function()
   while count<countto do

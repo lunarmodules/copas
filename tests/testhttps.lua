@@ -3,7 +3,7 @@ local https = require("copas.https")
 local luasec = require("ssl.https")
 
 local url = "https://www.google.nl"
-local count, countto = 0, 500
+local count, countto = 0, 999999
 
 print("first the original LuaSec implementation;")
 print(luasec.request(url))

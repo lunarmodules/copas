@@ -9,30 +9,33 @@ local ltn12 = require("ltn12")
 
 
 local create = function() return copas.wrap(socket.tcp()) end
+local forwards = { -- setting these will be forwarded to the original smtp module
+  PORT = true,
+  PROXY = true,
+  TIMEOUT = true,
+  USERAGENT = true
+}
 
 copas.http = setmetatable({}, { 
     -- use original module as metatable, to lookup constants like socket.PROXY, etc.
-    __index = require("socket.http"),
+    __index = http,
     -- Setting constants is forwarded to the luasocket.http module.
     __newindex = function(self, key, value)
-        if key == "PORT" then http.PORT = value return end
-        if key == "PROXY" then http.PROXY = value return end
-        if key == "TIMEOUT" then http.TIMEOUT = value return end
-        if key == "USERAGENT" then http.USERAGENT = value return end
+        if forwards[key] then http[key] = value return end
         return rawset(self, key, value)
       end,
     })
 local _M = copas.http
 
--- mostly a copy of the version in LuaSockets' http.lua 
--- no 'create' can be passed in the string form, hence a local copy here
-local function srequest(u, b, userc)
-    local t = {}
+---[[ IS HERE UNTIL PR #133 IS ACCEPTED INTO LUASOCKET
+-- parses a shorthand form into the advanced table form.
+-- adds field `target` to the table. This will hold the return values.
+_M.parseRequest = function(u, b)
     local reqt = {
         url = u,
-        sink = ltn12.sink.table(t),
-        create = userc
+        target = {},
     }
+    reqt.sink = ltn12.sink.table(reqt.target)
     if b then
         reqt.source = ltn12.source.string(b)
         reqt.headers = {
@@ -41,15 +44,15 @@ local function srequest(u, b, userc)
         }
         reqt.method = "POST"
     end
-    local code, headers, status = socket.skip(1, _M.request(reqt))
-    return table.concat(t), code, headers, status
+    return reqt
 end
+--]]
 
--- userc = is a user specified 'create' function, instead of the default copas one
--- used in string version, for advanced supply one in the parameter table
-_M.request = socket.protect(function(reqt, body, userc)
+_M.request = socket.protect(function(reqt, body)
   if type(reqt) == "string" then
-    return srequest(reqt, body, userc)
+    reqt = _M.parseRequest(reqt, body) 
+    local code, headers, status = socket.skip(1, _M.request(reqt))
+    return table.concat(reqt.target), code, headers, status
   else 
     reqt.create = reqt.create or create  -- insert our own create function here
     return http.request(reqt)

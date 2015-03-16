@@ -17,7 +17,7 @@ local function sync(list)
     if not res then
       print("Error sync: "..host.." failed, rerun test!")
     else
-      print("Async host done: "..host)
+      print("Sync host done: "..host)
     end
   end
 end
@@ -27,7 +27,7 @@ local handler = function(host)
   if not res then
     print("Error async: "..host.." failed, rerun test!")
   else
-    print("Sync host done: "..host)
+    print("Async host done: "..host)
   end
 end
 
