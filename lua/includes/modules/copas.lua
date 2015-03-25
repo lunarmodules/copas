@@ -13,18 +13,18 @@
 -- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
 
-if package.loaded["socket.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: only for Lua 5.1 compatibility
+if package.loaded["socket.http"] and (_VERSION=="Lua 5.1") and false then     -- obsolete: only for Lua 5.1 compatibility
   error("you must require copas before require'ing socket.http")
 end
 
-local socket = require "socket"
+local socket = require "luasocket" or socket
 local gettime = socket.gettime
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192
 
 local pcall = pcall
-if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
   pcall = require("coxpcall").pcall
   
   -- Redefines LuaSocket functions with coroutine safe versions
@@ -658,5 +658,26 @@ end
 function copas.loop(timeout)
   while not copas.finished() do copas.step(timeout) end
 end
+
+function copas.think()
+
+	local ok,err = copas.step(0)
+	if ok==nil and err then
+		Msg"[Copas] Error: "print(err)
+	end
+	if copas.finished() then
+		copas._looping = false
+		hook.Remove("Think","copas")
+	end
+	
+end
+
+copas.loop = function()
+	if copas._looping then return end
+	copas._looping = true
+    hook.Add("Think","copas",copas.think)
+end
+
+_G.copas = copas
 
 return copas
