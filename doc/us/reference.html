@@ -219,17 +219,11 @@ servers.</br>
 </p>
     <dt><strong><code>copas.http.request(url [, body])</code></strong> or</br> 
         <strong><code>copas.http.request(requestparams)</code></strong></dt>
-    <dd>Performs an http request, identical to the LuaSocket implementation, but wrapped in
-    an async operation.
-    </dd>
-
-    <dt><strong><code>copas.https.request(url [, body] [,sslparams])</code></strong> or</br> 
-        <strong><code>copas.https.request(requestparams)</code></strong></dt>
-    <dd>Performs an https request, compatible with the LuaSec implementation, but wrapped in
-    async operation. In the short form, the <code>sslparams</code> parameter allows the passing
-    of the ssl settings, which is additional to the LuaSec implementation. In the advanced form,
-    as with LuaSec, both the http parameters and the ssl parameters must be in the 
-    <code>requestparams</code> table.
+    <dd>Performs an http or https request, identical to the LuaSocket and LuaSec 
+    implementations, but wrapped in an async operation. As opposed to the original 
+    implementations, this one also allows for redirects cross scheme (http to https and 
+    viceversa). </br><strong>Note:</strong> https to http redirects are not allowed by 
+    default, but only when <code>requestparams.redirect == "all"</code>
     </dd>
 
     <dt><strong><code>copas.ftp.put(url, content)</code></strong> or</br> 

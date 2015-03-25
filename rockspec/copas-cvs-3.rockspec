@@ -29,7 +29,6 @@ build = {
      ["copas.http"] = "src/copas/copas/http.lua",
      ["copas.ftp"] = "src/copas/copas/ftp.lua",
      ["copas.smtp"] = "src/copas/copas/smtp.lua",
-     ["copas.https"] = "src/copas/copas/https.lua",
      ["copas.limit"] = "src/copas/copas/limit.lua",
    }
 }
