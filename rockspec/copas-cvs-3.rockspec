@@ -25,10 +25,10 @@ dependencies = {
 build = {
    type = "builtin",
    modules = { 
-     ["copas"] = "src/copas/copas.lua",
-     ["copas.http"] = "src/copas/copas/http.lua",
-     ["copas.ftp"] = "src/copas/copas/ftp.lua",
-     ["copas.smtp"] = "src/copas/copas/smtp.lua",
-     ["copas.limit"] = "src/copas/copas/limit.lua",
+     ["copas"] = "src/copas.lua",
+     ["copas.http"] = "src/copas/http.lua",
+     ["copas.ftp"] = "src/copas/ftp.lua",
+     ["copas.smtp"] = "src/copas/smtp.lua",
+     ["copas.limit"] = "src/copas/limit.lua",
    }
 }

@@ -8,6 +8,10 @@ LUA_DIR= $(PREFIX)/share/lua/5.1
 
 install:
 	mkdir -p $(LUA_DIR)/copas
-	cp src/copas/copas.lua $(LUA_DIR)/copas.lua
+	cp src/copas.lua $(LUA_DIR)/copas.lua
+	cp src/copas/ftp.lua $(LUA_DIR)/copas/ftp.lua
+	cp src/copas/smtp.lua $(LUA_DIR)/copas/smtp.lua
+	cp src/copas/http.lua $(LUA_DIR)/copas/http.lua
+	cp src/copas/limit.lua $(LUA_DIR)/copas/limit.lua
 
 clean:
