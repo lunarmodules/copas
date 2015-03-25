@@ -13,47 +13,51 @@
 -- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
 
-if package.loaded["socket.http"] then
+if package.loaded["socket.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: only for Lua 5.1 compatibility
   error("you must require copas before require'ing socket.http")
 end
 
 local socket = require "socket"
 local gettime = socket.gettime
-local coxpcall = require "coxpcall"
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192
 
--- Redefines LuaSocket functions with coroutine safe versions
--- (this allows the use of socket.http from within copas)
-local function statusHandler(status, ...)
-  if status then return ... end
-  local err = (...)
-  if type(err) == "table" then
-    return nil, err[1]
-  else
-    error(err)
+local pcall = pcall
+if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
+  pcall = require("coxpcall").pcall
+  
+  -- Redefines LuaSocket functions with coroutine safe versions
+  -- (this allows the use of socket.http from within copas)
+  local function statusHandler(status, ...)
+    if status then return ... end
+    local err = (...)
+    if type(err) == "table" then
+      return nil, err[1]
+    else
+      error(err)
+    end
   end
-end
 
-function socket.protect(func)
-  return function (...)
-           return statusHandler(coxpcall.pcall(func, ...))
-         end
-end
-
-function socket.newtry(finalizer)
-  return function (...)
-           local status = (...)
-           if not status then
-             coxpcall.pcall(finalizer, select(2, ...))
-             error({ (select(2, ...)) }, 0)
+  function socket.protect(func)
+    return function (...)
+             return statusHandler(pcall(func, ...))
            end
-           return ...
-         end
-end
+  end
 
--- end of LuaSocket redefinitions
+  function socket.newtry(finalizer)
+    return function (...)
+             local status = (...)
+             if not status then
+               pcall(finalizer, select(2, ...))
+               error({ (select(2, ...)) }, 0)
+             end
+             return ...
+           end
+  end
+
+  -- end of LuaSocket redefinitions
+end
 
 local copas = {}
 
@@ -166,7 +170,6 @@ local _sleeping = {
             for i=1,#let do
                 if let[i]==co then
                     table.remove(let, i)
-                    local tm = self.times[i]
                     table.remove(self.times, i)
                     self:push(0, co)
                     return
@@ -186,6 +189,11 @@ local _writing = newset() -- sockets currently being written
 -------------------------------------------------------------------------------
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
+
+local function isTCP(socket)
+  return string.sub(tostring(socket),1,3) ~= "udp"
+end
+
 -- reads a pattern from a client and yields to the reading set on timeouts
 -- UDP: a UDP socket expects a second argument to be a number, so it MUST
 -- be provided as the 'pattern' below defaults to a string. Will throw a
@@ -241,14 +249,14 @@ end
 -- yields to the writing set on timeouts
 -- Note: from and to parameters will be ignored by/for UDP sockets
 function copas.send(client, data, from, to)
-  local s, err,sent
+  local s, err
   from = from or 1
   local lastIndex = from - 1
 
   repeat
     s, err, lastIndex = client:send(data, lastIndex + 1, to)
-    -- adds extra corrotine swap
-    -- garantees that high throuput dont take other threads to starvation
+    -- adds extra coroutine swap
+    -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
       _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
@@ -265,12 +273,12 @@ end
 -- sends data to a client over UDP. Not available for TCP.
 -- (this is a copy of send() method, adapted for sendto() use)
 function copas.sendto(client, data, ip, port)
-  local s, err,sent
+  local s, err
 
   repeat
     s, err = client:sendto(data, ip, port)
-    -- adds extra corrotine swap
-    -- garantees that high throuput dont take other threads to starvation
+    -- adds extra coroutine swap
+    -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
       _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
@@ -297,7 +305,6 @@ function copas.connect(skt, host, port)
     _writing_log[skt] = gettime()
     coroutine.yield(skt, _writing)
   until false
-  return ret, err
 end
 
 -- flushes a client write buffer (deprecated)
@@ -394,8 +401,10 @@ local function _doTick (co, skt, ...)
     new_q:insert (res)
     new_q:push (res, co)
   else
-    if not ok then coxpcall.pcall (_errhandlers [co] or _deferror, res, co, skt) end
-    if skt and copas.autoclose then skt:close() end
+    if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
+    if skt and copas.autoclose and isTCP(skt) then 
+      skt:close() -- do not auto-close UDP sockets, as the handler socket is also the server socket
+    end
     _errhandlers [co] = nil
   end
 end
@@ -438,21 +447,25 @@ local function addUDPserver(server, handler, timeout)
 end
 
 function copas.addserver(server, handler, timeout)
-    if string.sub(tostring(server),1,3) == "udp" then
-        addUDPserver(server, handler, timeout)
-    else
+    if isTCP(server) then
         addTCPserver(server, handler, timeout)
+    else
+        addUDPserver(server, handler, timeout)
     end
 end
 
 function copas.removeserver(server)
-  _servers[server] = nil
-  _reading:remove(server)
-  return server:close()
-end
+  local s, mt = server, getmetatable(server)
+  if mt == _skt_mt or mt == _skt_mt_udp then
+    s = server.socket
+  end
+  _servers[s] = nil 
+  _reading:remove(s) 
+  return server:close() 
+ end
 
 -------------------------------------------------------------------------------
--- Adds an new courotine thread to Copas dispatcher
+-- Adds an new coroutine thread to Copas dispatcher
 -------------------------------------------------------------------------------
 function copas.addthread(thread, ...)
   if type(thread) ~= "thread" then
@@ -564,19 +577,26 @@ local function _select (timeout)
 
   if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
     last_cleansing = now
-    for k,v in pairs(_reading_log) do
-      if not r_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-        _reading_log[k] = nil
-        r_evs[#r_evs + 1] = k
-        r_evs[k] = #r_evs
+    
+    -- Check all sockets selected for reading, and check how long they have been waiting
+    -- for data already, without select returning them as readable
+    for skt,time in pairs(_reading_log) do
+      if not r_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+        -- This one timedout while waiting to become readable, so move
+        -- it in the readable list and try and read anyway, despite not 
+        -- having been returned by select
+        _reading_log[skt] = nil
+        r_evs[#r_evs + 1] = skt
+        r_evs[skt] = #r_evs
       end
     end
 
-    for k,v in pairs(_writing_log) do
-      if not w_evs[k] and duration(now, v) > WATCH_DOG_TIMEOUT then
-        _writing_log[k] = nil
-        w_evs[#w_evs + 1] = k
-        w_evs[k] = #w_evs
+    -- Do the same for writing
+    for skt,time in pairs(_writing_log) do
+      if not w_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+        _writing_log[skt] = nil
+        w_evs[#w_evs + 1] = skt
+        w_evs[skt] = #w_evs
       end
     end
   end
@@ -602,13 +622,16 @@ function copas.step(timeout)
   local nextwait = _sleeping:getnext()
   if nextwait then
     timeout = timeout and math.min(nextwait, timeout) or nextwait
+  else
+    if copas.finished() then
+      return false
+    end
   end
 
   local err = _select (timeout)
-  if err == "timeout" then return false end
-
   if err then
-    error(err)
+    if err == "timeout" then return false end
+    return nil, err
   end
 
   for tsk in tasks() do
@@ -620,13 +643,20 @@ function copas.step(timeout)
 end
 
 -------------------------------------------------------------------------------
+-- Check whether there is something to do.
+-- returns false if there are no sockets for read/write nor tasks scheduled
+-- (which means Copas is in an empty spin)
+-------------------------------------------------------------------------------
+function copas.finished()
+  return not (next(_reading) or next(_writing) or _sleeping:getnext())
+end
+
+-------------------------------------------------------------------------------
 -- Dispatcher endless loop.
 -- Listen to client requests and handles them forever
 -------------------------------------------------------------------------------
 function copas.loop(timeout)
-  while true do
-    copas.step(timeout)
-  end
+  while not copas.finished() do copas.step(timeout) end
 end
 
 return copas
