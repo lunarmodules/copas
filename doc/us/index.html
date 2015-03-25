@@ -114,17 +114,17 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
-    <dt><strong>Copas x.x.x</strong> [2014]</dt>
+    <dt><strong>Copas x.x.x</strong> [2015]</dt>
 	<dd><ul>
-		<li>Added removeserver() function to remove servers from the scheduler (by Paul Kulchenko)</li>
-		<li>Added client requests for http, https, ftp, and smtp (like LuaSocket/LuaSec, but async)</li>
+		<li>Added <code>removeserver()</code> function to remove servers from the scheduler (by Paul Kulchenko)</li>
+		<li>Added client requests for http(s), ftp, and smtp (like LuaSocket/LuaSec, but async)</li>
 		<li>Added transparent async support (handshake, and transmit/receive) for ssl using LuaSec</li>
                 <li>Change the loop now exits when there is nothing more to do</li>
                 <li>Change dummy first argument to new tasks removed</li>
                 <li>Fixed completed the socket wrappers, missing functions were added</li>
-                <li>Fixed connect issue, step() errorring out instead of returning nil + error</li>
+                <li>Fixed connect issue, <code>step()</code> errorring out instead of returning <code>nil + error</code></li>
 		<li>Fixed UDP sockets being auto closed</li>
-		<li>Fixed the receivePartial function for http request support (by Paul Kulchenko)</li>
+		<li>Fixed the <code>receivePartial</code> function for http request support (by Paul Kulchenko)</li>
 	</ul></dd>
 
     <dt><strong>Copas 1.2.1</strong> [2013]</dt>
