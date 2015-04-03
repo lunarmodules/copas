@@ -250,7 +250,7 @@ function copas.receivePartial(client, pattern, part)
   local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout(err)) then
+    if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout[err]) then
       current_log[client] = nil
       return s, err, part
     end
@@ -290,7 +290,6 @@ function copas.send(client, data, from, to)
       current_log[client] = nil
       return s, err,lastIndex
     end
-    _writing_log[client] = gettime()
     if err == "wantwrite" then
       current_log = _reading_log
       current_log[client] = gettime()
