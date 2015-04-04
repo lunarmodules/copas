@@ -374,8 +374,8 @@ Here's an example for an incoming connection in a server scenario;
 </p>
 <pre class="example">
 function handler(skt)
-  skt = copas.wrap(skt)
-  skt:handshake(sslparams)
+  skt = copas.wrap(skt):dohandshake(sslparams)
+  -- skt = copas.wrap(skt, sslparams):dohandshake()  -- would be identical
 
   while true do
 
@@ -388,7 +388,7 @@ end
 Here's an example for an outgoing request;
 </p>
 <pre class="example">
-copas.addhandler(function()
+copas.addthread(function()
   local skt = copas.wrap(socket.tcp(), sslparams)
   skt:connect(host, port)  -- connecting will also perform the handshake on a wrapped socket
 

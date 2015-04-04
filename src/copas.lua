@@ -354,12 +354,19 @@ end
 ---
 -- Peforms an (async) ssl handshake on a connected TCP client socket.
 -- NOTE: replace all previous socket references, with the returned new ssl wrapped socket
+-- Throws error and does not return nil+error, as that might silently fail
+-- in code like this;
+--   copas.addserver(s1, function(skt)
+--       skt = copas.wrap(skt, sparams)
+--       skt:dohandshake()   --> without explicit error checking, this fails silently and
+--       skt:send(body)      --> continues unencrypted
 -- @param skt Regular LuaSocket CLIENT socket object
 -- @param sslt Table with ssl parameters
--- @return wrapped ssl socket, or nil + errormsg
-function copas.handshake(skt, sslt)  
+-- @return wrapped ssl socket, or throws an error
+function copas.dohandshake(skt, sslt)  
   ssl = ssl or require("ssl")
-  local nskt = ssl.wrap(skt, sslt)
+  local nskt, err = ssl.wrap(skt, sslt)
+  if not nskt then return error(err) end
   local queue
   nskt:settimeout(0)
   repeat
@@ -371,7 +378,7 @@ function copas.handshake(skt, sslt)
     elseif err == "wantwrite" then
       queue = _reading
     else
-      return nil, err
+      error(err)
     end
     coroutine.yield(nskt, queue)
   until false    
@@ -413,7 +420,7 @@ local _skt_mt_tcp = {
                    connect = function(self, ...)
                      local res, err = copas.connect(self.socket, ...)
                      if res and self.ssl_params then
-                       res, err = self:handshake()
+                       res, err = self:dohandshake()
                      end  
                      return res, err
                    end,
@@ -441,12 +448,12 @@ local _skt_mt_tcp = {
 
                    shutdown = function(self, ...) return self.shutdown:accept(...) end,
 
-                   handshake = function(self, sslt)
+                   dohandshake = function(self, sslt)
                      self.ssl_params = sslt or self.ssl_params
-                     local nskt, err = copas.handshake(self.socket, self.ssl_params)
-                     if not nskt then return nil, err end
+                     local nskt, err = copas.dohandshake(self.socket, self.ssl_params)
+                     if not nskt then return nskt, err end
                      self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
-                     return true
+                     return self
                    end,
                    
                }}
@@ -457,7 +464,7 @@ for k,v in pairs(_skt_mt_tcp) do _skt_mt_udp[k] = _skt_mt_udp[k] or v end
 for k,v in pairs(_skt_mt_tcp.__index) do _skt_mt_udp.__index[k] = v end
 
 _skt_mt_udp.__index.sendto =      function (self, ...)
-                                    -- UDP sending is non-blocking, but we provide starvation prevention...
+                                    -- UDP sending is non-blocking, but we provide starvation prevention, so replace anyway
                                     return copas.sendto (self.socket, ...)
                                   end
 
@@ -474,6 +481,10 @@ _skt_mt_udp.__index.setpeername = function(self, ...) return self.socket:getpeer
 
 _skt_mt_udp.__index.setsockname = function(self, ...) return self.socket:setsockname(...) end
 
+                                    -- do not close client, as it is also the server for udp.
+_skt_mt_udp.__index.close       = function(self, ...) return true end
+
+
 ---
 -- Wraps a LuaSocket socket object in an async Copas based socket object.
 -- @param skt The socket to wrap
@@ -484,7 +495,7 @@ function copas.wrap (skt, sslt)
     return skt -- already wrapped
   end
   skt:settimeout(0.001)
-  if string.sub(tostring(skt),1,3) == "udp" then
+  if not isTCP(skt) then
     return  setmetatable ({socket = skt}, _skt_mt_udp)
   else
     return  setmetatable ({socket = skt, ssl_params = sslt}, _skt_mt_tcp)

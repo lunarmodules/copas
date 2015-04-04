@@ -1,5 +1,5 @@
 local copas = require("copas")
-local https = require("copas.https")
+local https = require("copas.http")
 local luasec = require("ssl.https")
 
 local url = "https://www.google.nl"

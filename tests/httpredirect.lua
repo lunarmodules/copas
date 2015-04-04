@@ -35,7 +35,7 @@ copas.addthread(function()
   assert(headers.location == "https://github.com/brunoos/luasec")
   print("https -> https redirect OK!")
   copas.addthread(function()
-    local result, code, headers, status = doreq("http://goo.gl/UBCUc5")  -- https --> https redirect
+    local result, code, headers, status = doreq("http://goo.gl/UBCUc5")  -- http --> https redirect
     assert(tonumber(code)==200)
     assert(headers.location == "https://github.com/brunoos/luasec")
     print("http  -> https redirect OK!")
