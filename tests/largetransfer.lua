@@ -5,6 +5,10 @@
 -- Test should;
 --  * show timer output, once per minute, and actual time should be 60 second increments
 --  * both transmissions should take appr. equal time, then they we're nicely cooperative
+--
+-- Requires;
+--  * test certificates, generated using LuaSec scripts in ./samples/certs
+--    generate them and put all the 'A' certificates next to this testscript
 
 local copas = require 'copas'
 local socket = require 'socket'
@@ -80,24 +84,24 @@ local function runtest()
   print("Loop done")
 end
 
---runtest()   -- run test using regular connection (s/cparams == nil)
+runtest()   -- run test using regular connection (s/cparams == nil)
 
--- set ssl parameters and do it again again
+-- set ssl parameters and do it again
 sparams = {
    mode = "server",
    protocol = "tlsv1",
-   key = "../certs/serverAkey.pem",
-   certificate = "../certs/serverA.pem",
-   cafile = "../certs/rootA.pem",
+   key = "./serverAkey.pem",
+   certificate = "./serverA.pem",
+   cafile = "./rootA.pem",
    verify = {"peer", "fail_if_no_peer_cert"},
    options = {"all", "no_sslv2"},
 }
 cparams = {
    mode = "client",
    protocol = "tlsv1",
-   key = "../certs/clientAkey.pem",
-   certificate = "../certs/clientA.pem",
-   cafile = "../certs/rootA.pem",
+   key = "./clientAkey.pem",
+   certificate = "./clientA.pem",
+   cafile = "./rootA.pem",
    verify = {"peer", "fail_if_no_peer_cert"},
    options = {"all", "no_sslv2"},
 }

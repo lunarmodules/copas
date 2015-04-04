@@ -214,7 +214,7 @@ function copas.receive(client, pattern, part)
       current_log[client] = nil
       return s, err, part
     end
-    if err == "wantread" then
+    if err == "wantwrite" then
       current_log = _writing_log
       current_log[client] = gettime()
       coroutine.yield(client, _writing)
@@ -254,7 +254,7 @@ function copas.receivePartial(client, pattern, part)
       current_log[client] = nil
       return s, err, part
     end
-    if err == "wantread" then
+    if err == "wantwrite" then
       current_log = _writing_log
       current_log[client] = gettime()
       coroutine.yield(client, _writing)
@@ -290,7 +290,7 @@ function copas.send(client, data, from, to)
       current_log[client] = nil
       return s, err,lastIndex
     end
-    if err == "wantwrite" then
+    if err == "wantread" then
       current_log = _reading_log
       current_log[client] = gettime()
       coroutine.yield(client, _reading)
@@ -373,9 +373,9 @@ function copas.dohandshake(skt, sslt)
     local success, err = nskt:dohandshake()
     if success then
       return nskt
-    elseif err == "wantread" then
-      queue = _writing
     elseif err == "wantwrite" then
+      queue = _writing
+    elseif err == "wantread" then
       queue = _reading
     else
       error(err)
