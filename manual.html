@@ -40,6 +40,11 @@
             <li><a href="manual.html#introduction">Introduction</a></li>
             <li><a href="manual.html#why">Why use Copas?</a></li>
             <li><a href="manual.html#using">Using Copas</a></li>
+            <li><a href="manual.html#udp">UDP support</a></li>
+            <li><a href="manual.html#tasks">Adding tasks</a></li>
+            <li><a href="manual.html#timers">Creating timers</a></li>
+            <li><a href="manual.html#ssl">Ssl support</a></li>
+            <li><a href="manual.html#highlevel">http(s), ftp & smtp</a></li>
             <li><a href="manual.html#control">Controlling Copas</a></li>
         </ul>
     </li>
@@ -259,7 +264,7 @@ allows your handler code to remain basically the same:</p>
 <pre class="example">
 function handle(skt)
   -- this line may suffice for your handler to work with Copas
-  skt = copas.wrap(skt)
+  skt = copas.wrap(skt)   -- or... skip this line and wrap `handle` using copas.handler()
   -- now skt behaves like a LuaSocket socket but uses Copas'
   ...
   -- gets some data from the client - "the request"
@@ -314,16 +319,17 @@ on a UDP socket, the <code>size</code> parameter is NOT optional as with regular
 luasocket UDP sockets. This limitation is removed when the socket is wrapped 
 (it then defaults to 8192, the max UDP datagram size luasocket supports).</p>
 
-<h2><a name="thread"></a>Adding threads</h2>
-<p>Additional threads may be added to the scheduler, as long as they use the Copas send and receive methods. Below an example of a thread being added to create an outgoing TCP connection using Copas;</p>
+<h2><a name="tasks"></a>Adding tasks</h2>
+<p>Additional threads may be added to the scheduler, as long as they use the Copas <code>send</code>, <code>receive</code> or <code>sleep</code> methods. Below an example of a thread being added to create an outgoing TCP connection using Copas;</p>
 <pre class="example">
 local socket = require("socket")
-local copas = require("copas.timer")
+local copas = require("copas")
 
 local host = "127.0.0.1"
 local port = 10000
 
 local skt = socket.connect(host, port)
+skt:settimeout(0)  -- important: make it non-blocking
 
 copas.addthread(function()
    while true do
@@ -339,7 +345,105 @@ end)
 
 copas.loop()
 </pre>
-<p>The example connects, echoes whatever it receives and exits upon receiving 'quit'.</p>
+<p>The example connects, echoes whatever it receives and exits upon receiving 'quit'. For an 
+example passing arguments to a task, see the async http example below.</p>
+
+<h2><a name="timers"></a>Creating timers</h2>
+<p>Timers can be created using the <code>addthread</code> method with the <code>sleep</code> method. 
+Below an example of a thread being added to create and used as a timer;</p>
+<pre class="example">
+local copas = require("copas")
+
+copas.addthread(function()
+   print("This will print immediately, upon adding the thread. So before the loop starts")
+   while true do
+      copas.sleep(1) -- 1 second interval
+      print("Hello there!")
+   end
+end)
+
+print("We're starting!")
+copas.loop()
+</pre>
+<p>The example simply prints a message once every second.</p>
+
+<h2><a name="ssl"></a>Ssl support</h2>
+<p>LuaSec is transparently integrated in the Copas scheduler.</p>
+<p>
+Here's an example for an incoming connection in a server scenario;
+</p>
+<pre class="example">
+function handler(skt)
+  skt = copas.wrap(skt):dohandshake(sslparams)
+  -- skt = copas.wrap(skt, sslparams):dohandshake()  -- would be identical
+
+  while true do
+    -- perform the regular reading/writing ops on skt
+  end
+end
+</pre>
+<p>
+A simpler handler would wrap the handler function to do the wrapping and 
+handshake before the handler gets called;
+</p>
+<pre class="example">
+function handle(skt)
+  -- by now `skt` is copas wrapped, and has its handshake already completed
+
+  while true do
+    -- perform the regular reading/writing ops on skt
+  end
+end
+handle = copas.handler(handle, sslparams)  -- wraps the handler to auto wrap and handshake
+</pre>
+<p>
+Here's an example for an outgoing request;
+</p>
+<pre class="example">
+copas.addthread(function()
+  local skt = copas.wrap(socket.tcp(), sslparams)
+  skt:connect(host, port)  -- connecting will also perform the handshake on a wrapped socket
+
+  while true do
+
+    -- perform the regular reading/writing ops on skt
+
+  end
+end
+</pre>
+
+<h2><a name="highlevel"></a>High level requests</h2>
+
+<p>
+For creating high level requests; http(s), ftp or smtp versions of the
+methods are available that handle them async. As opposed to the original
+LuaSocket and LuaSec implementations.
+</p>
+<p>
+Below an example that schedules a number of http requests, then starts the Copas
+loop to execute them. The loop exits when it's done.
+</p>
+
+<pre class="example">
+local copas = require("copas")
+local asynchttp = require("copas.http").request
+
+local list = {
+  "http://www.google.com",
+  "http://www.microsoft.com",
+  "http://www.apple.com",
+  "http://www.facebook.com",
+  "http://www.yahoo.com",
+}
+
+local handler = function(host)
+  res, err = asynchttp(host)
+  print("Host done: "..host)
+end
+
+for _, host in ipairs(list) do copas.addthread(handler, host) end
+copas.loop()
+</pre>
 
 <h2><a name="control"></a>Controlling Copas</h2>
 

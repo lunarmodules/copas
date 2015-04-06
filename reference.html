@@ -40,6 +40,11 @@
             <li><a href="manual.html#introduction">Introduction</a></li>
             <li><a href="manual.html#why">Why use Copas?</a></li>
             <li><a href="manual.html#using">Using Copas</a></li>
+            <li><a href="manual.html#udp">UDP support</a></li>
+            <li><a href="manual.html#tasks">Adding tasks</a></li>
+            <li><a href="manual.html#timers">Creating timers</a></li>
+            <li><a href="manual.html#ssl">Ssl support</a></li>
+            <li><a href="manual.html#highlevel">http(s), ftp & smtp</a></li>
             <li><a href="manual.html#control">Controlling Copas</a></li>
         </ul>
     </li>
@@ -57,9 +62,16 @@
 <h2>Reference</h2>
 
 <p>
-Copas functions are separated in two groups.</p>
+<strong>NOTE:</strong> Some functions require DNS lookups, which is handled internally 
+by LuaSocket. This is being done in a <strong>blocking</strong> manner. Hence every function 
+that accepts a hostname as an argument (e.g. <code>tcp:connect()</code>, 
+<code>udp:sendto()</code>, etc.) is potentially blocking on the DNS resolving part.
+So either provide IP addresses (assuming the underlying OS will detect those and resolve 
+locally, non-blocking) or accept that the lookup might block.
+</p>
+<h3>Copas dispatcher main functions</h3>
 <p>
-The first group is relative to the use of the dispatcher itself and
+The group of functions is relative to the use of the dispatcher itself and
 are used to register servers and to execute the main loop of Copas:</p>
 
 <dl class="reference">
@@ -75,21 +87,43 @@ are used to register servers and to execute the main loop of Copas:</p>
         registered handlers as long as it uses the Copas socket functions.
     </dd>
 
-    <dt><strong><code>copas.addthread(thrd[, ...])</code></strong></dt>
-    <dd>Adds a new thread to the dispatcher using optional parameters.<br />
+    <dt><strong><code>copas.addthread(func [, ...])</code></strong></dt>
+    <dd>Adds a function as a new coroutine/thread to the dispatcher using 
+        optional parameters.<br />
         The thread will be executed in parallel with other threads and the
-        registered handlers as long as it uses the Copas socket functions.
+        registered handlers as long as it uses the Copas socket/sleep functions.
+        It returns the created coroutine.
     </dd>
 
-    <dt><strong><code>copas.loop(timeout)</code></strong></dt>
-    <dd>Starts the Copas infinite loop accepting client connections for the 
+    <dt><strong><code>copas.autoclose</code></strong></dt>
+    <dd>Constant that controls whether sockets are automatically closed.<br />
+        When a TCP handler function completes and terminates, then the client
+        socket will be automatically closed when <code>copas.autoclose</code> is 
+        truthy (neither <code>nil</code> nor <code>false</code>).
+    </dd>
+
+    <dt><strong><code>copas.finished()</code></strong></dt>
+    <dd>Checks whether anything remains to be done.<br />
+        Returns <code>false</code> when the sockets lists for reading and writing
+        are empty and there is no other (sleeping) task to execute.
+    </dd>
+
+    <dt><strong><code>copas.loop([timeout])</code></strong></dt>
+    <dd>Starts the Copas loop accepting client connections for the 
         registered servers and handling those connections with the corresponding
         handlers. Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
-        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
+        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional,
+        and is passed to the <code>copas.step()</code> function.
+        The loop returns when <code>copas.finished() == true</code>.
     </dd>
     
-    <dt><strong><code>copas.step(timeout)</code></strong></dt>
+    <dt><strong><code>copas.removeserver(skt)</code></strong></dt>
+    <dd>Removes a server socket from the Copas scheduler. 
+    The socket will be closed to allow the socket to be reused right away after removing the server.
+    </dd>
+
+    <dt><strong><code>copas.step([timeout])</code></strong></dt>
     <dd>Executes one copas iteration accepting client connections for the 
         registered servers and handling those connections with the corresponding
         handlers. When a server accepts a connection, Copas calls the
@@ -103,44 +137,140 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dt><strong><code>copas.setErrorHandler(func)</code></strong></dt>
     <dd>Sets the error handling function for the current thread. Any socket
         errors will be forwarded to the handler, which will receive the
-        error message, the thread, and the socket as arguments.</dd>
+        error message, the thread, and the socket as arguments.
     </dd>
 </dl>
 
-<p>The second group is used by the handler functions to exchange data with
+<h3>Non-blocking data exchange and timer/sleep functions</h3>
+
+<p>These are used by the handler functions to exchange data with
 the clients, and by threads registered with <code>addthread</code> to
 exchange data with other services.</p>
 
 <dl class="reference">
-    <dt><strong><code>copas.flush(skt)</code></strong> (deprecated)</dt>
+    <dt><strong><code>copas.connect(skt, address, port)</code></strong></dt>
+    <dd>Connects and transforms a master socket to a client just like LuaSocket
+    <code>socket:connect()</code>. The Copas version does not block and allows
+    the multitasking of the other handlers and threads.
+    </dd>
+
+    <dt><strong><code>copas.dohandshake(skt, sslparams)</code></strong></dt>
+    <dd>Performs an ssl handshake on an already connected TCP client socket. It
+    returns the new ssl-socket on success, or throws an error on failure.
+    </dd>
+
+    <dt><strong><code>copas.flush(skt)</code></strong></br></dt>
+    <dd>(deprecated)</dd>
     
-    <dt><strong><code>copas.receive(skt, pattern)</code></strong></dt>
+    <dt><strong><code>copas.handler(connhandler [, sslparams])</code></strong></dt>
+    <dd>Wraps the <code>connhandler</code> function. Returns a new function that 
+    wraps the client socket, and (if <code>sslparams</code> is provided) performs 
+    the ssl handshake, before calling <code>connhandler</code>.
+    </dd>
+
+    <dt><strong><code>copas.receive(skt [, pattern])</code></strong> (TCP) or</br>
+    <strong><code>copas.receive(size)</code></strong> (UDP) 
+    </dt>
     <dd>Reads data from a client socket according to a pattern just like LuaSocket
     <code>socket:receive()</code>. The Copas version does not block and allows
+    the multitasking of the other handlers and threads.</br>
+    <strong>Note:</strong> for UDP sockets the <code>size</code> parameter is NOT
+    optional. For the wrapped function <code>socket:receive([size])</code> it is
+    optional again.
+    </dd>
+
+    <dt><strong><code>copas.receivefrom(skt [, size])</code></strong></dt>
+    <dd>Reads data from a UDP socket just like LuaSocket
+    <code>socket:receivefrom()</code>. The Copas version does not block and allows
     the multitasking of the other handlers and threads.
     </dd>
     
-    <dt><strong><code>copas.send(skt, data)</code></strong></dt>
+    <dt><strong><code>copas.send(skt, data [, i [, j]])</code></strong> (TCP) or</br>
+    <strong><code>copas.send(skt, datagram)</code></strong> (UDP)
+    </dt>
     <dd>Sends data to a client socket just like <code>socket:send()</code>. The Copas version
     is buffered and does not block, allowing the multitasking of the other handlers and threads.
     </dd>
-    
-    <dt><strong><code>copas.wrap(skt)</code></strong></dt>
-    <dd>Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
-    but use Copas' methods <code>copas.send()</code> and <code>copas.receive()</code>
-    automatically.
-    </dd>
 
-    <dt><strong><code>copas.sleep(sleeptime)</code></strong></dt>
-    <dd><code>sleeptime</code> (in seconds) is optional and defaults to 0. If <code>sleeptime &lt 0</code>
+    <dt><strong><code>copas.sendto(skt, datagram, ip, port)</code></strong></dt>
+    <dd>Sends data over a UDP socket just like LuaSocket
+    <code>socket:sendto()</code>. The Copas version does not block and allows
+    the multitasking of the other handlers and threads.
+    </dd>
+        
+    <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>
+    <dd>Pauses the current co-routine. Parameter <code>sleeptime</code> (in seconds) is optional 
+    and defaults to 0. If <code>sleeptime &lt 0</code>
     then it will sleep until explicitly woken by a call to <code>copas.wakeup()</code>.
     </dd>
 
     <dt><strong><code>copas.wakeup(co)</code></strong></dt>
-    <dd><code>co</code> is the coroutine to wakeup. Use <code>coroutine.running()</code> inside
-    the handler function to get the value for <code>co</code>.
+    <dd><code>co</code> is the coroutine to wakeup.
     </dd>
 
+    <dt><strong><code>copas.wrap(skt [, sslparams] )</code></strong></dt>
+    <dd>Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
+    but use Copas' methods like <code>copas.send()</code> and <code>copas.receive()</code>
+    automatically. If the <code>sslparams</code> is provided, then a call to the wrapped
+    <code>skt:connect()</code> method will automatically include the handshake (and in that 
+    case <code>connect()</code> might throw an error instead of returning nil+error, see 
+    <code>copas.dohandshake()</code>). To use ssl with defaults; provide an empty table.
+    </dd>
+
+</dl>
+
+<h3>High level request functions</h3>
+
+<p>The last ones are the higher level client functions to perform requests to (remote) 
+servers.</br>
+</p>
+    <dt><strong><code>copas.http.request(url [, body])</code></strong> or</br> 
+        <strong><code>copas.http.request(requestparams)</code></strong></dt>
+    <dd>Performs an http or https request, identical to the LuaSocket and LuaSec 
+    implementations, but wrapped in an async operation. As opposed to the original 
+    implementations, this one also allows for redirects cross scheme (http to https and 
+    viceversa). </br><strong>Note:</strong> https to http redirects are not allowed by 
+    default, but only when <code>requestparams.redirect == "all"</code>
+    </dd>
+
+    <dt><strong><code>copas.ftp.put(url, content)</code></strong> or</br> 
+        <strong><code>copas.ftp.put(requestparams)</code></strong></dt>
+    <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
+    an async operation.
+    </dd>
+
+    <dt><strong><code>copas.ftp.get(url)</code></strong> or</br> 
+        <strong><code>copas.ftp.get(requestparams)</code></strong></dt>
+    <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
+    an async operation.
+    </dd>
+
+    <dt><strong><code>copas.smtp.send(msgparams)</code></strong></dt>
+    <dd>Sends an smtp request, identical to the LuaSocket implementation, but wrapped in
+    an async operation.
+    </dd>
+
+    <dt><strong><code>copas.smtp.message(msgt)</code></strong></dt>
+    <dd>Just points to <code>socket.smtp.message</code>, provided so the <code>copas.smtp</code> 
+    module is a drop-in replacement for the <code>socket.smtp</code> module
+    </dd>
+
+    <dt><strong><code>copas.limit.new(max)</code></strong></dt>
+    <dd>Creates and returns a `limitset` that limits the concurrent tasks to <code>max</code> number
+    of running tasks. Eg. 100 http requests, in a set with <code>max == 10</code>, then no more than
+    10 requests will be performed simultaneously. Only when a request finishes, the next will be started.
+    </dd>
+
+    <dt><strong><code>limitset:addthread(func [, ...])</code></strong></dt>
+    <dd>Identical to <code>copas.addthread</code>, except that it operates within the limits of
+    the set of running tasks.
+    </dd>
+
+    <dt><strong><code>limitset:wait()</code></strong></dt>
+    <dd>Will yield until all tasks in the set have finished.
+    </dd>
+
+<dl class="reference">
 </dl>
 
 </div> <!-- id="content" -->

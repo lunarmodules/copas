@@ -40,6 +40,11 @@
             <li><a href="manual.html#introduction">Introduction</a></li>
             <li><a href="manual.html#why">Why use Copas?</a></li>
             <li><a href="manual.html#using">Using Copas</a></li>
+            <li><a href="manual.html#udp">UDP support</a></li>
+            <li><a href="manual.html#tasks">Adding tasks</a></li>
+            <li><a href="manual.html#timers">Creating timers</a></li>
+            <li><a href="manual.html#ssl">Ssl support</a></li>
+            <li><a href="manual.html#highlevel">http(s), ftp & smtp</a></li>
             <li><a href="manual.html#control">Controlling Copas</a></li>
         </ul>
     </li>
@@ -58,17 +63,23 @@
 <h2><a name="over"></a>Overview</h2>
 
 <p>
-Copas is a dispatcher based on coroutines that can be used by
-TCP/IP servers. It uses
-<a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>
-as the interface with the TCP/IP stack.
+Copas is a dispatcher based on coroutines that can be used for asynchroneous 
+networking. For example TCP or UDP based servers. But it also features timers 
+and client support for http(s), ftp and smtp requests.
 </p>
+
 <p>
-A server registered with Copas should provide a handler for requests and use
-Copas socket functions to send the response. Copas loops through requests and
-invokes the corresponding handlers. For a full implementation of a Copas HTTP
-server you can refer to <a href="http://www.keplerproject.org/xavante">Xavante</a>
-as an example.
+It uses <a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a> 
+as the interface with the TCP/IP stack and <a href="https://github.com/brunoos/luasec">LuaSec</a> for ssl 
+support.
+</p>
+
+<p>
+A server or thread registered with Copas should provide a handler for requests and use
+Copas socket functions to send the response.
+Copas loops through requests and invokes the corresponding handlers.
+For a full implementation of a Copas HTTP server you can refer to 
+<a href="http://www.keplerproject.org/xavante">Xavante</a> as an example.
 </p>
 
 <p>Copas is free software and uses the same <a href="license.html">license</a>
@@ -77,7 +88,7 @@ as Lua 5.1 and 5.2</p>
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 1.2.1 and was developed for Lua 5.1 and 5.2.</p>
+<p>Current version is 2.0.0 and was developed for Lua 5.1 and 5.2.</p>
 
 <h2><a name="download"></a>Download</h2>
 
@@ -97,12 +108,26 @@ luarocks install copas
 <h2><a name="dependencies"></a>Dependencies</h2>
 
 <p>Copas depends on
-LuaSocket and <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a>.
+LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only when using Lua 5.1), and (optionally) LuaSec.
 </p>
 
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>Copas 2.0.0</strong> [2015]</dt>
+	<dd><ul>
+		<li>Added: <code>removeserver()</code> function to remove servers from the scheduler (by Paul Kulchenko)</li>
+		<li>Added: client requests for http(s), ftp, and smtp (like LuaSocket/LuaSec, but async)</li>
+		<li>Added: transparent async support (handshake, and send/receive) for ssl using LuaSec</li>
+                <li>Added: <code>handler()</code> as a convenience for full copas and ssl wrapping</li>
+                <li>[breaking] Change: the loop now exits when there is nothing more to do</li>
+                <li>[breaking] Change: dummy first argument to new tasks removed</li>
+                <li>Fixed: completed the socket wrappers, missing functions were added</li>
+                <li>Fixed: connect issue, <code>step()</code> errorring out instead of returning <code>nil + error</code></li>
+		<li>Fixed: UDP sockets being auto closed</li>
+		<li>Fixed: the <code>receivePartial</code> function for http request support (by Paul Kulchenko)</li>
+	</ul></dd>
+
     <dt><strong>Copas 1.2.1</strong> [2013]</dt>
 	<dd><ul>
 		<li>Fixed bad version constant</li>
