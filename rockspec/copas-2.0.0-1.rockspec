@@ -1,7 +1,8 @@
 package = "Copas"
-version = "cvs-2"
+version = "2.0.0-1"
 source = {
-  url = "git://github.com/keplerproject/copas.git"
+   url = "https://github.com/keplerproject/copas/archive/v2_0_0.tar.gz",
+   dir = "copas-2_0_0",
 }
 description = {
    summary = "Coroutine Oriented Portable Asynchronous Services",
@@ -18,11 +19,17 @@ description = {
    homepage = "http://www.keplerproject.org/copas/"
 }
 dependencies = {
-   "lua >= 5.1",
-   "luasocket >= 2.0",
-   "coxpcall >= 1.13",
+   "lua >= 5.1, < 5.3",
+   "luasocket >= 2.1",
+   "coxpcall >= 1.14",
 }
 build = {
-   type = "module",
-   modules = { copas = "src/copas/copas.lua" }
+   type = "builtin",
+   modules = { 
+     ["copas"] = "src/copas.lua",
+     ["copas.http"] = "src/copas/http.lua",
+     ["copas.ftp"] = "src/copas/ftp.lua",
+     ["copas.smtp"] = "src/copas/smtp.lua",
+     ["copas.limit"] = "src/copas/limit.lua",
+   }
 }

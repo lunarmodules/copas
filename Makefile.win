@@ -5,4 +5,10 @@ LUA_DIR= c:\lua5.1\lua
 build clean:
 
 install:
-	copy src\copas\copas.lua "$(LUA_DIR)"
+	mkdir "$(LUA_DIR)\copas"
+	copy src\copas.lua "$(LUA_DIR)"
+	copy src\copas.lua "$(LUA_DIR)\copas.lua"
+	copy src\copas\ftp.lua "$(LUA_DIR)\copas\ftp.lua"
+	copy src\copas\smtp.lua "$(LUA_DIR)\copas\smtp.lua"
+	copy src\copas\http.lua "$(LUA_DIR)\copas\http.lua"
+	copy src\copas\limit.lua "$(LUA_DIR)\copas\limit.lua"
