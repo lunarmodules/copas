@@ -88,7 +88,7 @@ as Lua 5.1 and 5.2</p>
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 1.2.1 and was developed for Lua 5.1 and 5.2.</p>
+<p>Current version is 2.0.0 and was developed for Lua 5.1 and 5.2.</p>
 
 <h2><a name="download"></a>Download</h2>
 
@@ -108,23 +108,24 @@ luarocks install copas
 <h2><a name="dependencies"></a>Dependencies</h2>
 
 <p>Copas depends on
-LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only when using Lua 5.1), and LuaSec.
+LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only when using Lua 5.1), and (optionally) LuaSec.
 </p>
 
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
-    <dt><strong>Copas x.x.x</strong> [2015]</dt>
+    <dt><strong>Copas 2.0.0</strong> [2015]</dt>
 	<dd><ul>
-		<li>Added <code>removeserver()</code> function to remove servers from the scheduler (by Paul Kulchenko)</li>
-		<li>Added client requests for http(s), ftp, and smtp (like LuaSocket/LuaSec, but async)</li>
-		<li>Added transparent async support (handshake, and transmit/receive) for ssl using LuaSec</li>
-                <li>Change the loop now exits when there is nothing more to do</li>
-                <li>Change dummy first argument to new tasks removed</li>
-                <li>Fixed completed the socket wrappers, missing functions were added</li>
-                <li>Fixed connect issue, <code>step()</code> errorring out instead of returning <code>nil + error</code></li>
-		<li>Fixed UDP sockets being auto closed</li>
-		<li>Fixed the <code>receivePartial</code> function for http request support (by Paul Kulchenko)</li>
+		<li>Added: <code>removeserver()</code> function to remove servers from the scheduler (by Paul Kulchenko)</li>
+		<li>Added: client requests for http(s), ftp, and smtp (like LuaSocket/LuaSec, but async)</li>
+		<li>Added: transparent async support (handshake, and send/receive) for ssl using LuaSec</li>
+                <li>Added: <code>handler()</code> as a convenience for full copas and ssl wrapping</li>
+                <li>[breaking] Change: the loop now exits when there is nothing more to do</li>
+                <li>[breaking] Change: dummy first argument to new tasks removed</li>
+                <li>Fixed: completed the socket wrappers, missing functions were added</li>
+                <li>Fixed: connect issue, <code>step()</code> errorring out instead of returning <code>nil + error</code></li>
+		<li>Fixed: UDP sockets being auto closed</li>
+		<li>Fixed: the <code>receivePartial</code> function for http request support (by Paul Kulchenko)</li>
 	</ul></dd>
 
     <dt><strong>Copas 1.2.1</strong> [2013]</dt>

@@ -1,7 +1,8 @@
 package = "Copas"
-version = "cvs-3"
+version = "2.0.0-1"
 source = {
-  url = "git://github.com/keplerproject/copas.git"
+   url = "https://github.com/keplerproject/copas/archive/v2_0_0.tar.gz",
+   dir = "copas-2_0_0",
 }
 description = {
    summary = "Coroutine Oriented Portable Asynchronous Services",
