@@ -162,6 +162,12 @@ exchange data with other services.</p>
     <dt><strong><code>copas.flush(skt)</code></strong></br></dt>
     <dd>(deprecated)</dd>
     
+    <dt><strong><code>copas.handler(connhandler [, sslparams])</code></strong></dt>
+    <dd>Wraps the <code>connhandler</code> function. Returns a new function that 
+    wraps the client socket, and (if <code>sslparams</code> is provided) performs 
+    the ssl handshake, before calling <code>connhandler</code>.
+    </dd>
+
     <dt><strong><code>copas.receive(skt [, pattern])</code></strong> (TCP) or</br>
     <strong><code>copas.receive(size)</code></strong> (UDP) 
     </dt>
@@ -199,8 +205,7 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>copas.wakeup(co)</code></strong></dt>
-    <dd><code>co</code> is the coroutine to wakeup. Use <code>coroutine.running()</code> inside
-    the handler function to get the value for <code>co</code>.
+    <dd><code>co</code> is the coroutine to wakeup.
     </dd>
 
     <dt><strong><code>copas.wrap(skt [, sslparams] )</code></strong></dt>

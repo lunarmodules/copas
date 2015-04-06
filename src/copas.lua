@@ -494,13 +494,24 @@ function copas.wrap (skt, sslt)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then 
     return skt -- already wrapped
   end
-  skt:settimeout(0.001)
+  skt:settimeout(0)
   if not isTCP(skt) then
     return  setmetatable ({socket = skt}, _skt_mt_udp)
   else
     return  setmetatable ({socket = skt, ssl_params = sslt}, _skt_mt_tcp)
   end
 end
+
+--- Wraps a handler in a function that deals with wrapping the socket and doing the
+-- optional ssl handshake.
+function copas.handler(handler, sslparams)
+  return function (skt, ...) 
+    skt = copas.wrap(skt)
+    if sslparams then skt:dohandshake(sslparams) end
+    return handler(skt, ...)
+  end
+end
+
 
 --------------------------------------------------
 -- Error handling
@@ -565,13 +576,13 @@ end
 -- Adds a server/handler pair to Copas dispatcher
 -------------------------------------------------------------------------------
 local function addTCPserver(server, handler, timeout)
-  server:settimeout(timeout or 0.001)
+  server:settimeout(timeout or 0)
   _servers[server] = handler
   _reading:insert(server)
 end
 
 local function addUDPserver(server, handler, timeout)
-    server:settimeout(timeout or 0.001)
+    server:settimeout(timeout or 0)
     local co = coroutine.create(handler)
     _reading:insert(server)
     _doTick (co, server)

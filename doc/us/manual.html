@@ -264,7 +264,7 @@ allows your handler code to remain basically the same:</p>
 <pre class="example">
 function handle(skt)
   -- this line may suffice for your handler to work with Copas
-  skt = copas.wrap(skt)
+  skt = copas.wrap(skt)   -- or... skip this line and wrap `handle` using copas.handler()
   -- now skt behaves like a LuaSocket socket but uses Copas'
   ...
   -- gets some data from the client - "the request"
@@ -378,11 +378,23 @@ function handler(skt)
   -- skt = copas.wrap(skt, sslparams):dohandshake()  -- would be identical
 
   while true do
-
     -- perform the regular reading/writing ops on skt
-
   end
 end
+</pre>
+<p>
+A simpler handler would wrap the handler function to do the wrapping and 
+handshake before the handler gets called;
+</p>
+<pre class="example">
+function handle(skt)
+  -- by now `skt` is copas wrapped, and has its handshake already completed
+
+  while true do
+    -- perform the regular reading/writing ops on skt
+  end
+end
+handle = copas.handler(handle, sslparams)  -- wraps the handler to auto wrap and handshake
 </pre>
 <p>
 Here's an example for an outgoing request;

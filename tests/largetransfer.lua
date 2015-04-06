@@ -20,28 +20,24 @@ local sparams, cparams
 
 local function runtest()
   local s1 = socket.bind('*', 49500)
-  copas.addserver(s1, function(skt)
-      skt = copas.wrap(skt, sparams)
-      if sparams then skt:dohandshake() end
+  copas.addserver(s1, copas.handler(function(skt)
       --skt:settimeout(0)  -- don't set, uses `receive` method
       local res, err, part = skt:receive('*a')
       res = res or part
       if res ~= body then print("Received doesn't match send") end
       print("Reading... 49500... Done!", socket.gettime()-start, err, #res)
       if copas.removeserver then copas.removeserver(s1) end
-    end)
+    end, sparams))
 
   local s2 = socket.bind('*', 49501)
-  copas.addserver(s2, function(skt)
-      skt = copas.wrap(skt, sparams)
-      if sparams then skt:dohandshake() end
+  copas.addserver(s2, copas.handler(function(skt)
       skt:settimeout(0)  -- set, uses the `receivePartial` method
       local res, err, part = skt:receive('*a')
       res = res or part
       if res ~= body then print("Received doesn't match send") end
       print("Reading... 49501... Done!", socket.gettime()-start, err, #res)
       if copas.removeserver then copas.removeserver(s2) end
-    end)
+    end, sparams))
 
   copas.addthread(function()
       copas.sleep(0)
