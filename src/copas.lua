@@ -26,7 +26,7 @@ local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocke
 
 local pcall = pcall
 if _VERSION=="Lua 5.1" and      -- obsolete: only for Lua 5.1 compatibility
-    not (jit and jit.version and jit.version:find("LuaJIT", 1, true)) then
+    not (jit and jit.version and jit.version:match("^LuaJIT")) then
       --LuaJIT supports pcall and xpcall with right semantics
 
   pcall = require("coxpcall").pcall
@@ -208,7 +208,7 @@ local _sleeping = {
     --   "sleeping", time - co is sleeping and will woke up at time
     --   nil              - co didn't call copas.sleep(...)
     --                      co may wait on reading or writing
-    status = function(co)
+    status = function(self, co)
         local let = self.lethargy
         if let[co] then
             return "lethargy"
@@ -221,8 +221,6 @@ local _sleeping = {
             end
         end
 
-        --does next make sense???
-        --if co==coroutine.running() then return "running" end
         return nil
     end,
 } --_sleeping
@@ -763,6 +761,13 @@ end
 -- Wakes up a sleeping coroutine 'co'.
 function copas.wakeup(co, msg)
     _sleeping:wakeup(co, msg)
+end
+
+function copas.status(co)
+    if _writing_log[co] then return "writing" end
+    if _reading_log[co] then return "reading" end
+    if co==coroutine.running() then return "running" end
+    return _sleeping:status(co)
 end
 
 local last_cleansing = 0
