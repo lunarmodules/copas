@@ -25,42 +25,41 @@ local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocket
 
 local pcall = pcall
-if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
-  if jit and jit.version and jit.version:find("LuaJIT", 1, true) then
+if _VERSION=="Lua 5.1" and      -- obsolete: only for Lua 5.1 compatibility
+    not (jit and jit.version and jit.version:find("LuaJIT", 1, true)) then
       --LuaJIT supports pcall and xpcall with right semantics
+
+  pcall = require("coxpcall").pcall
+
+  -- Redefines LuaSocket functions with coroutine safe versions
+  -- (this allows the use of socket.http from within copas)
+  local function statusHandler(status, ...)
+  if status then return ... end
+  local err = (...)
+  if type(err) == "table" then
+    return nil, err[1]
   else
-    pcall = require("coxpcall").pcall
-
-    -- Redefines LuaSocket functions with coroutine safe versions
-    -- (this allows the use of socket.http from within copas)
-    local function statusHandler(status, ...)
-    if status then return ... end
-    local err = (...)
-    if type(err) == "table" then
-      return nil, err[1]
-    else
-      error(err)
-    end
-    end
-
-    function socket.protect(func)
-    return function (...)
-               return statusHandler(pcall(func, ...))
-           end
-    end
-
-    function socket.newtry(finalizer)
-    return function (...)
-             local status = (...)
-             if not status then
-                 pcall(finalizer, select(2, ...))
-               error({ (select(2, ...)) }, 0)
-             end
-             return ...
-           end
-    end
-    -- end of LuaSocket redefinitions
+    error(err)
   end
+  end
+
+  function socket.protect(func)
+  return function (...)
+             return statusHandler(pcall(func, ...))
+         end
+  end
+
+  function socket.newtry(finalizer)
+  return function (...)
+           local status = (...)
+           if not status then
+               pcall(finalizer, select(2, ...))
+             error({ (select(2, ...)) }, 0)
+           end
+           return ...
+         end
+  end
+  -- end of LuaSocket redefinitions
 end
 
 local copas = {}
