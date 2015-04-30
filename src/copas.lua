@@ -164,7 +164,9 @@ local _sleeping = {
         local co = c[1]
         table.remove(t, 1)
         table.remove(c, 1)
-        return co, self.messages[co]
+        local msg = self.messages[co]
+        self.messages[co] = nil
+        return co, msg
     end,
     wakeup = function(self, co, msg)
         local let = self.lethargy
