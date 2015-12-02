@@ -2,6 +2,7 @@
 
 local copas = require("copas")
 local http = require("copas.http")
+local ltn12 = require("ltn12")
 local dump_all_headers = false
 local redirect
 

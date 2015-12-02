@@ -3,7 +3,8 @@
 -- Run the test file and the connect to the server using telnet on the used port.
 -- The server should be able to echo any input, to stop the test just send the command "quit"
 
-local copas = require"copas"
+local copas = require("copas")
+local socket = require("socket")
 
 local function echoHandler(skt)
   skt = copas.wrap(skt)
