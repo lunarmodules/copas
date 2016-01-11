@@ -1,5 +1,5 @@
 package = "Copas"
-version = "cvs-3"
+version = "cvs-4"
 source = {
   url = "git://github.com/keplerproject/copas.git"
 }
@@ -18,7 +18,7 @@ description = {
    homepage = "http://www.keplerproject.org/copas/"
 }
 dependencies = {
-   "lua >= 5.1, < 5.3",
+   "lua >= 5.1, < 5.4",
    "luasocket >= 2.1",
    "coxpcall >= 1.14",
 }
