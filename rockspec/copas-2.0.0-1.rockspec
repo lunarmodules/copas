@@ -1,5 +1,5 @@
 package = "Copas"
-version = "2.0.0-1"
+version = "2.0.0-2"
 source = {
    url = "https://github.com/keplerproject/copas/archive/v2_0_0.tar.gz",
    dir = "copas-2_0_0",
@@ -19,7 +19,7 @@ description = {
    homepage = "http://www.keplerproject.org/copas/"
 }
 dependencies = {
-   "lua >= 5.1, < 5.3",
+   "lua >= 5.1, < 5.4",
    "luasocket >= 2.1",
    "coxpcall >= 1.14",
 }
