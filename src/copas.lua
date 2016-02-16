@@ -27,10 +27,11 @@ local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocke
 local pcall = pcall
 if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
   pcall = require("coxpcall").pcall
+end
   
-  -- Redefines LuaSocket functions with coroutine safe versions
-  -- (this allows the use of socket.http from within copas)
-  local function statusHandler(status, ...)
+-- Redefines LuaSocket functions with coroutine safe versions
+-- (this allows the use of socket.http from within copas)
+local function statusHandler(status, ...)
   if status then return ... end
   local err = (...)
   if type(err) == "table" then
@@ -38,26 +39,23 @@ if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
   else
     error(err)
   end
-  end
+end
 
-  function socket.protect(func)
-  return function (...)
-             return statusHandler(pcall(func, ...))
+function socket.protect(func)
+return function (...)
+           return statusHandler(pcall(func, ...))
+       end
+end
+
+function socket.newtry(finalizer)
+return function (...)
+         local status = (...)
+         if not status then
+             pcall(finalizer, select(2, ...))
+           error({ (select(2, ...)) }, 0)
          end
-  end
-
-  function socket.newtry(finalizer)
-  return function (...)
-           local status = (...)
-           if not status then
-               pcall(finalizer, select(2, ...))
-             error({ (select(2, ...)) }, 0)
-           end
-           return ...
-         end
-  end
-
-  -- end of LuaSocket redefinitions
+         return ...
+       end
 end
 
 local copas = {}
