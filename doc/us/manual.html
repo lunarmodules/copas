@@ -67,6 +67,8 @@
 <pre class="example">
 luarocks install copas
 </pre>
+<p>Note: LuaSec is not automatically installed as a dependency. If you want to use ssl with Copas, 
+you need to manually install LuaSec as well.</p>
 
 <h2><a name="introduction"></a>Introduction to Copas</h2>
 
@@ -105,8 +107,8 @@ function echoHandler(skt)
 end
 </pre>
 
-<p>If all you will do with the socket is send and receive data, you may alternatively use
-<code>copas.wrap()</code> to let your code more close to a standard LuaSocket use:</p>
+<p>You may alternatively use <code>copas.wrap()</code> to let your code more close to a standard 
+LuaSocket use:</p>
 
 <pre class="example">
 function echoHandler(skt)
@@ -276,7 +278,7 @@ function handle(skt)
 end
 </pre>
 
-<p>Finally, to run the dispatcher infinite loop you just call:</p>
+<p>Finally, to run the dispatcher loop you just call:</p>
 
 <pre class="example">
 copas.loop()
@@ -314,6 +316,7 @@ copas.loop()
 <p>For UDP sockets the <code>receivefrom()</code> and <code>sendto()</code> 
 methods are available, both for copas and when the socket is wrapped. These 
 methods cannot be used on TCP sockets.</p>
+<p><strong>IMPORTANT:</strong> UDP sockets do not have the notion of master and client sockets, so where a handler function can close the client socket for a TCP connection, a handler should never close a UDP socket, because the socket is the same as the server socket, hence closing it destroys the server.</p>
 <p><strong>NOTE:</strong> When using the <code>copas.receive([size])</code> method
 on a UDP socket, the <code>size</code> parameter is NOT optional as with regular
 luasocket UDP sockets. This limitation is removed when the socket is wrapped 
@@ -368,7 +371,7 @@ copas.loop()
 <p>The example simply prints a message once every second.</p>
 
 <h2><a name="ssl"></a>Ssl support</h2>
-<p>LuaSec is transparently integrated in the Copas scheduler.</p>
+<p>LuaSec is transparently integrated in the Copas scheduler (though must be installed separately when using LuaRocks).</p>
 <p>
 Here's an example for an incoming connection in a server scenario;
 </p>
