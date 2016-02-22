@@ -83,12 +83,12 @@ For a full implementation of a Copas HTTP server you can refer to
 </p>
 
 <p>Copas is free software and uses the same <a href="license.html">license</a>
-as Lua 5.1 and 5.2</p>
+as Lua 5.1 to 5.3</p>
 
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 2.0.0 and was developed for Lua 5.1 and 5.2.</p>
+<p>Current version is 2.0.1 and was developed for Lua 5.1 to 5.3.</p>
 
 <h2><a name="download"></a>Download</h2>
 
@@ -114,6 +114,13 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>Copas 2.0.1</strong> [2016]</dt>
+	<dd><ul>
+		<li>Added: support for Lua 5.3 (no code changes, just rockspec update)</li>
+                <li>Fixed: yield across c boundary error (by Peter Melnichenko)</li>
+                <li>Fixed: bug in wrappers for <code>setoption()</code> and <code>shutdown()</code> (reported by Rob Probin)</li>
+	</ul></dd>
+
     <dt><strong>Copas 2.0.0</strong> [2015]</dt>
 	<dd><ul>
 		<li>Added: <code>removeserver()</code> function to remove servers from the scheduler (by Paul Kulchenko)</li>
