@@ -68,6 +68,9 @@ copas._VERSION     = "Copas 2.0.1"
 -- Close the socket associated with the current connection after the handler finishes
 copas.autoclose = true
 
+-- indicator for the loop running
+copas.running = false
+
 -------------------------------------------------------------------------------
 -- Simple set implementation based on LuaSocket's tinyirc.lua example
 -- adds a FIFO queue for each value in the set
@@ -796,7 +799,9 @@ end
 -- Listen to client requests and handles them forever
 -------------------------------------------------------------------------------
 function copas.loop(timeout)
+  copas.running = true
   while not copas.finished() do copas.step(timeout) end
+  copas.running = false
 end
 
 return copas
