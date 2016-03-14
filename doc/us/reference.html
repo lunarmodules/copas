@@ -104,8 +104,11 @@ are used to register servers and to execute the main loop of Copas:</p>
 
     <dt><strong><code>copas.finished()</code></strong></dt>
     <dd>Checks whether anything remains to be done.<br />
-        Returns <code>false</code> when the sockets lists for reading and writing
-        are empty and there is not another (sleeping) task to execute.
+        Returns <code>false</code> when the socket lists for reading and writing
+        are empty and there is not another (sleeping) task to execute.</br>
+        <strong>NOTE:</strong> when tasks or sockets have been scheduled/setup this
+        function will return <code>true</code> even if the loop has not yet started.
+        See also <code>copas.running</code>.
     </dd>
 
     <dt><strong><code>copas.loop([timeout])</code></strong></dt>
@@ -123,6 +126,11 @@ are used to register servers and to execute the main loop of Copas:</p>
     The socket will be closed to allow the socket to be reused right away after removing the server.
     </dd>
 
+    <dt><strong><code>copas.running</code></strong></dt>
+    <dd>A flag set to <code>true</code> when <code>copas.loop()</code> starts, and reset to 
+    <code>false</code> when the loop exits. See also <code>copas.finished()</code>.
+    </dd>
+
     <dt><strong><code>copas.step([timeout])</code></strong></dt>
     <dd>Executes one copas iteration accepting client connections for the 
         registered servers and handling those connections with the corresponding
@@ -131,7 +139,9 @@ are used to register servers and to execute the main loop of Copas:</p>
         <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
         It returns <code>false</code> when no data was handled (timeout) or 
         <code>true</code> if there was data handled (or alternatively nil + error
-        message in case of errors).
+        message in case of errors).</br>
+        <strong>NOTE:</strong> the <code>copas.running</code> flag will not automatically
+        be (un)set. So when using your own main loop, consider manually setting the flag.
     </dd>
 
     <dt><strong><code>copas.setErrorHandler(func)</code></strong></dt>
