@@ -14,12 +14,12 @@ before_install:
   - export PATH=$PATH:$PWD/lua_install/bin # Add directory with all installed binaries to PATH
 
 install:
-  - luarocks install luasocket
-  - luarocks install luasec
+  - luarocks install luasec # optional dependency
   - luarocks install luacov
   - luarocks install luacov-coveralls
 
 script:
+  - luarocks make $(ls src/copas-[a-z]* | sort -r | head -n 1) # get latest development rockspec
   - make test
 
 after_success:
