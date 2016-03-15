@@ -20,6 +20,7 @@ install:
 test:
 	cd tests; $(LUA) -lluacov largetransfer.lua
 	cd tests; $(LUA) -lluacov testhttp.lua
+	cd tests; $(LUA) -lluacov httpredirect.lua
 	cd tests; $(LUA) -lluacov testhttps.lua
 	cd tests; luacov copas
 	cd tests; cat luacov.report.out
