@@ -19,7 +19,7 @@ install:
   - luarocks install luacov-coveralls
 
 script:
-  - luarocks make $(ls src/copas-[a-z]* | sort -r | head -n 1) # get latest development rockspec
+  - luarocks make $(ls rockspec/copas-[a-z]* | sort -r | head -n 1) # get latest development rockspec
   - make test
 
 after_success:
