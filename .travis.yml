@@ -1,0 +1,30 @@
+language: python
+sudo: false
+
+env:
+  - LUA="lua=5.1"
+  - LUA="lua=5.2"
+  - LUA="lua=5.3"
+  - LUA="luajit=2.0"
+  - LUA="luajit=2.1"
+
+before_install:
+  - pip install hererocks
+  - hererocks lua_install -r^ --$LUA
+  - export PATH=$PATH:$PWD/lua_install/bin # Add directory with all installed binaries to PATH
+
+install:
+  - luarocks install luasec # optional dependency
+  - luarocks install luacov
+  - luarocks install luacov-coveralls
+
+script:
+  - luarocks make $(ls rockspec/copas-[a-z]* | sort -r | head -n 1) # get latest development rockspec
+  - make test
+
+after_success:
+  - cd test; luacov-coveralls --exclude $TRAVIS_BUILD_DIR/lua_install
+
+branches:
+  except:
+    - gh-pages
