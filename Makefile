@@ -24,7 +24,7 @@ test:
 	cd tests; $(LUA) $(PKGPATH) -lluacov testhttp.lua
 	cd tests; $(LUA) $(PKGPATH) -lluacov httpredirect.lua
 	cd tests; $(LUA) $(PKGPATH) -lluacov testhttps.lua
-	cd tests; luacov copas
+	cd tests; luacov src/copas
 	cd tests; cat luacov.report.out
 
 clean:
