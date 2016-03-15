@@ -3,7 +3,7 @@
 -- Does send the same string twice simultaneously
 -- 
 -- Test should;
---  * show timer output, once per minute, and actual time should be 60 second increments
+--  * show timer output, once per second, and actual time should be 1 second increments
 --  * both transmissions should take appr. equal time, then they we're nicely cooperative
 --
 -- Requires;
@@ -13,7 +13,7 @@
 local copas = require 'copas'
 local socket = require 'socket'
 
-local body = ("A"):rep(1024*1024*10) -- 10 mb string
+local body = ("A"):rep(1024*1024*50) -- 50 mb string
 local start = socket.gettime()
 local done = 0
 local sparams, cparams
@@ -69,8 +69,8 @@ local function runtest()
       copas.sleep(0)
       local i = 1
       while done ~= 2 do
-        copas.sleep(60)
-        print(i, "minutes:", socket.gettime()-start)
+        copas.sleep(1)
+        print(i, "seconds:", socket.gettime()-start)
         i = i + 1
       end
     end)
