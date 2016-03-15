@@ -1,5 +1,8 @@
 # Copas 2.0
 
+[![Build Status](https://travis-ci.org/keplerproject/copas.png?branch=master)](https://travis-ci.org/keplerproject/copas)
+[![Coverage Status](https://coveralls.io/repos/keplerproject/copas/badge.svg?branch=master&service=github)](https://coveralls.io/github/keplerproject/copas?branch=master)
+
 Copas is a dispatcher based on coroutines that can be used for asynchronous networking. For example TCP or UDP based servers. But it also features timers and client support for http(s), ftp and smtp requests.
 
 It uses [LuaSocket](https://github.com/diegonehab/luasocket) as the interface with the TCP/IP stack and [LuaSec](https://github.com/brunoos/luasec) for ssl support.
