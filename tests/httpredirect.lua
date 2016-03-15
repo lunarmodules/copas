@@ -30,6 +30,8 @@ local function doreq(url)
   return result, code, headers, status
 end
 
+local done = false
+
 copas.addthread(function()
   local result, code, headers, status = doreq("https://goo.gl/UBCUc5")  -- https --> https redirect
   assert(tonumber(code)==200)
@@ -55,6 +57,7 @@ copas.addthread(function()
           assert(tonumber(code)==200)
           assert(headers.location == "http://www.thijsschreijer.nl/blog/")
           print("https -> http  redirect, while allowed OK!")
+          done = true
         end)
       end)
     end)
@@ -63,3 +66,7 @@ end)
 
 copas.loop()
 
+if not done then
+  print("Some checks above failed")
+  os.exit(1)
+end
