@@ -82,18 +82,18 @@ runtest()   -- run test using regular connection (s/cparams == nil)
 sparams = {
    mode = "server",
    protocol = "tlsv1",
-   key = "tests/certs/serverAkey.pem",
-   certificate = "tests/certs/serverA.pem",
-   cafile = "tests/certs/rootA.pem",
+   key = "./certs/serverAkey.pem",
+   certificate = "./certs/serverA.pem",
+   cafile = "./certs/rootA.pem",
    verify = {"peer", "fail_if_no_peer_cert"},
    options = {"all", "no_sslv2"},
 }
 cparams = {
    mode = "client",
    protocol = "tlsv1",
-   key = "tests/certs/clientAkey.pem",
-   certificate = "tests/certs/clientA.pem",
-   cafile = "tests/certs/rootA.pem",
+   key = "./certs/clientAkey.pem",
+   certificate = "./certs/clientA.pem",
+   cafile = "./certs/rootA.pem",
    verify = {"peer", "fail_if_no_peer_cert"},
    options = {"all", "no_sslv2"},
 }
