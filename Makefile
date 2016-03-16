@@ -6,7 +6,7 @@ PREFIX = /usr/local
 # System's lua directory (where Lua libraries are installed)
 LUA_DIR= $(PREFIX)/share/lua/5.1
 
-PKGPATH=-e "package.path='$$PWD/src/?.lua;'..package.path"
+PKGPATH=-e "package.path='src/?.lua;'..package.path"
 
 # Lua interpreter
 LUA=lua
