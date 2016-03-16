@@ -6,7 +6,7 @@ PREFIX = /usr/local
 # System's lua directory (where Lua libraries are installed)
 LUA_DIR= $(PREFIX)/share/lua/5.1
 
-PKGPATH=-e "package.path='$$PWD/../src/?.lua;'..package.path"
+PKGPATH=-e "package.path='$$PWD/src/?.lua;'..package.path"
 
 # Lua interpreter
 LUA=lua
@@ -20,11 +20,11 @@ install:
 	cp src/copas/limit.lua $(LUA_DIR)/copas/limit.lua
 
 test:
-	cd tests; $(LUA) $(PKGPATH) -lluacov largetransfer.lua
-	cd tests; $(LUA) $(PKGPATH) -lluacov request.lua 'http://www.google.com'
-	cd tests; $(LUA) $(PKGPATH) -lluacov request.lua 'https://www.google.nl'
-	cd tests; $(LUA) $(PKGPATH) -lluacov httpredirect.lua
-	cd tests; luacov src/copas
-	cd tests; cat luacov.report.out
+	$(LUA) $(PKGPATH) -lluacov tests/largetransfer.lua
+	$(LUA) $(PKGPATH) -lluacov tests/request.lua 'http://www.google.com'
+	$(LUA) $(PKGPATH) -lluacov tests/request.lua 'https://www.google.nl'
+	$(LUA) $(PKGPATH) -lluacov tests/httpredirect.lua
+	luacov src/copas
+	cat luacov.report.out
 
 clean:

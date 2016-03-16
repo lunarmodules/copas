@@ -23,7 +23,7 @@ script:
   - make test
 
 after_success:
-  - cd tests; luacov-coveralls --exclude $TRAVIS_BUILD_DIR/lua_install
+  - luacov-coveralls --exclude $TRAVIS_BUILD_DIR/lua_install --exclude tests
 
 branches:
   except:
