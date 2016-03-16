@@ -396,12 +396,17 @@ end
 
 _M.request = socket.protect(function(reqt, body)
     if base.type(reqt) == "string" then 
-      reqt = _M.parseRequest(reqt, body)
-      local t, code, headers, status = reqt.target, socket.skip(1, _M.request(reqt))
-      return table.concat(t), code, headers, status
+        reqt = _M.parseRequest(reqt, body)
+        local ok, code, headers, status = _M.request(reqt)
+
+        if ok then
+            return table.concat(reqt.target), code, headers, status
+        else
+            return nil, code
+        end
     else
-      reqt.create = reqt.create or tcp(reqt)
-      return trequest(reqt) 
+        reqt.create = reqt.create or tcp(reqt)
+        return trequest(reqt)
     end
 end)
 
