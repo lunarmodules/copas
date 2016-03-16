@@ -25,7 +25,7 @@ local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocket
 
 local pcall = pcall
-if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
   pcall = require("coxpcall").pcall
 end
   
