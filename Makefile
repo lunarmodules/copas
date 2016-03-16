@@ -24,6 +24,7 @@ test:
 	$(LUA) $(PKGPATH) -lluacov tests/request.lua 'http://www.google.com'
 	$(LUA) $(PKGPATH) -lluacov tests/request.lua 'https://www.google.nl'
 	$(LUA) $(PKGPATH) -lluacov tests/httpredirect.lua
+	$(LUA) $(PKGPATH) -lluacov tests/limit.lua
 	luacov src/copas
 	cat luacov.report.out
 
