@@ -21,9 +21,9 @@ install:
 
 test:
 	cd tests; $(LUA) $(PKGPATH) -lluacov largetransfer.lua
-	cd tests; $(LUA) $(PKGPATH) -lluacov testhttp.lua
+	cd tests; $(LUA) $(PKGPATH) -lluacov request.lua 'http://www.google.com'
+	cd tests; $(LUA) $(PKGPATH) -lluacov request.lua 'https://www.google.nl'
 	cd tests; $(LUA) $(PKGPATH) -lluacov httpredirect.lua
-	cd tests; $(LUA) $(PKGPATH) -lluacov testhttps.lua
 	cd tests; luacov src/copas
 	cd tests; cat luacov.report.out
 
