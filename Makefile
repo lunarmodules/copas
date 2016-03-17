@@ -27,6 +27,7 @@ test:
 	$(LUA) $(PKGPATH) -lluacov tests/limit.lua
 	$(LUA) $(PKGPATH) -lluacov tests/connecttwice.lua
 	$(LUA) $(PKGPATH) -lluacov tests/exit.lua
+	$(LUA) $(PKGPATH) -lluacov tests/exittest.lua
 	luacov src/copas
 	cat luacov.report.out
 
