@@ -88,8 +88,8 @@ are used to register servers and to execute the main loop of Copas:</p>
     </dd>
 
     <dt><strong><code>copas.addthread(func [, ...])</code></strong></dt>
-    <dd>Adds a function as a new coroutine/thread to the dispatcher using 
-        optional parameters.<br />
+    <dd>Adds a function as a new coroutine/thread to the dispatcher. The optional
+        parameters will be passed to the function <code>func</code>.<br />
         The thread will be executed in parallel with other threads and the
         registered handlers as long as it uses the Copas socket/sleep functions.
         It returns the created coroutine.
@@ -123,12 +123,14 @@ are used to register servers and to execute the main loop of Copas:</p>
     
     <dt><strong><code>copas.removeserver(skt)</code></strong></dt>
     <dd>Removes a server socket from the Copas scheduler. 
-    The socket will be closed to allow the socket to be reused right away after removing the server.
+        The socket will be closed to allow the socket to be reused right away after 
+        removing the server.
     </dd>
 
     <dt><strong><code>copas.running</code></strong></dt>
-    <dd>A flag set to <code>true</code> when <code>copas.loop()</code> starts, and reset to 
-    <code>false</code> when the loop exits. See also <code>copas.finished()</code>.
+    <dd>A flag set to <code>true</code> when <code>copas.loop()</code> starts, and 
+        reset to <code>false</code> when the loop exits. See also 
+        <code>copas.finished()</code>.
     </dd>
 
     <dt><strong><code>copas.step([timeout])</code></strong></dt>
@@ -145,9 +147,9 @@ are used to register servers and to execute the main loop of Copas:</p>
     </dd>
 
     <dt><strong><code>copas.setErrorHandler(func)</code></strong></dt>
-    <dd>Sets the error handling function for the current thread. Any socket
+    <dd>Sets the error handling function for the current thread. Any 
         errors will be forwarded to the handler, which will receive the
-        error message, the thread, and the socket as arguments.
+        error, coroutine, and socket as arguments.
     </dd>
 </dl>
 
