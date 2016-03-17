@@ -20,7 +20,7 @@ install:
 
 script:
   - luarocks make $(ls rockspec/copas-[a-z]* | sort -r | head -n 1) # get latest development rockspec
-  - make test
+  - make coverage
 
 after_success:
   - luacov-coveralls --exclude $TRAVIS_BUILD_DIR/lua_install --exclude tests

@@ -20,15 +20,19 @@ install:
 	cp src/copas/limit.lua $(LUA_DIR)/copas/limit.lua
 
 test:
-	$(LUA) $(PKGPATH) -lluacov tests/largetransfer.lua
-	$(LUA) $(PKGPATH) -lluacov tests/request.lua 'http://www.google.com'
-	$(LUA) $(PKGPATH) -lluacov tests/request.lua 'https://www.google.nl'
-	$(LUA) $(PKGPATH) -lluacov tests/httpredirect.lua
-	$(LUA) $(PKGPATH) -lluacov tests/limit.lua
-	$(LUA) $(PKGPATH) -lluacov tests/connecttwice.lua
-	$(LUA) $(PKGPATH) -lluacov tests/exit.lua
-	$(LUA) $(PKGPATH) -lluacov tests/exittest.lua
+	$(LUA) $(PKGPATH) tests/largetransfer.lua
+	$(LUA) $(PKGPATH) tests/request.lua 'http://www.google.com'
+	$(LUA) $(PKGPATH) tests/request.lua 'https://www.google.nl'
+	$(LUA) $(PKGPATH) tests/httpredirect.lua
+	$(LUA) $(PKGPATH) tests/limit.lua
+	$(LUA) $(PKGPATH) tests/connecttwice.lua
+	$(LUA) $(PKGPATH) tests/exit.lua
+	$(LUA) $(PKGPATH) tests/exittest.lua
+
+coverage:
+	$(RM) luacov.stats.out
+	$(MAKE) test LUA="$(LUA) -lluacov"
 	luacov src/copas
-	cat luacov.report.out
 
 clean:
+	$(RM) luacov.stats.out luacov.report.out
