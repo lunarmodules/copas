@@ -597,15 +597,18 @@ function copas.addserver(server, handler, timeout)
     end
 end
 
-function copas.removeserver(server)
+function copas.removeserver(server, keep_open)
   local s, mt = server, getmetatable(server)
   if mt == _skt_mt_tcp or mt == _skt_mt_udp then
     s = server.socket
   end
   _servers[s] = nil 
   _reading:remove(s) 
+  if keep_open then
+    return true
+  end
   return server:close() 
- end
+end
 
 -------------------------------------------------------------------------------
 -- Adds an new coroutine thread to Copas dispatcher

@@ -28,6 +28,7 @@ test:
 	$(LUA) $(PKGPATH) tests/connecttwice.lua
 	$(LUA) $(PKGPATH) tests/exit.lua
 	$(LUA) $(PKGPATH) tests/exittest.lua
+	$(LUA) $(PKGPATH) tests/removeserver.lua
 
 coverage:
 	$(RM) luacov.stats.out

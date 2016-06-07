@@ -121,10 +121,11 @@ are used to register servers and to execute the main loop of Copas:</p>
         The loop returns when <code>copas.finished() == true</code>.
     </dd>
     
-    <dt><strong><code>copas.removeserver(skt)</code></strong></dt>
+    <dt><strong><code>copas.removeserver(skt [, keep_open])</code></strong></dt>
     <dd>Removes a server socket from the Copas scheduler. 
-        The socket will be closed to allow the socket to be reused right away after 
-        removing the server.
+    	By default, the socket will be closed to allow the socket to be reused right away after 
+        removing the server. If <code>keep_open</code> is <code>true</code>, the socket
+        is removed from the scheduler but it is not closed.
     </dd>
 
     <dt><strong><code>copas.running</code></strong></dt>
