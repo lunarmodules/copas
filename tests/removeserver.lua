@@ -1,5 +1,6 @@
 
---- Test for removeserver(skt, false)
+--- Test for removeserver(skt, true)
+-- that keeps the socket open after removal.
 
 local copas = require("copas")
 local socket = require("socket")
@@ -15,7 +16,7 @@ local function wait_for_trigger()
          data = partial
       end
       print("triggered", data)
-      copas.removeserver(wskt, false)
+      copas.removeserver(wskt, true)
    end)
 end
 
