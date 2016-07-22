@@ -14,7 +14,7 @@
 -------------------------------------------------------------------------------
 
 if package.loaded["socket.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: only for Lua 5.1 compatibility
-  error("you must require copas before require'ing socket.http")
+  ErrorNoHalt("you should require copas before require'ing socket.http\n")
 end
 
 local socket = socket or require "socket"
