@@ -502,12 +502,12 @@ local _skt_mt_tcp = {
 
                    accept = function(self, ...) return self.socket:accept(...) end,
 
-                   setoption = function(self, ...) return self.setoption:accept(...) end,
+                   setoption = function(self, ...) return self.socket:accept(...) end,
 
                    -- TODO: is this DNS related? hence blocking?
                    getpeername = function(self, ...) return self.socket:getpeername(...) end,
 
-                   shutdown = function(self, ...) return self.shutdown:accept(...) end,
+                   shutdown = function(self, ...) return self.socket:accept(...) end,
 
                    dohandshake = function(self, sslt)
                      self.ssl_params = sslt or self.ssl_params
