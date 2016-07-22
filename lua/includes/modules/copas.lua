@@ -528,7 +528,8 @@ function copas.setErrorHandler (err)
 end
 
 local function _deferror (msg, co, skt)
-  print (msg, co, skt)
+  local ErrorNoHalt = ErrorNoHalt or print
+  ErrorNoHalt ('[Copas] '..tostring(co)..( not skt and "" or (", "..tostring(skt)) )..': ',debug.traceback(co,tostring(msg)).."\n")
 end
 
 -------------------------------------------------------------------------------
