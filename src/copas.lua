@@ -123,62 +123,89 @@ local function newset()
   return set
 end
 
+-- sort function used for sleeping threads
+local function thread_sorter(a, b)
+  local ap, bp = a[3], b[3]
+  local at, bt = a[1], b[1]
+
+  if ap > bp then
+    return true
+  elseif ap == bp then
+    return at < bt
+  end
+end
+
+
 local fnil = function()end
 local _sleeping = {
-    times = {},  -- list with wake-up times
-    cos = {},    -- list with coroutines, index matches the 'times' list
-    lethargy = {}, -- list of coroutines sleeping without a wakeup time
+  threads = {}, -- list of threads ({wake_up, co, priority})
+  lethargy = {}, -- list of coroutines sleeping without a wakeup time
 
-    insert = fnil,
-    remove = fnil,
-    push = function(self, sleeptime, co)
-        if not co then return end
-        if sleeptime<0 then
-            --sleep until explicit wakeup through copas.wakeup
-            self.lethargy[co] = true
-            return
-        else
-            sleeptime = gettime() + sleeptime
-        end
-        local t, c = self.times, self.cos
-        local i, cou = 1, #t
-        --TODO: do a binary search
-        while i<=cou and t[i]<=sleeptime do i=i+1 end
-        table.insert(t, i, sleeptime)
-        table.insert(c, i, co)
-    end,
-    getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
-        local t = self.times
-        local delay = t[1] and t[1] - gettime() or nil
-
-        return delay and math.max(delay, 0) or nil
-    end,
-    -- find the thread that should wake up to the time
-    pop = function(self, time)
-        local t, c = self.times, self.cos
-        if #t==0 or time<t[1] then return end
-        local co = c[1]
-        table.remove(t, 1)
-        table.remove(c, 1)
-        return co
-    end,
-    wakeup = function(self, co)
-        local let = self.lethargy
-        if let[co] then
-            self:push(0, co)
-            let[co] = nil
-        else
-            let = self.cos
-            for i=1,#let do
-                if let[i]==co then
-                    table.remove(let, i)
-                    table.remove(self.times, i)
-                    self:push(0, co)
-                    return
-                end
-            end
-        end
+  insert = fnil,
+  remove = fnil,
+  push = function(self, sleeptime, co, priority)
+    if not co then return end
+    if sleeptime<0 then
+        --sleep until explicit wakeup through copas.wakeup
+        self.lethargy[co] = true
+        return
+    else
+        sleeptime = gettime() + sleeptime
     end
+    self.threads[#self.threads+1] = {sleeptime, co, priority or 0}
+    if #self.threads > 1 then
+      table.sort(self.threads, thread_sorter)
+    end
+  end,
+  getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
+    local ts = self.threads
+
+    local time = math.huge
+    for i = 1, #ts do
+      foundAny = true
+      local t = ts[i]
+      --print("getnext:", time, t[1])
+      if t[1] < time then
+        time = t[1]
+      end
+    end
+    time = math.max(time - gettime(), 0)
+    --print("getnext:", time)
+
+    if ts[1] then
+      return time
+    end
+
+    return nil
+  end,
+  -- find the thread that should wake up to the time
+  pop = function(self, time)
+    local ts = self.threads
+    for i = 1, #ts do
+      local t = ts[i]
+      if time>t[1] then
+        table.remove(ts, i)
+        return t[2]
+      end
+    end
+  end,
+  wakeup = function(self, co)
+    local let = self.lethargy
+    if let[co] then
+      self:push(0, co)
+      let[co] = nil
+    else
+      let = self.threads
+      for i = 1, #let do
+        local t = let[i]
+        if t[2] == co then
+          table.remove(let, i)
+          self:push(0, t[2])
+          return
+        end
+      end
+    end
+  end
 } --_sleeping
 
 local _servers = newset() -- servers being handled
@@ -538,11 +565,11 @@ end
 local function _doTick (co, skt, ...)
   if not co then return end
 
-  local ok, res, new_q = coroutine.resume(co, skt, ...)
+  local ok, res, new_q, prio = coroutine.resume(co, skt, ...)
 
   if ok and res and new_q then
     new_q:insert (res)
-    new_q:push (res, co)
+    new_q:push (res, co, prio)
   else
     if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
     if skt and copas.autoclose and isTCP(skt) then 
@@ -699,8 +726,8 @@ local _sleeping_t = {
 
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
 -- If sleeptime<0 then it sleeps until explicitly woken up using 'wakeup'
-function copas.sleep(sleeptime)
-    coroutine.yield((sleeptime or 0), _sleeping)
+function copas.sleep(sleeptime, priority)
+    coroutine.yield((sleeptime or 0), _sleeping, priority or 0)
 end
 
 -- Wakes up a sleeping coroutine 'co'.
