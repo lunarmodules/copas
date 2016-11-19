@@ -330,6 +330,13 @@ end
 
 -- waits until connection is completed
 function copas.connect(skt, host, port)
+  if not host:match'%d+%.%d+%.%d+%.%d+' then -- TODO ipv6?
+    local ret, err = copas.dns(host)
+    if ret then
+      host = ret
+    end
+  end
+  
   skt:settimeout(0)
   local ret, err, tried_more_than_once
   repeat
@@ -881,7 +888,7 @@ function copas.dns(a, b, give_all)
   end
 
   if not ret[1] then
-    return ret
+    return nil, ret
   end
 
   shuffle(ret)
