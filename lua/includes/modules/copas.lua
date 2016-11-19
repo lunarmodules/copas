@@ -271,6 +271,9 @@ end
 -- yields to the writing set on timeouts
 -- Note: from and to parameters will be ignored by/for UDP sockets
 function copas.send(client, data, from, to)
+  if data and type(data)=="table" then 
+    data = table.concat(data)
+  end
   local s, err
   from = from or 1
   local lastIndex = from - 1
