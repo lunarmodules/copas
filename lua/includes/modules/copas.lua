@@ -831,6 +831,80 @@ copas.loop = function()
     hook.Add("Think","copas",copas.think)
 end
 
+
+
+local function ResolveDNS(target, qtype)
+  if not adns then
+    local ret = require'adns'
+    if ret and ret ~= true then
+      _G.adns = ret
+    end
+    if not adns then return nil, 'no adns' end
+  end
+  
+  qtype = qtype:upper()
+  local r, err = adns:new { nameservers = { "8.8.8.8", "8.8.4.4" }, retrans = 2 }
+  if not r then
+    return nil, "failed to instantiate resolver: " .. tostring(err)
+  end
+
+  qtype = r["TYPE_" .. qtype]
+  if not qtype then
+    return nil, 'invalid query type'
+  end
+
+  local ans, err = r:query(target, { qtype = qtype })
+  if not ans then
+    return nil, tostring(err)
+  end
+
+  return ans
+end
+
+local function shuffle(t)
+  local j
+  for i = #t, 2, -1 do
+    j = math.random(i)
+    t[i], t[j] = t[j], t[i]
+  end
+end
+
+function copas.dns(a, b, give_all)
+  b = b or 'A'
+  local ret, err = ResolveDNS(a, b)
+  if not ret then
+    return nil, err
+  end
+
+  if ret.errstr then
+    return nil, ret.errstr, ret.errcode
+  end
+
+  if not ret[1] then
+    return ret
+  end
+
+  shuffle(ret)
+  if give_all then
+    return ret
+  end
+
+  for _, v in next, ret do
+    if (b == 'A' or b == 'AAAA') and v.address then
+      return v.address, ret
+    elseif b == 'TXT' and v.txt then
+      return v.txt, ret
+    elseif b ~= 'A' and b ~= 'AAAA' and v.address then
+      return v.address, ret
+    end
+
+  end
+
+  return false, ret
+end
+
+
+
 _G.copas = copas
 
 return copas
