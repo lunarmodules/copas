@@ -699,8 +699,15 @@ local _sleeping_t = {
 
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
 -- If sleeptime<0 then it sleeps until explicitly woken up using 'wakeup'
+-- If not in a coroutine context, the main thread just sleeps for the
+-- given amount of time.
 function copas.sleep(sleeptime)
-    coroutine.yield((sleeptime or 0), _sleeping)
+    local co, ismain = coroutine.running()
+    if (not co) or ismain then
+        socket.sleep(sleeptime)
+    else
+        coroutine.yield((sleeptime or 0), _sleeping)
+    end
 end
 
 -- Wakes up a sleeping coroutine 'co'.
