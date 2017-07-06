@@ -61,9 +61,9 @@ end
 local copas = {}
 
 -- Meta information is public even if beginning with an "_"
-copas._COPYRIGHT   = "Copyright (C) 2005-2016 Kepler Project"
+copas._COPYRIGHT   = "Copyright (C) 2005-2017 Kepler Project"
 copas._DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-copas._VERSION     = "Copas 2.0.1"
+copas._VERSION     = "Copas 2.0.2"
 
 -- Close the socket associated with the current connection after the handler finishes
 copas.autoclose = true
