@@ -10,7 +10,7 @@ local pack = table.pack or function(...) return {n=select('#',...),...} end
 local unpack = function(t) return (table.unpack or unpack)(t, 1, t.n or #t) end
 
 local pcall = pcall
-if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
   pcall = require("coxpcall").pcall
 end
 
