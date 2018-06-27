@@ -113,6 +113,13 @@ are used to register servers and to execute the main loop of Copas:</p>
         removing the server. If <code>keep_open</code> is <code>true</code>, the socket
         is removed from the scheduler but it is not closed.
     </dd>
+	
+	<dt><strong><code>copas.removethread(thread)</code></strong></dt>
+    <dd>Removes a thread added to the Copas scheduler. 
+    	Takes a <code>thread</code> created by <code>copas.addthread()</code> and removes
+		it from the disptacher the next time it tries to resume. If <code>thread</code> isn't 
+		registered,	it does nothing.
+    </dd>
 
     <dt><strong><code>copas.running</code></strong></dt>
     <dd>A flag set to <code>true</code> when <code>copas.loop()</code> starts, and 

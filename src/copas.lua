@@ -182,6 +182,8 @@ local _sleeping = {
 } --_sleeping
 
 local _servers = newset() -- servers being handled
+local _threads = {}       -- registered threads added with addthread()
+local _canceled = {}      -- threads that are canceled and pending removal
 local _reading_log = {}
 local _writing_log = {}
 
@@ -537,6 +539,13 @@ end
 
 local function _doTick (co, skt, ...)
   if not co then return end
+  
+  -- if a coroutine was canceled/removed, don't resume it
+  if _canceled[co] then
+    _canceled[co] = nil -- also clean up the registry
+    _threads[co] = nil
+    return
+  end
 
   local ok, res, new_q = coroutine.resume(co, skt, ...)
 
@@ -617,8 +626,15 @@ function copas.addthread(handler, ...)
   -- create a coroutine that skips the first argument, which is always the socket
   -- passed by the scheduler, but `nil` in case of a task/thread
   local thread = coroutine.create(function(_, ...) return handler(...) end)
+  _threads[thread] = true -- register this thread so it can be removed
   _doTick (thread, nil, ...)
   return thread
+end
+
+function copas.removethread(thread)
+    -- if the specified thread is registered, add it to the canceled table so
+    -- that next time it tries to resume it exits. 
+    _canceled[thread] = _threads[thread]   
 end
 
 -------------------------------------------------------------------------------
