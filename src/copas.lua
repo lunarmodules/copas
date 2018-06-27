@@ -632,6 +632,7 @@ function copas.addthread(handler, ...)
 end
 
 function copas.removethread(thread)
+    if not thread then return end
     -- if the specified thread is registered, add it to the canceled table so
     -- that next time it tries to resume it exits. 
     _canceled[thread] = _threads[thread]   
