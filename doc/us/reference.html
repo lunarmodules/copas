@@ -106,19 +106,19 @@ are used to register servers and to execute the main loop of Copas:</p>
         and is passed to the <code>copas.step()</code> function.
         The loop returns when <code>copas.finished() == true</code>.
     </dd>
-    
+
     <dt><strong><code>copas.removeserver(skt [, keep_open])</code></strong></dt>
     <dd>Removes a server socket from the Copas scheduler. 
-    	By default, the socket will be closed to allow the socket to be reused right away after 
+        By default, the socket will be closed to allow the socket to be reused right away after 
         removing the server. If <code>keep_open</code> is <code>true</code>, the socket
         is removed from the scheduler but it is not closed.
     </dd>
-	
-	<dt><strong><code>copas.removethread(thread)</code></strong></dt>
-    <dd>Removes a thread added to the Copas scheduler. 
-    	Takes a <code>thread</code> created by <code>copas.addthread()</code> and removes
-		it from the disptacher the next time it tries to resume. If <code>thread</code> isn't 
-		registered,	it does nothing.
+
+    <dt><strong><code>copas.removethread(coroutine)</code></strong></dt>
+    <dd>Removes a coroutine added to the Copas scheduler. 
+        Takes a <code>coroutine</code> created by <code>copas.addthread()</code> and removes
+        it from the disptacher the next time it tries to resume. If <code>coroutine</code> isn't
+        registered, it does nothing.
     </dd>
 
     <dt><strong><code>copas.running</code></strong></dt>
