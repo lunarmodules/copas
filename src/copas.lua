@@ -42,20 +42,20 @@ local function statusHandler(status, ...)
 end
 
 function socket.protect(func)
-return function (...)
+  return function (...)
            return statusHandler(pcall(func, ...))
-       end
+         end
 end
 
 function socket.newtry(finalizer)
-return function (...)
-         local status = (...)
-         if not status then
+  return function (...)
+           local status = (...)
+           if not status then
              pcall(finalizer, select(2, ...))
-           error({ (select(2, ...)) }, 0)
+             error({ (select(2, ...)) }, 0)
+           end
+           return ...
          end
-         return ...
-       end
 end
 
 local copas = {}
@@ -764,19 +764,19 @@ end
 function copas.step(timeout)
   _sleeping_t:tick(gettime())
 
-  -- Need to wake up the select call it time for the next sleeping event
+  -- Need to wake up the select call in time for the next sleeping event
   local nextwait = _sleeping:getnext()
   if nextwait then
     timeout = timeout and math.min(nextwait, timeout) or nextwait
   else
     if copas.finished() then
       return false
-  end
+    end
   end
 
   local err = _select (timeout)
   if err then
-  if err == "timeout" then return false end
+    if err == "timeout" then return false end
     return nil, err
   end
 
