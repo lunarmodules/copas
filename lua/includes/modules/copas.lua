@@ -280,16 +280,6 @@ function copas.send(client, data, from, to)
   local current_log = _writing_log
   repeat
     s, err, lastIndex = client:send(data, lastIndex + 1, to)
-    -- adds extra coroutine swap
-    -- garantees that high throughput doesn't take other threads to starvation
-    if (math.random(100) > 90) then
-      current_log[client] = gettime()   -- TODO: how to handle this?? 
-      if current_log == _writing_log then
-        coroutine.yield(client, _writing)
-      else
-        coroutine.yield(client, _reading)
-      end
-    end
     if s or (not _isTimeout[err]) then 
       current_log[client] = nil
       return s, err,lastIndex
