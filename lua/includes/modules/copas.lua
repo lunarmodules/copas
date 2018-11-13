@@ -352,7 +352,7 @@ function copas.connect(skt, host, port)
   local iptype = GetIPType(host)
   if iptype ~= 2 and iptype ~= 1 then
     local _,_,family = skt:getsockname()
-    local record = 'inet6' and 'aaaa' or nil
+    local record = family == 'inet6' and 'aaaa' or 'a'
     local ret, err = copas.dns(host,record)
     if ret then
       host = ret
