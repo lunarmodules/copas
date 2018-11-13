@@ -201,6 +201,35 @@ local function isTCP(socket)
   return string.sub(tostring(socket),1,3) ~= "udp"
 end
 
+-- https://stackoverflow.com/a/16643628
+local function GetIPType(ip)
+  local R = {ERROR = 0, IPV4 = 1, IPV6 = 2, STRING = 3}
+  if type(ip) ~= "string" then return R.ERROR end
+
+  -- check for format 1.11.111.111 for ipv4
+  local chunks = {ip:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$")}
+  if #chunks == 4 then
+    for _,v in pairs(chunks) do
+      if tonumber(v) > 255 then return R.STRING end
+    end
+    return R.IPV4
+  end
+
+  -- check for ipv6 format, should be 8 'chunks' of numbers/letters
+  -- without leading/trailing chars
+  -- or fewer than 8 chunks, but with only one `::` group
+  local chunks = {ip:match("^"..(("([a-fA-F0-9]*):"):rep(8):gsub(":$","$")))}
+  if #chunks == 8
+  or #chunks < 8 and ip:match('::') and not ip:gsub("::","",1):match('::') then
+    for _,v in pairs(chunks) do
+      if #v > 0 and tonumber(v, 16) > 65535 then return R.STRING end
+    end
+    return R.IPV6
+  end
+
+  return R.STRING
+end
+
 -- reads a pattern from a client and yields to the reading set on timeouts
 -- UDP: a UDP socket expects a second argument to be a number, so it MUST
 -- be provided as the 'pattern' below defaults to a string. Will throw a
@@ -320,10 +349,15 @@ end
 
 -- waits until connection is completed
 function copas.connect(skt, host, port)
-  if not host:match'%d+%.%d+%.%d+%.%d+' then -- TODO ipv6?
-    local ret, err = copas.dns(host)
+  local iptype = GetIPType(host)
+  if iptype ~= 2 and iptype ~= 1 then
+    local _,_,family = skt:getsockname()
+    local record = 'inet6' and 'aaaa' or nil
+    local ret, err = copas.dns(host,record)
     if ret then
       host = ret
+    else
+      error(err)
     end
   end
   
