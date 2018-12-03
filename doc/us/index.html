@@ -45,18 +45,18 @@
 </div> <!-- id="navigation" -->
 
 <div id="content">
- 
+
 <h2><a name="over"></a>Overview</h2>
 
 <p>
-Copas is a dispatcher based on coroutines that can be used for asynchroneous 
-networking. For example TCP or UDP based servers. But it also features timers 
+Copas is a dispatcher based on coroutines that can be used for asynchroneous
+networking. For example TCP or UDP based servers. But it also features timers
 and client support for http(s), ftp and smtp requests.
 </p>
 
 <p>
-It uses <a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a> 
-as the interface with the TCP/IP stack and <a href="https://github.com/brunoos/luasec">LuaSec</a> for ssl 
+It uses <a href="http://www.cs.princeton.edu/~diego/professional/luasocket/">LuaSocket</a>
+as the interface with the TCP/IP stack and <a href="https://github.com/brunoos/luasec">LuaSec</a> for ssl
 support.
 </p>
 
@@ -64,7 +64,7 @@ support.
 A server or thread registered with Copas should provide a handler for requests and use
 Copas socket functions to send the response.
 Copas loops through requests and invokes the corresponding handlers.
-For a full implementation of a Copas HTTP server you can refer to 
+For a full implementation of a Copas HTTP server you can refer to
 <a href="http://www.keplerproject.org/xavante">Xavante</a> as an example.
 </p>
 
@@ -89,7 +89,7 @@ Copas can be downloaded from its
 <pre class="example">
 luarocks install copas
 </pre>
-	
+
 
 <h2><a name="dependencies"></a>Dependencies</h2>
 
@@ -103,6 +103,8 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
     <dt><strong>Copas</strong> [unreleased]</dt>
 	<dd><ul>
                 <li>Fixed: coxpcall dependency in limit.lua #63 (Francois Perrad)</li>
+                <li>Change: update deprecated tls default to tls 1.2 in (copas.http)</li>
+                <li>Fixed: CI now generates the certificates for testing, on unix make can be used, on Windows generate them manually</li>
 	</ul></dd>
 
     <dt><strong>Copas 2.0.2</strong> [2017]</dt>
@@ -162,25 +164,25 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 			(found due to Xavante locking up on some POST requests)
 		</li>
 	</ul></dd>
-	
+
     <dt><strong>Copas 1.1.4</strong> [10/Dec/2008]</dt>
 	<dd><ul>
 		<li>Fixed bug [#5372]
 		- copas.connect is semi-broken (found by Gary NG)</li>
 	</ul></dd>
-	
+
     <dt><strong>Copas 1.1.3</strong> [19/May/2008]</dt>
 	<dd><ul>
 		<li>Using <code>copcall</code> instead of <code>pcall</code> in <code>socket.protect</code>
 		(feature request [#5274] by Gary NG)</li>
 	</ul></dd>
-	
+
     <dt><strong>Copas 1.1.2</strong> [15/May/2008]</dt>
 	<dd><ul>
 		<li>Fixed Bug [#4249]
 		- bugs in copas.receive (found by Gary NG)</li>
 	</ul></dd>
-	
+
     <dt><strong>Copas 1.1.1</strong> [13/Aug/2007]</dt>
     <dd>
     <ul>
@@ -189,7 +191,7 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         Bug 766)</li>
         <li>Patch by Gary NG concerning the handling of stopped sockets</li>
     </ul>
-    
+
     </dd>
 
     <dt><strong>Copas 1.1</strong> [20/Sep/2006]</dt>
@@ -201,7 +203,7 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
     <dd><ul>
 		<li><a href="reference.html">copas.step()</a> added</li>
 	</ul></dd>
-    
+
     <dt><strong>Copas 1.0 Beta</strong>[17/Feb/2005]</dt>
     <dd><ul>
 		<li>First public version</li>
@@ -216,7 +218,7 @@ Javier Guerra as part of the
 holds its copyright. Copas development had significative contributions from Diego Nehab,
 Mike Pall, David Burgess, Leonardo Godinho, Thomas Harning Jr. and Gary NG.</p>
 
- 
+
 <h2><a name="contact"></a>Contact us</h2>
 
 <p>For more information please
