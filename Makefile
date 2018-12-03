@@ -1,6 +1,6 @@
 # $Id: Makefile,v 1.3 2007/10/29 22:50:16 carregal Exp $
 
-DESTDIR ?= 
+DESTDIR ?=
 
 # Default prefix
 PREFIX  ?= /usr/local
@@ -8,10 +8,13 @@ PREFIX  ?= /usr/local
 # System's lua directory (where Lua libraries are installed)
 LUA_DIR ?= $(PREFIX)/share/lua/5.1
 
+DELIM=-e "print(([[=]]):rep(70))"
 PKGPATH=-e "package.path='src/?.lua;'..package.path"
 
 # Lua interpreter
 LUA=lua
+
+.PHONY: certs
 
 install:
 	mkdir -p $(DESTDIR)$(LUA_DIR)/copas
@@ -21,16 +24,29 @@ install:
 	cp src/copas/http.lua $(DESTDIR)$(LUA_DIR)/copas/http.lua
 	cp src/copas/limit.lua $(DESTDIR)$(LUA_DIR)/copas/limit.lua
 
-test:
-	$(LUA) $(PKGPATH) tests/largetransfer.lua
-	$(LUA) $(PKGPATH) tests/request.lua 'http://www.google.com'
-	$(LUA) $(PKGPATH) tests/request.lua 'https://www.google.nl'
-	$(LUA) $(PKGPATH) tests/httpredirect.lua
-	$(LUA) $(PKGPATH) tests/limit.lua
-	$(LUA) $(PKGPATH) tests/connecttwice.lua
-	$(LUA) $(PKGPATH) tests/exit.lua
-	$(LUA) $(PKGPATH) tests/exittest.lua
-	$(LUA) $(PKGPATH) tests/removeserver.lua
+tests/certs/clientA.pem:
+	cd ./tests/certs && \
+	./rootA.sh       && \
+	./rootB.sh       && \
+	./serverA.sh     && \
+	./serverB.sh     && \
+	./clientA.sh     && \
+	./clientB.sh     && \
+	cd ../..
+
+certs: tests/certs/clientA.pem
+
+test: certs
+	$(LUA) $(DELIM) $(PKGPATH) tests/largetransfer.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'http://www.google.com'
+	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'https://www.google.nl'
+	$(LUA) $(DELIM) $(PKGPATH) tests/httpredirect.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/limit.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/connecttwice.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/exit.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/exittest.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/removeserver.lua
+	$(LUA) $(DELIM)
 
 coverage:
 	$(RM) luacov.stats.out
@@ -39,3 +55,4 @@ coverage:
 
 clean:
 	$(RM) luacov.stats.out luacov.report.out
+	$(RM) tests/certs/*.pem tests/certs/*.srl

@@ -230,7 +230,7 @@ local function adjustheaders(reqt)
     }
     -- if we have authentication information, pass it along
     if reqt.user and reqt.password then
-        lower["authorization"] = 
+        lower["authorization"] =
             "Basic " ..  (mime.b64(reqt.user .. ":" .. reqt.password))
     end
     -- override with user headers
@@ -254,7 +254,7 @@ local function adjustrequest(reqt)
     -- explicit components override url
     for i,v in base.pairs(reqt) do nreqt[i] = v end
     if nreqt.port == "" then nreqt.port = 80 end
-    socket.try(nreqt.host and nreqt.host ~= "", 
+    socket.try(nreqt.host and nreqt.host ~= "",
         "invalid host '" .. base.tostring(nreqt.host) .. "'")
     -- compute uri if user hasn't overriden
     nreqt.uri = reqt.uri or adjusturi(nreqt)
@@ -292,10 +292,10 @@ local trequest, tredirect
         source = reqt.source,
         sink = reqt.sink,
         headers = reqt.headers,
-        proxy = reqt.proxy, 
+        proxy = reqt.proxy,
         nredirects = (reqt.nredirects or 0) + 1,
         create = reqt.create
-    }   
+    }
     -- pass location header back as a hint we redirected
     headers = headers or {}
     headers.location = headers.location or location
@@ -312,7 +312,7 @@ end
     h:sendheaders(nreqt.headers)
     -- if there is a body, send it
     if nreqt.source then
-        h:sendbody(nreqt.headers, nreqt.source, nreqt.step) 
+        h:sendbody(nreqt.headers, nreqt.source, nreqt.step)
     end
     local code, status = h:receivestatusline()
     -- if it is an HTTP/0.9 server, simply get the body and we are done
@@ -322,13 +322,13 @@ end
     end
     local headers
     -- ignore any 100-continue messages
-    while code == 100 do 
+    while code == 100 do
         headers = h:receiveheaders()
         code, status = h:receivestatusline()
     end
     headers = h:receiveheaders()
     -- at this point we should have a honest reply from the server
-    -- we can't redirect if we already used the source, so we report the error 
+    -- we can't redirect if we already used the source, so we report the error
     if shouldredirect(nreqt, code, headers) and not nreqt.source then
         h:close()
         return tredirect(reqt, headers.location)
@@ -361,7 +361,7 @@ local function tcp(params)
         if not u.port then
            u.port = _M.SSLPORT
            reqt.url = url.build(u)
-           reqt.port = _M.SSLPORT 
+           reqt.port = _M.SSLPORT
         end
         washttps = true
         return conn
@@ -371,7 +371,7 @@ local function tcp(params)
           try(nil, "Unallowed insecure redirect https to http")
         end
         return copas.wrap(socket.tcp())
-      end  
+      end
    end
 end
 
@@ -395,7 +395,7 @@ _M.parseRequest = function(u, b)
 end
 
 _M.request = socket.protect(function(reqt, body)
-    if base.type(reqt) == "string" then 
+    if base.type(reqt) == "string" then
         reqt = _M.parseRequest(reqt, body)
         local ok, code, headers, status = _M.request(reqt)
 
