@@ -25,7 +25,15 @@ local function add(self, task, ...)
       self:removethread(coroutine.running())           -- dismiss ourselves
       if not suc then error(err) end             -- rethrow error
     end)
-  table.insert(self.queue, coro)                 -- store in list
+  -- store in queue after the last coroutine
+  local node = {prev = self.queue.last, coro = coro}
+  self.queue.last = node
+  if node.prev then
+    node.prev.next = node
+  else
+    self.queue.first = node                      -- since there was no last node
+  end
+  self.queue[coro] = node
   self:next()
   return coro
 end
@@ -41,12 +49,14 @@ local function remove(self, coro)
     self.count = self.count - 1
   else
     -- check the queue and remove if found
-    for i, item in ipairs(self.queue) do
-      if coro == item then 
-        table.remove(self.queue, i)
-        break
-      end
-    end    
+    local node = self.queue[coro]
+    if node then
+      self.queue[coro] = nil
+      if self.queue.first == node then self.queue.first = node.next end
+      if self.queue.last == node then self.queue.last = node.prev end
+      if node.next then node.next.prev = node.prev end
+      if node.prev then node.prev.next = node.next end
+    end
   end  
   self:next()
 end
@@ -54,10 +64,18 @@ end
 -- schedules the next task (if any) for execution, signals completeness
 local function nxt(self)
   while self.count < self.maxt do
-    local coro = self.queue[1]
-    if not coro then break end -- queue is empty, so nothing to add
+    local node = self.queue.first
+    if not node then break end -- queue is empty, so nothing to add
+    local coro = node.coro
+    -- removing from the queue as both hash table and doubly linked list
+    self.queue[coro] = nil
+    self.queue.first = node.next
+    if node.next then
+      node.next.prev = nil
+    else
+      self.queue.last = nil
+    end
     -- move it to running and restart the task
-    table.remove(self.queue, 1)
     self.running[coro] = coro
     self.count = self.count + 1
     copas.wakeup(coro)
@@ -85,7 +103,8 @@ local function new(maxt)
   return {
     maxt = maxt or 99999,     -- max simultaneous tasks
     count = 0,                -- count of running tasks
-    queue = {},               -- tasks waiting (list/array)
+    queue = { first = nil,    -- tasks waiting (as a hash table and as a doubly linked list,
+      last = nil },           --                with each node containing prev,next,coro)
     running = {},             -- tasks currently running (indexed by coroutine)
     waiting = {},             -- coroutines, waiting for all tasks being finished (indexed by coro)
     addthread = add,
