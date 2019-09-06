@@ -8,9 +8,10 @@
 local copas = require("copas")
 local pack = table.pack or function(...) return {n=select('#',...),...} end
 local unpack = function(t) return (table.unpack or unpack)(t, 1, t.n or #t) end
+local QUEUE_MODULO = 0x40000000 -- about 1e9 max coroutines in set.
 
 local pcall = pcall
-if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
+if _VERSION=="Lua 5.1" then     -- obsolete: only for Lua 5.1 compatibility
   pcall = require("coxpcall").pcall
 end
 
@@ -26,14 +27,12 @@ local function add(self, task, ...)
       if not suc then error(err) end             -- rethrow error
     end)
   -- store in queue after the last coroutine
-  local node = {prev = self.queue.last, coro = coro}
-  self.queue.last = node
-  if node.prev then
-    node.prev.next = node
-  else
-    self.queue.first = node                      -- since there was no last node
-  end
-  self.queue[coro] = node
+  local queue = self.queue
+  local wp = queue.wp
+  queue[wp] = coro
+  queue[coro] = wp
+  queue.wp = wp % QUEUE_MODULO + 1
+
   self:next()
   return coro
 end
@@ -42,43 +41,39 @@ end
 -- set of tasks is executing. Will NOT stop the task if 
 -- it is already running.
 local function remove(self, coro)
-  self.queue[coro] = nil
   if self.running[coro] then
     -- it is in the already running set
     self.running[coro] = nil
     self.count = self.count - 1
-  else
-    -- check the queue and remove if found
-    local node = self.queue[coro]
-    if node then
-      self.queue[coro] = nil
-      if self.queue.first == node then self.queue.first = node.next end
-      if self.queue.last == node then self.queue.last = node.prev end
-      if node.next then node.next.prev = node.prev end
-      if node.prev then node.prev.next = node.next end
-    end
-  end  
+  end
+  -- check the queue and remove if found
+  local queue = self.queue
+  local i = queue[coro]
+  if i then
+    queue[i] = nil
+    queue[coro] = nil
+  end
   self:next()
 end
 
 -- schedules the next task (if any) for execution, signals completeness
 local function nxt(self)
+  local queue = self.queue
   while self.count < self.maxt do
-    local node = self.queue.first
-    if not node then break end -- queue is empty, so nothing to add
-    local coro = node.coro
-    -- removing from the queue as both hash table and doubly linked list
-    self.queue[coro] = nil
-    self.queue.first = node.next
-    if node.next then
-      node.next.prev = nil
-    else
-      self.queue.last = nil
+    local rp = queue.rp
+    if rp == queue.wp then break end -- queue is empty
+
+    local coro = queue[rp]
+    queue.rp = rp % QUEUE_MODULO + 1
+    if coro then
+      -- removing from the queue
+      queue[rp] = nil
+      queue[coro] = nil
+      -- move it to running and restart the task
+      self.running[coro] = coro
+      self.count = self.count + 1
+      copas.wakeup(coro)
     end
-    -- move it to running and restart the task
-    self.running[coro] = coro
-    self.count = self.count + 1
-    copas.wakeup(coro)
   end
   if self.count == 0 and next(self.waiting) then
     -- all tasks done, resume the waiting tasks so they can unblock/return
@@ -103,8 +98,7 @@ local function new(maxt)
   return {
     maxt = maxt or 99999,     -- max simultaneous tasks
     count = 0,                -- count of running tasks
-    queue = { first = nil,    -- tasks waiting (as a hash table and as a doubly linked list,
-      last = nil },           --                with each node containing prev,next,coro)
+    queue = {rp=1, wp=1},     -- tasks waiting (as a circular buffer. If wp==rp then the queue is empty)
     running = {},             -- tasks currently running (indexed by coroutine)
     waiting = {},             -- coroutines, waiting for all tasks being finished (indexed by coro)
     addthread = add,
