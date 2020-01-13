@@ -4,6 +4,7 @@
 
 local copas = require("copas")
 local smtp = require("socket.smtp")
+local socket = require("socket")
 
 local create = function() return copas.wrap(socket.tcp()) end
 local forwards = { -- setting these will be forwarded to the original smtp module
@@ -14,7 +15,7 @@ local forwards = { -- setting these will be forwarded to the original smtp modul
   TIMEZONE = true
 }
 
-copas.smtp = setmetatable({}, { 
+copas.smtp = setmetatable({}, {
     -- use original module as metatable, to lookup constants like socket.SERVER, etc.
     __index = smtp,
     -- Setting constants is forwarded to the luasocket.smtp module.

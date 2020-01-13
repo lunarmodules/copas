@@ -34,12 +34,12 @@ end
 local done = false
 
 copas.addthread(function()
-  local result, code, headers, status = doreq("https://goo.gl/UBCUc5")  -- https --> https redirect
+  local _, code, headers = doreq("https://goo.gl/UBCUc5")  -- https --> https redirect
   assert(tonumber(code)==200)
   assert(headers.location == "https://github.com/brunoos/luasec")
   print("https -> https redirect OK!")
   copas.addthread(function()
-    local result, code, headers, status = doreq("http://goo.gl/UBCUc5")  -- http --> https redirect
+    local _, code, headers = doreq("http://goo.gl/UBCUc5")  -- http --> https redirect
     assert(tonumber(code)==200)
     assert(headers.location == "https://github.com/brunoos/luasec")
     print("http  -> https redirect OK!")
@@ -53,7 +53,7 @@ copas.addthread(function()
       local crlf = string.char(13)..string.char(10)
       copas.addserver(server, function(skt)
           skt = copas.wrap(skt)
-          local request = assert(skt:receive())
+          assert(skt:receive())
           local response =
               "HTTP/1.1 302 Found" .. crlf ..
               "Location: http://www.thijsschreijer.nl/blog/" .. crlf .. crlf
@@ -61,18 +61,18 @@ copas.addthread(function()
           skt:close()
       end)
       -- execute test request
-      local result, code, headers, status = doreq("http://localhost:9876/")  -- http --> http redirect
+      local _, code, headers = doreq("http://localhost:9876/")  -- http --> http redirect
       copas.removeserver(server)  -- immediately close server again
       assert(tonumber(code)==200)
       assert(headers.location == "http://www.thijsschreijer.nl/blog/")
       print("http  -> http  redirect OK!")
       copas.addthread(function()
-        local result, code, headers, status = doreq("https://goo.gl/tBfqNu")  -- https --> http security test case
+        local result, code = doreq("https://goo.gl/tBfqNu")  -- https --> http security test case
         assert(result==nil and code == "Unallowed insecure redirect https to http")
         print("https -> http  redirect, while not allowed OK!:", code)
         copas.addthread(function()
           redirect = "all"
-          local result, code, headers, status = doreq("https://goo.gl/tBfqNu")  -- https --> http security test case
+          local _, code, headers = doreq("https://goo.gl/tBfqNu")  -- https --> http security test case
           assert(tonumber(code)==200)
           assert(headers.location == "http://www.thijsschreijer.nl/blog/")
           print("https -> http  redirect, while allowed OK!")

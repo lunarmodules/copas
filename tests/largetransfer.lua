@@ -1,7 +1,7 @@
 -- tests large transmissions, sending and receiving
--- uses `receive` and `receivePartial` 
+-- uses `receive` and `receivePartial`
 -- Does send the same string twice simultaneously
--- 
+--
 -- Test should;
 --  * show timer output, once per second, and actual time should be 1 second increments
 --  * both transmissions should take appr. equal time, then they we're nicely cooperative
@@ -40,9 +40,9 @@ local function runtest()
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
       skt:connect("localhost", 49500)
-      skt:send(body)
+      local _, err = skt:send(body)
       print("Writing... 49500... Done!", socket.gettime()-start, err, #body)
-      skt = nil
+      skt = nil -- luacheck: ignore
       collectgarbage()
       collectgarbage()
       done = done + 1
@@ -53,9 +53,9 @@ local function runtest()
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
       skt:connect("localhost", 49501)
-      skt:send(body)
+      local _, err = skt:send(body)
       print("Writing... 49501... Done!", socket.gettime()-start, err, #body)
-      skt = nil
+      skt = nil -- luacheck: ignore
       collectgarbage()
       collectgarbage()
       done = done + 1
@@ -99,4 +99,4 @@ cparams = {
 }
 done = 0
 start = socket.gettime()
-runtest()  
+runtest()

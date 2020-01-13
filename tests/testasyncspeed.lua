@@ -13,7 +13,7 @@ local targets = {
 
 local function sync(list)
   for _, host in ipairs(list) do
-    res, err = synchttp(host)
+    local res = synchttp(host)
     if not res then
       print("Error sync: "..host.." failed, rerun test!")
     else
@@ -23,7 +23,7 @@ local function sync(list)
 end
 
 local handler = function(host)
-  res, err = asynchttp(host)
+  local res = asynchttp(host)
   if not res then
     print("Error async: "..host.." failed, rerun test!")
   else

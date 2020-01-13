@@ -11,7 +11,7 @@ wport = tonumber(wport)
 
 local function wait_for_trigger()
    copas.addserver(wskt, function(cskt)
-      local data, err, partial = cskt:receive()
+      local data, _, partial = cskt:receive()
       if partial and not data then
          data = partial
       end
@@ -23,7 +23,7 @@ end
 local function trigger_it(n)
    local cskt = socket.tcp()
    local ok = cskt:connect(whost, wport)
-   if ok then 
+   if ok then
       cskt:send("hi "..n)
    end
    cskt:close()

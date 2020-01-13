@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 -- Copas - Coroutine Oriented Portable Asynchronous Services
--- 
+--
 -- Copas Wrapper for socket.http module
--- 
+--
 -- Written by Leonardo Godinho da Cunha
 -------------------------------------------------------------------------------
 local copas = require("copas")
@@ -21,8 +21,8 @@ function cosocket.tcp ()
 	local w_skt_mt = { __index = skt }
 	local ret_skt = setmetatable ({ socket = skt }, w_skt_mt)
 	ret_skt.settimeout = function (self,val)
-				return self.socket:settimeout (val) 
-	   		end 	
+				return self.socket:settimeout (val)
+      end
 	ret_skt.connect = function (self,host, port)
 				local ret,err = copas.connect (self.socket,host, port)
 				local d = copas.wrap(self.socket)
@@ -31,12 +31,14 @@ function cosocket.tcp ()
 					local ret,val=d.send(client, data)
 					return ret,val
 				end
-    				self.receive=d.receive
-    				self.close = function (w_socket)
-    					ret=w_socket.socket:close()
-    					return ret
-    				end
+        self.receive=d.receive
+        self.close = function (w_socket)
+          ret=w_socket.socket:close()
+          return ret
+        end
 				return ret,err
-			end 
+			end
 	return  ret_skt
 end
+
+return cosocket
