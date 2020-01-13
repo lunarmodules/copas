@@ -17,7 +17,7 @@ local forwards = { -- setting these will be forwarded to the original smtp modul
   USER = true
 }
 
-copas.ftp = setmetatable({}, { 
+copas.ftp = setmetatable({}, {
     -- use original module as metatable, to lookup constants like socket.TIMEOUT, etc.
     __index = ftp,
     -- Setting constants is forwarded to the luasocket.ftp module.
@@ -29,14 +29,14 @@ copas.ftp = setmetatable({}, {
 local _M = copas.ftp
 
 ---[[ copy of Luasocket stuff here untile PR #133 is accepted
--- a copy of the version in LuaSockets' ftp.lua 
+-- a copy of the version in LuaSockets' ftp.lua
 -- no 'create' can be passed in the string form, hence a local copy here
 local default = {
     path = "/",
     scheme = "ftp"
 }
 
--- a copy of the version in LuaSockets' ftp.lua 
+-- a copy of the version in LuaSockets' ftp.lua
 -- no 'create' can be passed in the string form, hence a local copy here
 local function parse(u)
     local t = socket.try(url.parse(u, default))
@@ -66,7 +66,7 @@ end
 --]]
 
 _M.put = socket.protect(function(putt, body)
-    if type(putt) == "string" then 
+    if type(putt) == "string" then
       putt = _M.parseRequest(putt, body)
       _M.put(putt)
       return table.concat(putt.target)
@@ -77,11 +77,11 @@ _M.put = socket.protect(function(putt, body)
 end)
 
 _M.get = socket.protect(function(gett)
-    if type(gett) == "string" then 
+    if type(gett) == "string" then
       gett = _M.parseRequest(gett)
       _M.get(gett)
       return table.concat(gett.target)
-    else 
+    else
       gett.create = gett.create or create
       return ftp.get(gett)
     end

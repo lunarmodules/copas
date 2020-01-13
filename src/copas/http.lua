@@ -323,7 +323,7 @@ end
     local headers
     -- ignore any 100-continue messages
     while code == 100 do
-        headers = h:receiveheaders()
+        h:receiveheaders()
         code, status = h:receivestatusline()
     end
     headers = h:receiveheaders()

@@ -28,7 +28,7 @@ local pcall = pcall
 if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
   pcall = require("coxpcall").pcall
 end
-  
+
 -- Redefines LuaSocket functions with coroutine safe versions
 -- (this allows the use of socket.http from within copas)
 local function statusHandler(status, ...)
@@ -211,7 +211,7 @@ function copas.receive(client, pattern, part)
   local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or (not _isTimeout[err]) then 
+    if s or (not _isTimeout[err]) then
       current_log[client] = nil
       return s, err, part
     end
@@ -280,14 +280,14 @@ function copas.send(client, data, from, to)
     -- adds extra coroutine swap
     -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
-      current_log[client] = gettime()   -- TODO: how to handle this?? 
+      current_log[client] = gettime()   -- TODO: how to handle this??
       if current_log == _writing_log then
         coroutine.yield(client, _writing)
       else
         coroutine.yield(client, _reading)
       end
     end
-    if s or (not _isTimeout[err]) then 
+    if s or (not _isTimeout[err]) then
       current_log[client] = nil
       return s, err,lastIndex
     end
@@ -336,8 +336,8 @@ function copas.connect(skt, host, port)
     -- it is the same as "timeout"
     if ret or (err ~= "timeout" and err ~= "Operation already in progress") then
       -- Once the async connect completes, Windows returns the error "already connected"
-      -- to indicate it is done, so that error should be ignored. Except when it is the 
-      -- first call to connect, then it was already connected to something else and the 
+      -- to indicate it is done, so that error should be ignored. Except when it is the
+      -- first call to connect, then it was already connected to something else and the
       -- error should be returned
       if (not ret) and (err == "already connected" and tried_more_than_once) then
         ret = 1
@@ -364,7 +364,7 @@ end
 -- @param skt Regular LuaSocket CLIENT socket object
 -- @param sslt Table with ssl parameters
 -- @return wrapped ssl socket, or throws an error
-function copas.dohandshake(skt, sslt)  
+function copas.dohandshake(skt, sslt)
   ssl = ssl or require("ssl")
   local nskt, err = ssl.wrap(skt, sslt)
   if not nskt then return error(err) end
@@ -382,7 +382,7 @@ function copas.dohandshake(skt, sslt)
       error(err)
     end
     coroutine.yield(nskt, queue)
-  until false    
+  until false
 end
 
 -- flushes a client write buffer (deprecated)
@@ -395,7 +395,7 @@ local _skt_mt_tcp = {
                                   return tostring(self.socket).." (copas wrapped)"
                                 end,
                    __index = {
-                              
+
                    send = function (self, data, from, to)
                             return copas.send (self.socket, data, from, to)
                           end,
@@ -422,7 +422,7 @@ local _skt_mt_tcp = {
                      local res, err = copas.connect(self.socket, ...)
                      if res and self.ssl_params then
                        res, err = self:dohandshake()
-                     end  
+                     end
                      return res, err
                    end,
 
@@ -443,7 +443,7 @@ local _skt_mt_tcp = {
                    accept = function(self, ...) return self.socket:accept(...) end,
 
                    setoption = function(self, ...) return self.socket:setoption(...) end,
-                   
+
                    -- TODO: is this DNS related? hence blocking?
                    getpeername = function(self, ...) return self.socket:getpeername(...) end,
 
@@ -456,7 +456,7 @@ local _skt_mt_tcp = {
                      self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
                      return self
                    end,
-                   
+
                }}
 
 -- wraps a UDP socket, copy of TCP one adapted for UDP.
@@ -476,7 +476,7 @@ _skt_mt_udp.__index.receive =     function (self, size)
 _skt_mt_udp.__index.receivefrom = function (self, size)
                                     return copas.receivefrom (self.socket, (size or UDP_DATAGRAM_MAX))
                                   end
-                   
+
                                   -- TODO: is this DNS related? hence blocking?
 _skt_mt_udp.__index.setpeername = function(self, ...) return self.socket:getpeername(...) end
 
@@ -492,7 +492,7 @@ _skt_mt_udp.__index.close       = function(self, ...) return true end
 -- @sslt (optional) Table with ssl parameters, use an empty table to use ssl with defaults
 -- @return wrapped socket object
 function copas.wrap (skt, sslt)
-  if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then 
+  if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then
     return skt -- already wrapped
   end
   skt:settimeout(0)
@@ -506,7 +506,7 @@ end
 --- Wraps a handler in a function that deals with wrapping the socket and doing the
 -- optional ssl handshake.
 function copas.handler(handler, sslparams)
-  return function (skt, ...) 
+  return function (skt, ...)
     skt = copas.wrap(skt)
     if sslparams then skt:dohandshake(sslparams) end
     return handler(skt, ...)
@@ -545,7 +545,7 @@ local function _doTick (co, skt, ...)
     new_q:push (res, co)
   else
     if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
-    if skt and copas.autoclose and isTCP(skt) then 
+    if skt and copas.autoclose and isTCP(skt) then
       skt:close() -- do not auto-close UDP sockets, as the handler socket is also the server socket
     end
     _errhandlers [co] = nil
@@ -602,12 +602,12 @@ function copas.removeserver(server, keep_open)
   if mt == _skt_mt_tcp or mt == _skt_mt_udp then
     s = server.socket
   end
-  _servers[s] = nil 
-  _reading:remove(s) 
+  _servers[s] = nil
+  _reading:remove(s)
   if keep_open then
     return true
   end
-  return server:close() 
+  return server:close()
 end
 
 -------------------------------------------------------------------------------
@@ -661,7 +661,7 @@ local _readable_t = {
   tick = function (self, input)
            local handler = _servers[input]
            if handler then
-             input = _accept(input, handler)
+             _accept(input, handler)
            else
              _reading:remove (input)
              self.def_tick (input)
@@ -723,13 +723,13 @@ local function _select (timeout)
 
   if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
     last_cleansing = now
-    
+
     -- Check all sockets selected for reading, and check how long they have been waiting
     -- for data already, without select returning them as readable
     for skt,time in pairs(_reading_log) do
       if not r_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
         -- This one timedout while waiting to become readable, so move
-        -- it in the readable list and try and read anyway, despite not 
+        -- it in the readable list and try and read anyway, despite not
         -- having been returned by select
         _reading_log[skt] = nil
         r_evs[#r_evs + 1] = skt

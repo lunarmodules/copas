@@ -1,13 +1,13 @@
 --------------------------------------------------------------
 -- Limits resource usage while executing tasks.
--- Tasks added will be run in parallel, with a maximum of 
+-- Tasks added will be run in parallel, with a maximum of
 -- simultaneous tasks to prevent consuming all/too many resources.
 -- Every task added will immediately be scheduled (if there is room)
 -- using the `wait` method one can wait for completion.
 
 local copas = require("copas")
-local pack = table.pack or function(...) return {n=select('#',...),...} end
-local unpack = function(t) return (table.unpack or unpack)(t, 1, t.n or #t) end
+local pack = table.pack or function(...) return {n=select('#',...),...} end --luacheck: ignore
+local unpack = function(t) return (table.unpack or unpack)(t, 1, t.n or #t) end --luacheck: ignore
 
 local pcall = pcall
 if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
@@ -15,7 +15,7 @@ if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compat
 end
 
 -- Add a task to the queue, returns the coroutine created
--- identical to `copas.addthread`. Can be called while the 
+-- identical to `copas.addthread`. Can be called while the
 -- set of tasks is executing.
 local function add(self, task, ...)
   local carg = pack(...)
@@ -30,8 +30,8 @@ local function add(self, task, ...)
   return coro
 end
 
--- remove a task from the queue. Can be called while the 
--- set of tasks is executing. Will NOT stop the task if 
+-- remove a task from the queue. Can be called while the
+-- set of tasks is executing. Will NOT stop the task if
 -- it is already running.
 local function remove(self, coro)
   self.queue[coro] = nil
@@ -42,12 +42,12 @@ local function remove(self, coro)
   else
     -- check the queue and remove if found
     for i, item in ipairs(self.queue) do
-      if coro == item then 
+      if coro == item then
         table.remove(self.queue, i)
         break
       end
-    end    
-  end  
+    end
+  end
   self:next()
 end
 
@@ -96,4 +96,4 @@ local function new(maxt)
 end
 
 return { new = new }
-  
+
