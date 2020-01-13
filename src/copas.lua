@@ -478,7 +478,7 @@ _skt_mt_udp.__index.receivefrom = function (self, size)
                                   end
 
                                   -- TODO: is this DNS related? hence blocking?
-_skt_mt_udp.__index.setpeername = function(self, ...) return self.socket:getpeername(...) end
+_skt_mt_udp.__index.setpeername = function(self, ...) return self.socket:setpeername(...) end
 
 _skt_mt_udp.__index.setsockname = function(self, ...) return self.socket:setsockname(...) end
 
