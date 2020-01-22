@@ -189,6 +189,52 @@ end   -- _sleeping
 
 
 
+local weakkeys = { __mode = "k" }
+local weakvals = { __mode = "v" }
+local _usersockettimeouts = {} -- relative timeout values, indexed by socket
+setmetatable(_usersockettimeouts, weakkeys)
+local _usertimedoutsockets = {} -- table of t[socket] = true for sockets that have hit timeout
+setmetatable(_usertimedoutsockets, weakkeys)
+local _usertimeouts = {
+    ordered = {}, -- list of absolute time & socket ordered by absolute time
+    bysocket = {}, -- list of timeout times by socket
+
+    insert = function(self, timeout, skt, co)
+        if not skt then return end
+        assert(self.bysocket[skt] == nil)
+        if timeout < 0 then timeout = 0 end
+        local timeouttime = gettime() + timeout
+        local i, n = 1, #self.ordered
+        while i <= #self.ordered and self.ordered[i].time <= timeouttime do i=i+1 end
+        local t = {time = timeouttime, skt = skt, co = co}
+        setmetatable(t, weakvals)
+        table.insert(self.ordered, i, t)
+        self.bysocket[skt] = timeouttime
+    end,
+    remove = function(self, skt)
+      -- naive, but probably good enough (but maybe search back from end?)
+      for i,t in pairs(self.ordered) do
+        if t.skt == skt then table.remove(self.ordered, i) end
+      end
+      self.bysocket[skt] = nil
+    end,
+    getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
+        local delay = self.ordered[1] and self.ordered[1].time - gettime() or nil
+
+        return delay and math.max(delay, 0) or nil
+    end,
+    -- find the next timeout time that has passed
+    pop = function(self, time)
+        if #self.ordered == 0 or time < self.ordered[1].time then return end
+        self.bysocket[self.ordered[1].skt] = nil
+        return table.remove(self.ordered, 1)
+    end,
+    get = function(self, skt)
+      return self.bysocket[skt]
+    end
+}
+setmetatable(_usertimeouts.bysocket, weakkeys)
+
 local _servers = newsocketset() -- servers being handled
 local _threads = setmetatable({}, {__mode = "k"})  -- registered threads added with addthread()
 local _canceled = setmetatable({}, {__mode = "k"}) -- threads that are canceled and pending removal
@@ -215,6 +261,10 @@ local function isTCP(socket)
   return string.sub(tostring(socket),1,3) ~= "udp"
 end
 
+function copas.settimeout(client, timeout)
+  _usersockettimeouts[client] = timeout
+end
+
 -- reads a pattern from a client and yields to the reading set on timeouts
 -- UDP: a UDP socket expects a second argument to be a number, so it MUST
 -- be provided as the 'pattern' below defaults to a string. Will throw a
@@ -225,7 +275,10 @@ function copas.receive(client, pattern, part)
   local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or (not _isTimeout[err]) then
+    if s or (not _isTimeout[err]) or _usertimedoutsockets[client] then
+      if not s and _usertimedoutsockets[client] then err = "timeout" end
+      _usertimedoutsockets[client] = nil
+      _usertimeouts:remove(client)
       current_log[client] = nil
       return s, err, part
     end
@@ -248,7 +301,10 @@ function copas.receivefrom(client, size)
   size = size or UDP_DATAGRAM_MAX
   repeat
     s, err, port = client:receivefrom(size) -- upon success err holds ip address
-    if s or err ~= "timeout" then
+    if s or err ~= "timeout" or _usertimedoutsockets[client] then
+      if not s and _usertimedoutsockets[client] then err = "timeout" end
+      _usertimedoutsockets[client] = nil
+      _usertimeouts:remove(client)
       _reading_log[client] = nil
       return s, err, port
     end
@@ -265,7 +321,14 @@ function copas.receivePartial(client, pattern, part)
   local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout[err]) then
+    if s
+      or ((type(pattern)=="number") and part~="" and part ~=nil )
+      or (not _isTimeout[err])
+      or _usertimedoutsockets[client]
+    then
+      if not s and _usertimedoutsockets[client] then err = "timeout" end
+      _usertimedoutsockets[client] = nil
+      _usertimeouts:remove(client)
       current_log[client] = nil
       return s, err, part
     end
@@ -301,7 +364,10 @@ function copas.send(client, data, from, to)
         coroutine.yield(client, _reading)
       end
     end
-    if s or (not _isTimeout[err]) then
+    if s or (not _isTimeout[err]) or _usertimedoutsockets[client] then
+      if not s and _usertimedoutsockets[client] then err = "timeout" end
+      _usertimedoutsockets[client] = nil
+      _usertimeouts:remove(client)
       current_log[client] = nil
       return s, err,lastIndex
     end
@@ -330,7 +396,10 @@ function copas.sendto(client, data, ip, port)
       _writing_log[client] = gettime()
       coroutine.yield(client, _writing)
     end
-    if s or err ~= "timeout" then
+    if s or err ~= "timeout" or _usertimedoutsockets[client] then
+      if not s and _usertimedoutsockets[client] then err = "timeout" end
+      _usertimedoutsockets[client] = nil
+      _usertimeouts:remove(client)
       _writing_log[client] = nil
       return s, err
     end
@@ -348,7 +417,11 @@ function copas.connect(skt, host, port)
     -- non-blocking connect on Windows results in error "Operation already
     -- in progress" to indicate that it is completing the request async. So essentially
     -- it is the same as "timeout"
-    if ret or (err ~= "timeout" and err ~= "Operation already in progress") then
+    if ret
+      or (err ~= "timeout" and err ~= "Operation already in progress")
+      or _usertimedoutsockets[client]
+    then
+      if not ret and _usertimedoutsockets[client] then err = "timeout" end
       -- Once the async connect completes, Windows returns the error "already connected"
       -- to indicate it is done, so that error should be ignored. Except when it is the
       -- first call to connect, then it was already connected to something else and the
@@ -357,6 +430,8 @@ function copas.connect(skt, host, port)
         ret = 1
         err = nil
       end
+      _usertimedoutsockets[skt] = nil
+      _usertimeouts:remove(skt)
       _writing_log[skt] = nil
       return ret, err
     end
@@ -387,6 +462,8 @@ function copas.dohandshake(skt, sslt)
   repeat
     local success, err = nskt:dohandshake()
     if success then
+      _usertimedoutsockets[nskt] = nil
+      _usertimeouts:remove(nskt)
       return nskt
     elseif err == "wantwrite" then
       queue = _writing
@@ -395,6 +472,7 @@ function copas.dohandshake(skt, sslt)
     else
       error(err)
     end
+    if _usertimedoutsockets[nskt] then return nil, "timeout" end
     coroutine.yield(nskt, queue)
   until false
 end
@@ -415,7 +493,7 @@ local _skt_mt_tcp = {
                           end,
 
                    receive = function (self, pattern, prefix)
-                               if (self.timeout==0) then
+                               if self.usernoblock then
                                  return copas.receivePartial(self.socket, pattern, prefix)
                                end
                                return copas.receive(self.socket, pattern, prefix)
@@ -425,8 +503,14 @@ local _skt_mt_tcp = {
                              return copas.flush(self.socket)
                            end,
 
-                   settimeout = function (self, time)
-                                  self.timeout=time
+                   settimeout = function (self, timeout)
+                                  if timeout == 0 then
+                                    self.usernoblock = true
+                                    copas.settimeout(self.socket, nil)
+                                  else
+                                    self.usernoblock = false
+                                    copas.settimeout(self.socket, timeout)
+                                  end
                                   return true
                                 end,
 
@@ -560,7 +644,13 @@ local function _doTick (co, skt, ...)
     return
   end
 
+  if skt then _usertimeouts:remove(skt) end
+
   local ok, res, new_q = coroutine.resume(co, skt, ...)
+
+  if ok and coroutine.running(co) and _usersockettimeouts[res] then
+    _usertimeouts:insert(_usersockettimeouts[res], res, co)
+  end
 
   if ok and res and new_q then
     new_q:insert (res)
@@ -723,7 +813,20 @@ local _writable_t = {
 }
 
 addtaskWrite (_writable_t)
---
+
+-- a task to check user timeout events
+local _usertimeout_t = {
+  tick = function (self, time, ...)
+           local ut = _usertimeouts:pop(time)
+           if ut then
+             _usertimedoutsockets[ut.skt] = true
+             _reading:remove(ut.skt)
+             _writing:remove(ut.skt)
+             _doTick(ut.co, ut.skt, ...)
+           end
+         end
+}
+
 --sleeping threads task
 local _sleeping_t = {
     tick = function (self, time, ...)
@@ -862,15 +965,20 @@ end
 -------------------------------------------------------------------------------
 function copas.step(timeout)
   _sleeping_t:tick(gettime())
+  _usertimeout_t:tick(gettime())
+
 
   -- Need to wake up the select call in time for the next sleeping event
   local nextwait = _sleeping:getnext()
   if nextwait then
     timeout = timeout and math.min(nextwait, timeout) or nextwait
-  else
-    if copas.finished() then
-      return false
-    end
+  elseif copas.finished() then
+    return false
+  end
+
+  local nextusertimeout = _usertimeouts:getnext()
+  if nextusertimeout then
+    timeout = timeout and math.min(timeout, nextusertimeout) or nextusertimeout
   end
 
   local err = _select (timeout)
