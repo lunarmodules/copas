@@ -228,6 +228,58 @@ end   -- _sleeping
 
 
 
+local _sockettimeouts = {} do
+  local running = setmetatable({}, { __mode = "k" }) -- map of threads that have timers running
+  local beenhit = setmetatable({}, { __mode = "k" }) -- map of threads that have hit timeout
+  local hits = setmetatable({}, { __mode = "v" }) -- list of threads that have hit timeout
+  local reltimes = setmetatable({}, { __mode = "k" }) -- relative timeouts per socket
+
+  function _sockettimeouts.settimeout(skt, timeout)
+    reltimes[skt] = timeout
+  end
+
+  function _sockettimeouts.start(skt, queue)
+    assert(skt, "no socket provided")
+    assert(queue, "no queue provided")
+    local co = coroutine.running()
+    local timeout = reltimes[skt]
+    if timeout and timeout > 0  and not running[co] then
+      copas.settimeout(timeout, function(co)
+                                  beenhit[co] = true
+                                  running[co] = nil
+                                  table.insert(hits, { co, skt })
+                                  queue:remove(skt)
+                                end)
+      running[co] = true
+      beenhit[co] = nil
+    elseif timeout then
+      beenhit[co] = true
+    end
+  end
+
+  function _sockettimeouts.reset()
+    local co = coroutine.running()
+    copas.canceltimeout()
+    beenhit[co] = nil
+    running[co] = nil
+  end
+
+  function _sockettimeouts.beenhit()
+    local co = coroutine.running()
+    return beenhit[co] and true or false
+  end
+
+  -- get next hit timeout, returns `co, skt` or `nil`
+  function _sockettimeouts.pop()
+    return table.unpack(table.remove(hits) or {})
+  end
+
+  -- check if there are timeouts that are waiting to be `pop`ed
+  function _sockettimeouts.waitinghits()
+    return #hits > 0
+  end
+end  -- _sockettimeouts
+
 local _servers = newsocketset() -- servers being handled
 local _threads = setmetatable({}, {__mode = "k"})  -- registered threads added with addthread()
 local _canceled = setmetatable({}, {__mode = "k"}) -- threads that are canceled and pending removal
@@ -254,6 +306,10 @@ local function isTCP(socket)
   return string.sub(tostring(socket),1,3) ~= "udp"
 end
 
+function copas.settimeout(client, timeout)
+  _sockettimeouts.settimeout(client, timeout)
+end
+
 -- reads a pattern from a client and yields to the reading set on timeouts
 -- UDP: a UDP socket expects a second argument to be a number, so it MUST
 -- be provided as the 'pattern' below defaults to a string. Will throw a
@@ -264,15 +320,18 @@ function copas.receive(client, pattern, part)
   local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or (not _isTimeout[err]) then
+    if s or (not _isTimeout[err]) or _sockettimeouts.beenhit(client) then
+      _sockettimeouts.reset(client)
       current_log[client] = nil
       return s, err, part
     end
-    if err == "wantwrite" then
+    if err == "wantwrite" then -- Can receive really get a want write?
+      _sockettimeouts.start(client, _writing)
       current_log = _writing_log
       current_log[client] = gettime()
       coroutine.yield(client, _writing)
     else
+      _sockettimeouts.start(client, _reading)
       current_log = _reading_log
       current_log[client] = gettime()
       coroutine.yield(client, _reading)
@@ -287,10 +346,12 @@ function copas.receivefrom(client, size)
   size = size or UDP_DATAGRAM_MAX
   repeat
     s, err, port = client:receivefrom(size) -- upon success err holds ip address
-    if s or err ~= "timeout" then
+    if s or err ~= "timeout" or _sockettimeouts.beenhit(client) then
+      _sockettimeouts.reset(client)
       _reading_log[client] = nil
       return s, err, port
     end
+    _sockettimeouts.start(client, _reading)
     _reading_log[client] = gettime()
     coroutine.yield(client, _reading)
   until false
@@ -304,15 +365,22 @@ function copas.receivePartial(client, pattern, part)
   local current_log = _reading_log
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout[err]) then
+    if s
+      or ((type(pattern)=="number") and part~="" and part ~=nil )
+      or (not _isTimeout[err])
+      or _sockettimeouts.beenhit(client)
+    then
+      _sockettimeouts.reset(client)
       current_log[client] = nil
       return s, err, part
     end
     if err == "wantwrite" then
+      _sockettimeouts.start(client, _writing)
       current_log = _writing_log
       current_log[client] = gettime()
       coroutine.yield(client, _writing)
     else
+      _sockettimeouts.start(client, _reading)
       current_log = _reading_log
       current_log[client] = gettime()
       coroutine.yield(client, _reading)
@@ -335,20 +403,25 @@ function copas.send(client, data, from, to)
     if (math.random(100) > 90) then
       current_log[client] = gettime()   -- TODO: how to handle this??
       if current_log == _writing_log then
+        _sockettimeouts.start(client, _writing)
         coroutine.yield(client, _writing)
       else
+        _sockettimeouts.start(client, _reading)
         coroutine.yield(client, _reading)
       end
     end
-    if s or (not _isTimeout[err]) then
+    if s or (not _isTimeout[err]) or _sockettimeouts.beenhit(client) then
+      _sockettimeouts.reset(client)
       current_log[client] = nil
       return s, err,lastIndex
     end
     if err == "wantread" then
+      _sockettimeouts.start(client, _reading)
       current_log = _reading_log
       current_log[client] = gettime()
       coroutine.yield(client, _reading)
     else
+      _sockettimeouts.start(client, _writing)
       current_log = _writing_log
       current_log[client] = gettime()
       coroutine.yield(client, _writing)
@@ -370,7 +443,10 @@ function copas.connect(skt, host, port)
     -- non-blocking connect on Windows results in error "Operation already
     -- in progress" to indicate that it is completing the request async. So essentially
     -- it is the same as "timeout"
-    if ret or (err ~= "timeout" and err ~= "Operation already in progress") then
+    if ret
+      or (err ~= "timeout" and err ~= "Operation already in progress")
+      or _sockettimeouts.beenhit(skt)
+    then
       -- Once the async connect completes, Windows returns the error "already connected"
       -- to indicate it is done, so that error should be ignored. Except when it is the
       -- first call to connect, then it was already connected to something else and the
@@ -379,9 +455,11 @@ function copas.connect(skt, host, port)
         ret = 1
         err = nil
       end
+      _sockettimeouts.reset(skt)
       _writing_log[skt] = nil
       return ret, err
     end
+    _sockettimeouts.start(skt, _writing)
     tried_more_than_once = tried_more_than_once or true
     _writing_log[skt] = gettime()
     coroutine.yield(skt, _writing)
@@ -409,6 +487,7 @@ function copas.dohandshake(skt, sslt)
   repeat
     local success, err = nskt:dohandshake()
     if success then
+      _sockettimeouts.reset(nskt)
       return nskt
     elseif err == "wantwrite" then
       queue = _writing
@@ -417,6 +496,11 @@ function copas.dohandshake(skt, sslt)
     else
       error(err)
     end
+    if _sockettimeouts.beenhit(nskt) then
+      _sockettimeouts.reset(nskt)
+      return nil, "timeout"
+    end
+    _sockettimeouts.start(nskt, queue)
     coroutine.yield(nskt, queue)
   until false
 end
@@ -449,6 +533,7 @@ local _skt_mt_tcp = {
 
                    settimeout = function (self, time)
                                   self.timeout=time
+                                  _sockettimeouts.settimeout(self.socket, time)
                                   return true
                                 end,
 
