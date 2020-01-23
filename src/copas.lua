@@ -364,10 +364,11 @@ end
 -- @param skt Regular LuaSocket CLIENT socket object
 -- @param sslt Table with ssl parameters
 -- @return wrapped ssl socket, or throws an error
-function copas.dohandshake(skt, sslt)
+function copas.dohandshake(skt, sslt, sni)
   ssl = ssl or require("ssl")
   local nskt, err = ssl.wrap(skt, sslt)
   if not nskt then return error(err) end
+  if sni then nskt:sni(sni) end
   local queue
   nskt:settimeout(0)
   repeat
@@ -451,7 +452,7 @@ local _skt_mt_tcp = {
 
                    dohandshake = function(self, sslt)
                      self.ssl_params = sslt or self.ssl_params
-                     local nskt, err = copas.dohandshake(self.socket, self.ssl_params)
+                     local nskt, err = copas.dohandshake(self.socket, self.ssl_params, self.sni_hostname)
                      if not nskt then return nskt, err end
                      self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
                      return self
@@ -491,7 +492,7 @@ _skt_mt_udp.__index.close       = function(self, ...) return true end
 -- @param skt The socket to wrap
 -- @sslt (optional) Table with ssl parameters, use an empty table to use ssl with defaults
 -- @return wrapped socket object
-function copas.wrap (skt, sslt)
+function copas.wrap (skt, sslt, sni)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then
     return skt -- already wrapped
   end
@@ -499,7 +500,7 @@ function copas.wrap (skt, sslt)
   if not isTCP(skt) then
     return  setmetatable ({socket = skt}, _skt_mt_udp)
   else
-    return  setmetatable ({socket = skt, ssl_params = sslt}, _skt_mt_tcp)
+    return  setmetatable ({socket = skt, ssl_params = sslt, sni_hostname = sni}, _skt_mt_tcp)
   end
 end
 

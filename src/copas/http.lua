@@ -356,7 +356,7 @@ local function tcp(params)
       local u = url.parse(reqt.url)
       if (reqt.scheme or u.scheme) == "https" then
         -- https, provide an ssl wrapped socket
-        local conn = copas.wrap(socket.tcp(), params)
+        local conn = copas.wrap(socket.tcp(), params, reqt.host)
         -- insert https default port, overriding http port inserted by LuaSocket
         if not u.port then
            u.port = _M.SSLPORT
