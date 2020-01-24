@@ -46,6 +46,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/exit.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/exittest.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removeserver.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/removethread.lua
 	$(LUA) $(DELIM)
 
 coverage:
