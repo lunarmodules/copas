@@ -355,8 +355,10 @@ local function tcp(params)
    return function (reqt)
       local u = url.parse(reqt.url)
       if (reqt.scheme or u.scheme) == "https" then
+        -- insert hostname for SNI
+        params.hostname = params.hostname or reqt.host
         -- https, provide an ssl wrapped socket
-        local conn = copas.wrap(socket.tcp(), params, reqt.host)
+        local conn = copas.wrap(socket.tcp(), params)
         -- insert https default port, overriding http port inserted by LuaSocket
         if not u.port then
            u.port = _M.SSLPORT
