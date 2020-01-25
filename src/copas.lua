@@ -530,7 +530,8 @@ function copas.setErrorHandler (err)
 end
 
 local function _deferror (msg, co, skt)
-  print (msg, co, skt)
+  print(msg, co, skt)
+  print(debug.traceback(co))
 end
 
 -------------------------------------------------------------------------------
@@ -539,7 +540,6 @@ end
 
 local function _doTick (co, skt, ...)
   if not co then return end
-
 
   -- if a coroutine was canceled/removed, don't resume it
   if _canceled[co] then
