@@ -363,12 +363,18 @@ end
 --       skt:send(body)      --> continues unencrypted
 -- @param skt Regular LuaSocket CLIENT socket object
 -- @param sslt Table with ssl parameters
+-- @param hostname SNI hostname/map
+-- @param strict Fails the handshake if the SNI host name does not exist
 -- @return wrapped ssl socket, or throws an error
-function copas.dohandshake(skt, sslt)
+function copas.dohandshake(skt, sslt, hostname, strict)
   ssl = ssl or require("ssl")
   local nskt, err = ssl.wrap(skt, sslt)
   if not nskt then return error(err) end
-  if sslt.hostname then nskt:sni(sslt.hostname) end
+  if type(hostname) == 'table' then
+    nskt:sni(hostname, strict)
+  else if hostname then
+    nskt:sni(hostname)
+  end
   local queue
   nskt:settimeout(0)
   repeat
@@ -452,7 +458,7 @@ local _skt_mt_tcp = {
 
                    dohandshake = function(self, sslt)
                      self.ssl_params = sslt or self.ssl_params
-                     local nskt, err = copas.dohandshake(self.socket, self.ssl_params)
+                     local nskt, err = copas.dohandshake(self.socket, self.ssl_params, self.hostname, self.strict)
                      if not nskt then return nskt, err end
                      self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
                      return self
@@ -491,16 +497,18 @@ _skt_mt_udp.__index.close       = function(self, ...) return true end
 -- Wraps a LuaSocket socket object in an async Copas based socket object.
 -- @param skt The socket to wrap
 -- @sslt (optional) Table with ssl parameters, use an empty table to use ssl with defaults
+-- @hostname (optional) SNI host name
+-- @strict (optional) If true, the handshake will fail with a non-existing SNI hostname
 -- @return wrapped socket object
-function copas.wrap (skt, sslt)
+function copas.wrap (skt, sslt, hst, str)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then
     return skt -- already wrapped
   end
   skt:settimeout(0)
   if not isTCP(skt) then
-    return  setmetatable ({socket = skt}, _skt_mt_udp)
+    return  setmetatable ({socket = skt, hostname = host, strict = str}, _skt_mt_udp)
   else
-    return  setmetatable ({socket = skt, ssl_params = sslt}, _skt_mt_tcp)
+    return  setmetatable ({socket = skt, ssl_params = sslt, hostname = host, strict = str}, _skt_mt_tcp)
   end
 end
 
