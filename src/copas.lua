@@ -372,7 +372,7 @@ function copas.dohandshake(skt, sslt, hostname, strict)
   if not nskt then return error(err) end
   if type(hostname) == 'table' then
     nskt:sni(hostname, strict)
-  else if hostname then
+  elseif hostname then
     nskt:sni(hostname)
   end
   local queue
@@ -496,19 +496,19 @@ _skt_mt_udp.__index.close       = function(self, ...) return true end
 ---
 -- Wraps a LuaSocket socket object in an async Copas based socket object.
 -- @param skt The socket to wrap
--- @sslt (optional) Table with ssl parameters, use an empty table to use ssl with defaults
--- @hostname (optional) SNI host name
--- @strict (optional) If true, the handshake will fail with a non-existing SNI hostname
+-- @param sslt (optional) Table with ssl parameters, use an empty table to use ssl with defaults
+-- @param hostname (optional) SNI host name
+-- @param strict (optional) If true, the handshake will fail with a non-existing SNI hostname
 -- @return wrapped socket object
-function copas.wrap (skt, sslt, hst, str)
+function copas.wrap (skt, sslt, hostname, strict)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then
     return skt -- already wrapped
   end
   skt:settimeout(0)
   if not isTCP(skt) then
-    return  setmetatable ({socket = skt, hostname = host, strict = str}, _skt_mt_udp)
+    return  setmetatable ({socket = skt, hostname = hostname, strict = strict}, _skt_mt_udp)
   else
-    return  setmetatable ({socket = skt, ssl_params = sslt, hostname = host, strict = str}, _skt_mt_tcp)
+    return  setmetatable ({socket = skt, ssl_params = sslt, hostname = hostname, strict = strict}, _skt_mt_tcp)
   end
 end
 
