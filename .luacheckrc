@@ -23,7 +23,8 @@ ignore = {
 
 
 exclude_files = {
-    "here/**"
+    "here/**",
+    "lua_install/**",
     --"spec/fixtures/invalid-module.lua",
     --"spec-old-api/fixtures/invalid-module.lua",
 }
