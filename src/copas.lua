@@ -127,7 +127,7 @@ local fnil = function()end
 local _sleeping = {
     times = {},  -- list with wake-up times
     cos = {},    -- list with coroutines, index matches the 'times' list
-    lethargy = {}, -- list of coroutines sleeping without a wakeup time
+    lethargy = setmetatable({}, { __mode = "k" }), -- list of coroutines sleeping without a wakeup time
 
     insert = fnil,
     remove = fnil,
