@@ -97,12 +97,14 @@ are used to register servers and to execute the main loop of Copas:</p>
         See also <code>copas.running</code>.
     </dd>
 
-    <dt><strong><code>copas.loop([timeout])</code></strong></dt>
+    <dt><strong><code>copas.loop([init_func, ][timeout])</code></strong></dt>
     <dd>Starts the Copas loop accepting client connections for the
         registered servers and handling those connections with the corresponding
         handlers. Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
-        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional,
+        <code>socket.accept()</code>. The <code>init_func</code> function is an
+        optional initialization function that runs as a Copas thread. 
+        The <code>timeout</code> parameter is optional,
         and is passed to the <code>copas.step()</code> function.
         The loop returns when <code>copas.finished() == true</code>.
     </dd>
