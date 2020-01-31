@@ -50,6 +50,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/sleep.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
 	$(LUA) $(DELIM)
 
 coverage:
