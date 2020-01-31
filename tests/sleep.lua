@@ -26,3 +26,5 @@ collectgarbage()
 
 --check GC
 assert(next(validate_gc) == nil, "the 'validate_gc' table should have been empty!")
+
+print "test success!"

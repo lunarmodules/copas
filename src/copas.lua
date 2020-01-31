@@ -724,11 +724,12 @@ function copas.wakeup(co)
     _sleeping:wakeup(co)
 end
 
-local last_cleansing = 0
 
 -------------------------------------------------------------------------------
 -- Checks for reads and writes on sockets
 -------------------------------------------------------------------------------
+local last_cleansing = 0
+
 local function _select (timeout)
   local err
   local now = gettime()
@@ -817,7 +818,13 @@ end
 -- Dispatcher endless loop.
 -- Listen to client requests and handles them forever
 -------------------------------------------------------------------------------
-function copas.loop(timeout)
+function copas.loop(initializer, timeout)
+  if type(initializer) == "function" then
+    copas.addthread(initializer)
+  else
+    timeout = initializer or timeout
+  end
+
   copas.running = true
   while not copas.finished() do copas.step(timeout) end
   copas.running = false
