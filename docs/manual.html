@@ -358,6 +358,34 @@ end)
 </pre>
 <p>The example simply prints a message once every second, but gets cancelled right after the first one.</p>
 
+<h2><a name="locks"></a>Using locks</h2>
+<p>Since Copas allows to asynchroneously schedule tasks, locks might be required
+to protect resources from concurrent access. In this case the <code>copas.lock</code> class
+can be used. A lock will ensure that the coroutine running will be yielded until
+the protected resource becomes available, without blocking other threads.
+</p>
+<pre class="example">
+local copas = require("copas")
+local new_lock = require("copas.lock").new
+
+local lock = new_lock()
+
+local function some_func()
+  local ok, err, wait = lock:get()
+  if not ok then
+    return nil, "we got error '" .. err .. "' after " .. wait .. " seconds"
+  end
+
+  print("doing something on my own")
+  copas.sleep()  -- allow to yield, while inside the lock
+  print("after " .. ok .. " seconds waiting")
+
+  lock:release()
+end
+</pre>
+<p>The <code>some_func</code> function may now be called and the 2 lines will
+be printed together because of the lock.</p>
+
 <h2><a name="ssl"></a>Ssl support</h2>
 <p>LuaSec is transparently integrated in the Copas scheduler (though must be installed separately when using LuaRocks).</p>
 <p>

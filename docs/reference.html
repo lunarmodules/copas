@@ -240,6 +240,33 @@ exchange data with other services.</p>
     <code>copas.dohandshake()</code>). To use ssl with defaults; provide an empty table.
     </dd>
 
+    <dt><strong><code>lock:destroy()</code></strong></dt>
+    <dd>Will destroy the lock and release all waiting threads. The result for those
+    threads will be <code>nil + "destroyed" + wait_time</code>.
+    </dd>
+
+    <dt><strong><code>lock:get([timeout])</code></strong></dt>
+    <dd>Will try and acquire the lock. The optional <code>timeout</code> can be
+    used to override the timeout value set when the lock was created.</br>
+    If the the lock is not available, the coroutine will yield until either the
+    lock becomes available, or it times out. The one exception is when
+    <code>timeout</code> is 0, then it will immediately return without yielding.</br>
+    Upon success, it will return the <code>wait-time</code> in seconds. Upon failure it will
+    return <code>nil + error + wait-time</code>. Upon a timeout the error value will
+    be "timeout".
+    </dd>
+
+    <dt><strong><code>lock.new([timeout], [not_reentrant])</code></strong></dt>
+    <dd>Creates and returns a new lock. The <code>timeout</code> specifies the
+    default timeout for the lock in
+    seconds, and defaults to 10. By default the lock is re-entrant,
+    except if <code>not_reentrant</code> is set to a truthy value.
+    </dd>
+
+    <dt><strong><code>lock:release()</code></strong></dt>
+    <dd>Releases the currently held lock. Returns <code>true</code> or <code>nil + error</code>.
+    </dd>
+
     <dt><strong><code>timer.new(options)</code></strong></dt>
     <dd>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
     <ul>
