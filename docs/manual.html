@@ -338,23 +338,24 @@ copas.loop()
 example passing arguments to a task, see the async http example below.</p>
 
 <h2><a name="timers"></a>Creating timers</h2>
-<p>Timers can be created using the <code>addthread</code> method with the <code>sleep</code> method. 
-Below an example of a thread being added to create and used as a timer;</p>
+<p>Timers can be created using the <code>copas.timer</code> module.
+Below an example of a timer;</p>
 <pre class="example">
 local copas = require("copas")
+local timer = require("copas.timer")
 
-copas.addthread(function()
-   print("This will print immediately, upon adding the thread. So before the loop starts")
-   while true do
-      copas.sleep(1) -- 1 second interval
-      print("Hello there!")
-   end
+copas.loop(function()
+   timer.new({
+     delay = 1,                        -- delay in seconds
+     recurring = true,                 -- make the timer repeat
+     callback = function(timer_obj, params)
+       print(params)                   -- prints "hello world"
+       timer_obj:cancel()              -- cancel the timer after 1 occurence
+     end
+   }, "hello world")
 end)
-
-print("We're starting!")
-copas.loop()
 </pre>
-<p>The example simply prints a message once every second.</p>
+<p>The example simply prints a message once every second, but gets cancelled right after the first one.</p>
 
 <h2><a name="ssl"></a>Ssl support</h2>
 <p>LuaSec is transparently integrated in the Copas scheduler (though must be installed separately when using LuaRocks).</p>

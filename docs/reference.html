@@ -225,6 +225,25 @@ exchange data with other services.</p>
     <code>copas.dohandshake()</code>). To use ssl with defaults; provide an empty table.
     </dd>
 
+    <dt><strong><code>timer.new(options, [params], [initial_delay])</code></strong></dt>
+    <dd>Creates and returns an (armed) `timer`. The <code>options</code> table has 3 fields;
+    <code>options.recurring</code> boolean, <code>options.delay</code> (in seconds), and
+    <code>options.callback</code> with the function to execute on timer expiry.
+    The callback function has <code>function(timer_obj, params)</code> as signature, where
+    <code>params</code> is the value initially passed to <code>timer.new</code>.
+    </dd>
+
+    <dt><strong><code>timer:arm([initial_delay])</code></strong></dt>
+    <dd>Arms a timer that was previously cancelled or exited. Returns the timer. 
+    The optional parameter <code>initial_delay</code>, determines the first delay.
+    For example a recurring timer with <code>delay = 5</code>, and <code>initial_delay = 0</code> will
+    execute immediately and then recur every 5 seconds.
+    </dd>
+
+    <dt><strong><code>timer:cancel()</code></strong></dt>
+    <dd>Will cancel the timer.
+    </dd>
+
 </dl>
 
 <h3>High level request functions</h3>
@@ -279,6 +298,7 @@ servers.</br>
     <dt><strong><code>limitset:wait()</code></strong></dt>
     <dd>Will yield until all tasks in the set have finished.
     </dd>
+
 </dl>
 
 </div> <!-- id="content" -->
