@@ -12,7 +12,7 @@ do
     copas.sleep(initial_delay)
     while true do
       if not self.cancelled then
-        self.callback(self, self.params)
+        self:callback(self.params)
       end
 
       if (not self.recurring) or self.cancelled then
@@ -67,19 +67,18 @@ end
 --- Creates a new timer object.
 -- Note: the callback signature is: `function(timer_obj, params)`.
 -- @param opts (table) `opts.delay` timer delay in seconds, `opts.callback` function to execute, `opts.recurring` boolean
--- @param param (optional) this value will be passed to the timer callback
--- @param initial_delay (optional) the first delay to use, if not provided uses the timer delay
+-- `opts.params` (optional) this value will be passed to the timer callback, `opts.initial_delay` (optional) the first delay to use, defaults to `delay`.
 -- @return timer object, or throws an error on bad input
-function timer.new(opts, params, initial_delay)
+function timer.new(opts)
   assert(opts.delay >= 0, "delay must be greater than or equal to 0")
   assert(type(opts.callback) == "function", "expected callback to be a function")
   return setmetatable({
     delay = opts.delay,
     callback = opts.callback,
     recurring = not not opts.recurring,
-    params = params,
+    params = opts.params,
     cancelled = false,
-  }, timer):arm(initial_delay)
+  }, timer):arm(opts.initial_delay)
 end
 
 

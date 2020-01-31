@@ -348,11 +348,12 @@ copas.loop(function()
    timer.new({
      delay = 1,                        -- delay in seconds
      recurring = true,                 -- make the timer repeat
+     params = "hello world",
      callback = function(timer_obj, params)
        print(params)                   -- prints "hello world"
        timer_obj:cancel()              -- cancel the timer after 1 occurence
      end
-   }, "hello world")
+   })
 end)
 </pre>
 <p>The example simply prints a message once every second, but gets cancelled right after the first one.</p>

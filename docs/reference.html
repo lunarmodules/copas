@@ -225,12 +225,17 @@ exchange data with other services.</p>
     <code>copas.dohandshake()</code>). To use ssl with defaults; provide an empty table.
     </dd>
 
-    <dt><strong><code>timer.new(options, [params], [initial_delay])</code></strong></dt>
-    <dd>Creates and returns an (armed) `timer`. The <code>options</code> table has 3 fields;
-    <code>options.recurring</code> boolean, <code>options.delay</code> (in seconds), and
-    <code>options.callback</code> with the function to execute on timer expiry.
-    The callback function has <code>function(timer_obj, params)</code> as signature, where
-    <code>params</code> is the value initially passed to <code>timer.new</code>.
+    <dt><strong><code>timer.new(options)</code></strong></dt>
+    <dd>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
+    <ul>
+        <li><code>options.recurring</code> boolean</li>
+        <li><code>options.delay</code> expiry delay in seconds</li>
+        <li><code>options.initial_delay</code> (optional) see <code>timer:arm()</code></li>
+        <li><code>options.params</code> (optional) an opaque value that is passed to the callback upon expiry</li>
+        <li><code>options.callback</code> is the function to execute on timer expiry.
+            The callback function has <code>function(timer_obj, params)</code> as signature, where
+            <code>params</code> is the value initially passed in <code>options.params</code></li>
+    </ul>
     </dd>
 
     <dt><strong><code>timer:arm([initial_delay])</code></strong></dt>
