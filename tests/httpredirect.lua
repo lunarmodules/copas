@@ -17,7 +17,7 @@ local function doreq(url)
   reqt.sink = ltn12.sink.table(reqt.target)
 
   local result, code, headers, status = http.request(reqt)
-  print(string.rep("=",70))
+  print(string.rep("-",70))
   print("Fetching:",url,"==>",code, status)
   if dump_all_headers then
     if headers then
