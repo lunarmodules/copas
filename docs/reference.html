@@ -88,6 +88,10 @@ are used to register servers and to execute the main loop of Copas:</p>
         truthy (neither <code>nil</code> nor <code>false</code>).
     </dd>
 
+    <dt><strong><code>copas.canceltimeout()</code></strong></dt>
+    <dd>Cancels the timeout for the current coroutine.
+    </dd>
+
     <dt><strong><code>copas.finished()</code></strong></dt>
     <dd>Checks whether anything remains to be done.<br />
         Returns <code>false</code> when the socket lists for reading and writing
@@ -146,6 +150,17 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dd>Sets the error handling function for the current thread. Any
         errors will be forwarded to the handler, which will receive the
         error, coroutine, and socket as arguments.
+    </dd>
+
+    <dt><strong><code>copas.settimeout(delay, callback)</code></strong></dt>
+    <dd>Creates a timeout timer for the current coroutine. The <code>delay</code>
+        is the timeout in seconds, and the <code>callback</code> will
+        be called upon an actual timeout occuring.</br>
+        Calling it repeatedly will simply replace the timeout on the current
+        coroutine and any previous callback set will no longer be called.</br>
+        <strong>NOTE:</strong> The timeouts are a low-level Copas feature, and
+        should only be used to wrap an explicit yield to the Copas scheduler. They
+        should not be used to wrap user code.
     </dd>
 </dl>
 

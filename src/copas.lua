@@ -23,6 +23,7 @@ local ssl -- only loaded upon demand
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocket
+local fnil = function() end
 
 local pcall = pcall
 if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
@@ -123,7 +124,6 @@ local function newset()
   return set
 end
 
-local fnil = function()end
 local _sleeping = {
     times = {},  -- list with wake-up times
     cos = {},    -- list with coroutines, index matches the 'times' list
@@ -722,6 +722,68 @@ end
 -- Wakes up a sleeping coroutine 'co'.
 function copas.wakeup(co)
     _sleeping:wakeup(co)
+end
+
+
+-------------------------------------------------------------------------------
+-- Timeout management
+-------------------------------------------------------------------------------
+-- TODO: use a more efficient implementation than these timers,
+-- timerwheel for example
+local timer
+
+-- cyclical reference, hence we replace the timer value on
+-- first access. Can be removed after better timer is implemented.
+timer = setmetatable({}, {__index = function(self, key)
+  timer = require("copas.timer")
+  return timer[key]
+end})
+
+
+local _timeouts = setmetatable({}, { __mode = "k" })
+
+--- Sets the timeout for the current coroutine.
+-- @param delay (in seconds)
+-- @param callback function with signature: `function(coroutine)` where coroutine is the routine that timed-out
+-- @return true
+function copas.settimeout(delay, callback)
+  local co = coroutine.running()
+  local to = _timeouts[co]
+
+  if not to then
+    to = {}
+    _timeouts[co] = to
+  elseif to.timer then
+    to.timer:cancel()       -- already active, must cancel first
+  end
+
+  if delay > 0 then
+    to.co = co
+    to.callback = callback
+    to.timer = timer.new({
+      delay = delay,
+      params = to,
+      callback = function(timer_obj, to)
+        --print("timeout expired!")
+        to.callback(to.co)
+        to.co = nil
+        to.timer = nil
+        to.callback = nil
+      end
+    })
+  else
+    to.co = nil
+    to.timer = nil
+    to.callback = nil
+  end
+  return true
+end
+
+
+--- Cancels the timeout for the current coroutine.
+-- @return true
+function copas.canceltimeout()
+  return copas.settimeout(0, fnil)
 end
 
 
