@@ -749,32 +749,33 @@ local _timeouts = setmetatable({}, { __mode = "k" })
 function copas.settimeout(delay, callback)
   local co = coroutine.running()
   local to = _timeouts[co]
+
   if not to then
-    to = {
-      expired = nil,          -- has this timeout expired?
-      active = true,          -- flag indicating timeout is active
-      co = co,
-    }
+    to = {}
     _timeouts[co] = to
-  else
-    if to.active then
-      to.timer:cancel()       -- already active, must cancel first
-    end
-    to.expired = nil
+  elseif to.timer then
+    to.timer:cancel()       -- already active, must cancel first
   end
 
-  to.callback = callback or fnil
-
-  to.timer = timer.new({
-    delay = delay,
-    params = to,
-    callback = function(timer_obj, to)
-      --print("timeout expired!")
-      to.expired = true
-      to.active = nil
-      to.callback(to.co)
-    end
-  })
+  if delay > 0 then
+    to.co = co
+    to.callback = callback
+    to.timer = timer.new({
+      delay = delay,
+      params = to,
+      callback = function(timer_obj, to)
+        --print("timeout expired!")
+        to.callback(to.co)
+        to.co = nil
+        to.timer = nil
+        to.callback = nil
+      end
+    })
+  else
+    to.co = nil
+    to.timer = nil
+    to.callback = nil
+  end
   return true
 end
 
@@ -782,17 +783,7 @@ end
 --- Cancels the timeout for the current coroutine.
 -- @return true
 function copas.canceltimeout()
-  local co = coroutine.running()
-  local to = _timeouts[co]
-  if not to then
-    return
-  end
-  if to.active then
-    to.timer:cancel()
-  end
-  to.active = nil
-  to.expired = nil
-  return true
+  return copas.settimeout(0, fnil)
 end
 
 
