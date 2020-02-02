@@ -72,57 +72,69 @@ copas.autoclose = true
 -- indicator for the loop running
 copas.running = false
 
+
 -------------------------------------------------------------------------------
--- Simple set implementation based on LuaSocket's tinyirc.lua example
--- adds a FIFO queue for each value in the set
+-- Simple set implementation
+-- adds a FIFO queue for each socket in the set
 -------------------------------------------------------------------------------
-local function newset()
-  local reverse = {}
+
+local function newsocketset()
   local set = {}
-  local q = {}
-  setmetatable(set, { __index = {
-                        insert = function(set, value)
-                                   if not reverse[value] then
-                                     set[#set + 1] = value
-                                     reverse[value] = #set
-                                   end
-                                 end,
 
-                        remove = function(set, value)
-                                   local index = reverse[value]
-                                   if index then
-                                     reverse[value] = nil
-                                     local top = set[#set]
-                                     set[#set] = nil
-                                     if top ~= value then
-                                       reverse[top] = index
-                                       set[index] = top
-                                     end
-                                   end
-                                 end,
+  do  -- set implementation
+    local reverse = {}
 
-                        push = function (set, key, itm)
-                                 local qKey = q[key]
-                                 if qKey == nil then
-                                   q[key] = {itm}
-                                 else
-                                   qKey[#qKey + 1] = itm
-                                 end
-                               end,
+    -- Adds a socket to the set, does nothing if it exists
+    function set:insert(skt)
+      if not reverse[skt] then
+        self[#self + 1] = skt
+        reverse[skt] = #self
+      end
+    end
 
-                        pop = function (set, key)
-                                local t = q[key]
-                                if t ~= nil then
-                                  local ret = table.remove (t, 1)
-                                  if t[1] == nil then
-                                    q[key] = nil
-                                  end
-                                  return ret
-                                end
-                              end
-                    }})
+    -- Removes socket from the set, does nothing if not found
+    function set:remove(skt)
+      local index = reverse[skt]
+      if index then
+        reverse[skt] = nil
+        local top = self[#self]
+        self[#self] = nil
+        if top ~= skt then
+          reverse[top] = index
+          self[index] = top
+        end
+      end
+    end
+
+  end
+
+  do  -- queues implementation
+    local fifo_queues = setmetatable({},{
+      __mode = "k",                 -- auto collect queue if socket is gone
+      __index = function(self, skt) -- auto create fifo queue if not found
+        local newfifo = {}
+        self[skt] = newfifo
+        return newfifo
+      end,
+    })
+
+    -- pushes an item in the fifo queue for the socket.
+    function set:push(skt, itm)
+      local queue = fifo_queues[skt]
+      queue[#queue + 1] = itm
+    end
+
+    -- pops an item from the fifo queue for the socket
+    function set:pop(skt)
+      local queue = fifo_queues[skt]
+      return table.remove(queue, 1)
+    end
+
+  end
+
   return set
 end
+
 
 local _sleeping = {
     times = {},  -- list with wake-up times
@@ -181,14 +193,18 @@ local _sleeping = {
     end
 } --_sleeping
 
-local _servers = newset() -- servers being handled
+local _servers = newsocketset() -- servers being handled
 local _threads = setmetatable({}, {__mode = "k"})  -- registered threads added with addthread()
 local _canceled = setmetatable({}, {__mode = "k"}) -- threads that are canceled and pending removal
+
+-- for each socket we log the last read and last write times to enable the
+-- watchdog to follow up if it takes too long.
+-- tables contain the time, indexed by the socket
 local _reading_log = {}
 local _writing_log = {}
 
-local _reading = newset() -- sockets currently being read
-local _writing = newset() -- sockets currently being written
+local _reading = newsocketset() -- sockets currently being read
+local _writing = newsocketset() -- sockets currently being written
 local _isTimeout = {      -- set of errors indicating a timeout
   ["timeout"] = true,     -- default LuaSocket timeout
   ["wantread"] = true,    -- LuaSec specific timeout
@@ -881,7 +897,7 @@ end
 -- (which means Copas is in an empty spin)
 -------------------------------------------------------------------------------
 function copas.finished()
-  return not (next(_reading) or next(_writing) or _sleeping:getnext())
+  return #_reading == 0 and #_writing == 0 and not _sleeping:getnext()
 end
 
 -------------------------------------------------------------------------------
