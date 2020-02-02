@@ -790,49 +790,51 @@ end
 -------------------------------------------------------------------------------
 -- Checks for reads and writes on sockets
 -------------------------------------------------------------------------------
-local last_cleansing = 0
+local _select do
 
-local function _select (timeout)
-  local err
-  local now = gettime()
+  local last_cleansing = 0
   local duration = function(t2, t1) return t2-t1 end
 
-  _readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
-  local r_evs, w_evs = _readable_t._evs, _writable_t._evs
+  _select = function(timeout)
+    local err
+    local now = gettime()
 
-  if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
-    last_cleansing = now
+    _readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
+    local r_evs, w_evs = _readable_t._evs, _writable_t._evs
 
-    -- Check all sockets selected for reading, and check how long they have been waiting
-    -- for data already, without select returning them as readable
-    for skt,time in pairs(_reading_log) do
-      if not r_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
-        -- This one timedout while waiting to become readable, so move
-        -- it in the readable list and try and read anyway, despite not
-        -- having been returned by select
-        _reading_log[skt] = nil
-        r_evs[#r_evs + 1] = skt
-        r_evs[skt] = #r_evs
+    if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
+      last_cleansing = now
+
+      -- Check all sockets selected for reading, and check how long they have been waiting
+      -- for data already, without select returning them as readable
+      for skt,time in pairs(_reading_log) do
+        if not r_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+          -- This one timedout while waiting to become readable, so move
+          -- it in the readable list and try and read anyway, despite not
+          -- having been returned by select
+          _reading_log[skt] = nil
+          r_evs[#r_evs + 1] = skt
+          r_evs[skt] = #r_evs
+        end
+      end
+
+      -- Do the same for writing
+      for skt,time in pairs(_writing_log) do
+        if not w_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+          _writing_log[skt] = nil
+          w_evs[#w_evs + 1] = skt
+          w_evs[skt] = #w_evs
+        end
       end
     end
 
-    -- Do the same for writing
-    for skt,time in pairs(_writing_log) do
-      if not w_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
-        _writing_log[skt] = nil
-        w_evs[#w_evs + 1] = skt
-        w_evs[skt] = #w_evs
-      end
+    if err == "timeout" and #r_evs + #w_evs > 0 then
+      return nil
+    else
+      return err
     end
-  end
-
-  if err == "timeout" and #r_evs + #w_evs > 0 then
-    return nil
-  else
-    return err
   end
 end
-
 
 -------------------------------------------------------------------------------
 -- Dispatcher loop step.
