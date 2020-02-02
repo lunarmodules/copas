@@ -586,34 +586,40 @@ end
 -------------------------------------------------------------------------------
 -- Adds a server/handler pair to Copas dispatcher
 -------------------------------------------------------------------------------
-local function addTCPserver(server, handler, timeout)
-  server:settimeout(timeout or 0)
-  _servers[server] = handler
-  _reading:insert(server)
-end
 
-local function addUDPserver(server, handler, timeout)
+do
+  local function addTCPserver(server, handler, timeout)
+    server:settimeout(timeout or 0)
+    _servers[server] = handler
+    _reading:insert(server)
+  end
+
+  local function addUDPserver(server, handler, timeout)
     server:settimeout(timeout or 0)
     local co = coroutine.create(handler)
     _reading:insert(server)
     _doTick (co, server)
+  end
+
+
+  function copas.addserver(server, handler, timeout)
+    if isTCP(server) then
+      addTCPserver(server, handler, timeout)
+    else
+      addUDPserver(server, handler, timeout)
+    end
+  end
 end
 
-function copas.addserver(server, handler, timeout)
-    if isTCP(server) then
-        addTCPserver(server, handler, timeout)
-    else
-        addUDPserver(server, handler, timeout)
-    end
-end
 
 function copas.removeserver(server, keep_open)
-  local s, mt = server, getmetatable(server)
+  local skt = server
+  local mt = getmetatable(server)
   if mt == _skt_mt_tcp or mt == _skt_mt_udp then
-    s = server.socket
+    skt = server.socket
   end
-  _servers[s] = nil
-  _reading:remove(s)
+  _servers:remove(skt)
+  _reading:remove(skt)  --TODO: udp; server==client hence could also be in the _writing set? should we clear that too?
   if keep_open then
     return true
   end
