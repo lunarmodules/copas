@@ -135,63 +135,71 @@ local function newsocketset()
   return set
 end
 
+-- Similar to the socket set above, but tailored for the use of
+-- sleeping threads
+local _sleeping = {} do
 
-local _sleeping = {
-    times = {},  -- list with wake-up times
-    cos = {},    -- list with coroutines, index matches the 'times' list
-    lethargy = setmetatable({}, { __mode = "k" }), -- list of coroutines sleeping without a wakeup time
+  local times = {}  -- list with wake-up times
+  local cos = {}    -- list with coroutines, index matches the 'times' list
+  local lethargy = setmetatable({}, { __mode = "k" }) -- list of coroutines sleeping without a wakeup time
 
-    insert = fnil,
-    remove = fnil,
-    push = function(self, sleeptime, co)
-        if not co then return end
-        if sleeptime<0 then
-            --sleep until explicit wakeup through copas.wakeup
-            self.lethargy[co] = true
-            return
-        else
-            sleeptime = gettime() + sleeptime
-        end
-        local t, c = self.times, self.cos
-        local i, cou = 1, #t
-        --TODO: do a binary search
-        while i<=cou and t[i]<=sleeptime do i=i+1 end
-        table.insert(t, i, sleeptime)
-        table.insert(c, i, co)
-    end,
-    getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
-        local t = self.times
-        local delay = t[1] and t[1] - gettime() or nil
+  -- Required base implementation
+  -----------------------------------------
+  _sleeping.insert = fnil
+  _sleeping.remove = fnil
 
-        return delay and math.max(delay, 0) or nil
-    end,
-    -- find the thread that should wake up to the time
-    pop = function(self, time)
-        local t, c = self.times, self.cos
-        if #t==0 or time<t[1] then return end
-        local co = c[1]
-        table.remove(t, 1)
-        table.remove(c, 1)
-        return co
-    end,
-    wakeup = function(self, co)
-        local let = self.lethargy
-        if let[co] then
-            self:push(0, co)
-            let[co] = nil
-        else
-            let = self.cos
-            for i=1,#let do
-                if let[i]==co then
-                    table.remove(let, i)
-                    table.remove(self.times, i)
-                    self:push(0, co)
-                    return
-                end
-            end
-        end
+  -- push a new timer on the list
+  _sleeping.push = function(self, sleeptime, co)
+    if not co then return end
+    if sleeptime < 0 then
+      --sleep until explicit wakeup through copas.wakeup
+      lethargy[co] = true
+      return
     end
-} --_sleeping
+    sleeptime = gettime() + sleeptime
+    local i = 1
+    local count = #times
+    while i <= count and times[i] <= sleeptime do
+      i=i+1
+    end
+    table.insert(times, i, sleeptime)
+    table.insert(cos, i, co)
+  end
+
+  -- find the thread that should wake up to the time, if any
+  _sleeping.pop = function(self, time)
+    if #times == 0 or time < times[1] then
+      return
+    end
+    table.remove(times, 1)
+    return table.remove(cos, 1)
+  end
+
+  -- additional methods for time management
+  -----------------------------------------
+  _sleeping.getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
+    local delay = times[1] and times[1] - gettime() or nil
+
+    return delay and math.max(delay, 0) or nil
+  end
+
+  _sleeping.wakeup = function(self, co)
+    if lethargy[co] then
+      self:push(0, co)
+      lethargy[co] = nil
+    else
+      for i = 1, #cos do
+        if cos[i] == co then
+          table.remove(cos, i)
+          table.remove(times, i)
+          self:push(0, co)
+          return
+        end
+      end
+    end
+  end
+
+end   -- _sleeping
 
 local _servers = newsocketset() -- servers being handled
 local _threads = setmetatable({}, {__mode = "k"})  -- registered threads added with addthread()
