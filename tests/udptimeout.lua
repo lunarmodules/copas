@@ -33,12 +33,9 @@ local function singleuseechoserver(die_after)
       if not data or data == "quit" then
         break
       end
-      print("server data ("..#data.."):", data)
       skt:sendto(data, ip, port)
       die_after = die_after - 1
     end
-
-    print("server end")
   end)
 
   return ip, port
@@ -68,7 +65,6 @@ function tests.receive_timeout()
     client:close()
   end)
 
-  print("loop")
   copas.loop()
 end
 
@@ -92,7 +88,6 @@ function tests.receivefrom_timeout()
     client:close()
   end)
 
-  print("loop")
   copas.loop()
 end
 

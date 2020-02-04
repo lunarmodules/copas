@@ -34,11 +34,8 @@ local function singleuseechoserver()
       if not data or data == "quit" then
         break
       end
-      print("server data ("..#data.."):", data)
       skt:send(data..'\n')
     end
-
-    print("server end")
   end
 
   copas.addserver(server, echoHandler)
@@ -49,21 +46,18 @@ end
 local tests = {}
 
 function tests.just_exit()
-  print("loop")
   copas.loop()
 end
 
 function tests.connect_and_exit()
   local ip, port = singleuseechoserver()
   copas.addthread(function()
-    print("connect", ip, port)
     local client = socket.connect(ip, port)
     client = copas.wrap(client)
 
     client:close()
   end)
 
-  print("loop")
   copas.loop()
 end
 
@@ -80,15 +74,13 @@ function tests.connect_timeout()
 
     local client = socket.tcp()
     client = copas.wrap(client)
-    client:settimeout(1)
-    print("connect:", ip, port)
+    client:settimeout(0.01)
     local status, err = client:connect(ip, port)
     assert(status == nil, "connect somehow succeeded")
-    assert(err == "timeout", "connect failed with non-timeout error: "..err)
+    assert(err == "Operation already in progress", "connect failed with non-timeout error: "..err)
     client:close()
   end)
 
-  print("loop")
   copas.loop()
 end
 
@@ -114,7 +106,6 @@ function tests.receive_timeout()
     client:close()
   end)
 
-  print("loop")
   copas.loop()
 end
 
