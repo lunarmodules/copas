@@ -18,6 +18,7 @@ if package.loaded["socket.http"] and (_VERSION=="Lua 5.1") then     -- obsolete:
 end
 
 local socket = require "socket"
+local binaryheap = require "binaryheap"
 local gettime = socket.gettime
 local ssl -- only loaded upon demand
 
@@ -135,12 +136,13 @@ local function newsocketset()
   return set
 end
 
+
+
 -- Similar to the socket set above, but tailored for the use of
 -- sleeping threads
 local _sleeping = {} do
 
-  local times = {}  -- list with wake-up times
-  local cos = {}    -- list with coroutines, index matches the 'times' list
+  local heap = binaryheap.minUnique()
   local lethargy = setmetatable({}, { __mode = "k" }) -- list of coroutines sleeping without a wakeup time
 
   -- Required base implementation
@@ -148,58 +150,44 @@ local _sleeping = {} do
   _sleeping.insert = fnil
   _sleeping.remove = fnil
 
-  -- push a new timer on the list
+  -- push a new timer on the heap
   _sleeping.push = function(self, sleeptime, co)
-    if not co then return end
     if sleeptime < 0 then
-      --sleep until explicit wakeup through copas.wakeup
       lethargy[co] = true
-      return
+    else
+      heap:insert(gettime() + sleeptime, co)
     end
-    sleeptime = gettime() + sleeptime
-    local i = 1
-    local count = #times
-    while i <= count and times[i] <= sleeptime do
-      i=i+1
-    end
-    table.insert(times, i, sleeptime)
-    table.insert(cos, i, co)
   end
 
   -- find the thread that should wake up to the time, if any
   _sleeping.pop = function(self, time)
-    if #times == 0 or time < times[1] then
+    if time < (heap:peekValue() or math.huge) then
       return
     end
-    table.remove(times, 1)
-    return table.remove(cos, 1)
+    return heap:pop()
   end
 
   -- additional methods for time management
   -----------------------------------------
   _sleeping.getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
-    local delay = times[1] and times[1] - gettime() or nil
-
-    return delay and math.max(delay, 0) or nil
+    local t = heap:peekValue()
+    return t and math.max(t - gettime(), 0) or nil
   end
 
   _sleeping.wakeup = function(self, co)
     if lethargy[co] then
       self:push(0, co)
       lethargy[co] = nil
-    else
-      for i = 1, #cos do
-        if cos[i] == co then
-          table.remove(cos, i)
-          table.remove(times, i)
-          self:push(0, co)
-          return
-        end
-      end
+      return
+    end
+    if heap:remove(co) then
+      self:push(0, co)
     end
   end
 
 end   -- _sleeping
+
+
 
 local _servers = newsocketset() -- servers being handled
 local _threads = setmetatable({}, {__mode = "k"})  -- registered threads added with addthread()
