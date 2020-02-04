@@ -23,6 +23,8 @@ install:
 	cp src/copas/smtp.lua $(DESTDIR)$(LUA_DIR)/copas/smtp.lua
 	cp src/copas/http.lua $(DESTDIR)$(LUA_DIR)/copas/http.lua
 	cp src/copas/limit.lua $(DESTDIR)$(LUA_DIR)/copas/limit.lua
+	cp src/copas/timer.lua $(DESTDIR)$(LUA_DIR)/copas/timer.lua
+	cp src/copas/lock.lua $(DESTDIR)$(LUA_DIR)/copas/lock.lua
 
 tests/certs/clientA.pem:
 	cd ./tests/certs && \
