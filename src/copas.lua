@@ -574,26 +574,17 @@ local function _doTick (co, skt, ...)
   end
 end
 
+
 -- accepts a connection on socket input
-local function _accept(input, handler)
-  local client = input:accept()
-  if client then
-    client:settimeout(0)
+local function _accept(server_skt, handler)
+  local client_skt = server_skt:accept()
+  if client_skt then
+    client_skt:settimeout(0)
     local co = coroutine.create(handler)
-    _doTick (co, client)
-    --_reading:insert(client)
+    _doTick(co, client_skt)
   end
-  return client
 end
 
--- handle threads on a queue
-local function _tickRead (skt)
-  _doTick (_reading:pop (skt), skt)
-end
-
-local function _tickWrite (skt)
-  _doTick (_writing:pop (skt), skt)
-end
 
 -------------------------------------------------------------------------------
 -- Adds a server/handler pair to Copas dispatcher
@@ -655,84 +646,13 @@ function copas.removethread(thread)
   -- that next time it tries to resume it exits.
   _canceled[thread] = _threads[thread or 0]
 end
--------------------------------------------------------------------------------
--- tasks registering
--------------------------------------------------------------------------------
-
-local _tasks = {}
-
-local function addtaskRead (tsk)
-  -- lets tasks call the default _tick()
-  tsk.def_tick = _tickRead
-
-  _tasks [tsk] = true
-end
-
-local function addtaskWrite (tsk)
-  -- lets tasks call the default _tick()
-  tsk.def_tick = _tickWrite
-
-  _tasks [tsk] = true
-end
-
-local function tasks ()
-  return next, _tasks
-end
 
 -------------------------------------------------------------------------------
--- main tasks: manage readable and writable socket sets
+-- Sleep/pause management functions
 -------------------------------------------------------------------------------
--- a task to check ready to read events
-local _readable_t = {
-  events = function(self)
-             local i = 0
-             return function ()
-                      i = i + 1
-                      return self._evs [i]
-                    end
-           end,
-
-  tick = function (self, input)
-           local handler = _servers[input]
-           if handler then
-             _accept(input, handler)
-           else
-             _reading:remove (input)
-             self.def_tick (input)
-           end
-         end
-}
-
-addtaskRead (_readable_t)
-
-
--- a task to check ready to write events
-local _writable_t = {
-  events = function (self)
-             local i = 0
-             return function ()
-                      i = i + 1
-                      return self._evs [i]
-                    end
-           end,
-
-  tick = function (self, output)
-           _writing:remove (output)
-           self.def_tick (output)
-         end
-}
-
-addtaskWrite (_writable_t)
---
---sleeping threads task
-local _sleeping_t = {
-    tick = function (self, time, ...)
-       _doTick(_sleeping:pop(time), ...)
-    end
-}
 
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
--- If sleeptime<0 then it sleeps until explicitly woken up using 'wakeup'
+-- If sleeptime < 0 then it sleeps until explicitly woken up using 'wakeup'
 function copas.sleep(sleeptime)
     coroutine.yield((sleeptime or 0), _sleeping)
 end
@@ -740,6 +660,73 @@ end
 -- Wakes up a sleeping coroutine 'co'.
 function copas.wakeup(co)
     _sleeping:wakeup(co)
+end
+
+
+
+-------------------------------------------------------------------------------
+-- main tasks: manage readable and writable socket sets
+-------------------------------------------------------------------------------
+-- a task is an object with 2 properties:
+--   tsk:events()     -- returning an iterator for all events to handle for this task
+--   tsk:tick(event)  -- a function to handle the event returned by the iterator
+
+local _tasks = {} do
+  function _tasks:add(tsk)
+    _tasks[#_tasks + 1] = tsk
+  end
+end
+
+
+-- a task to check ready to read events
+local _readable_task = {} do
+  function _readable_task:events()
+    local i = 0
+    return function ()
+             i = i + 1
+             return self._evs [i]
+           end
+  end
+
+  function _readable_task:tick(skt)
+    local handler = _servers[skt]
+    if handler then
+      _accept(skt, handler)
+    else
+      _reading:remove(skt)
+      _doTick(_reading:pop(skt), skt)
+    end
+  end
+
+  _tasks:add(_readable_task)
+end
+
+
+-- a task to check ready to write events
+local _writable_task = {} do
+  function _writable_task:events()
+    local i = 0
+    return function ()
+             i = i + 1
+             return self._evs [i]
+           end
+  end
+
+  function _writable_task:tick(skt)
+    _writing:remove(skt)
+    _doTick(_writing:pop(skt), skt)
+  end
+
+  _tasks:add(_writable_task)
+end
+
+
+
+-- sleeping threads task
+local _sleeping_task = {} do
+  function _sleeping_task:tick(time, ...)
+    _doTick(_sleeping:pop(time), ...)
+  end
 end
 
 
@@ -817,8 +804,8 @@ local _select do
     local err
     local now = gettime()
 
-    _readable_t._evs, _writable_t._evs, err = socket.select(_reading, _writing, timeout)
-    local r_evs, w_evs = _readable_t._evs, _writable_t._evs
+    _readable_task._evs, _writable_task._evs, err = socket.select(_reading, _writing, timeout)
+    local r_evs, w_evs = _readable_task._evs, _writable_task._evs
 
     if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
       last_cleansing = now
@@ -861,7 +848,7 @@ end
 -- handled (or nil + error message)
 -------------------------------------------------------------------------------
 function copas.step(timeout)
-  _sleeping_t:tick(gettime())
+  _sleeping_task:tick(gettime())
 
   -- Need to wake up the select call in time for the next sleeping event
   local nextwait = _sleeping:getnext()
@@ -873,15 +860,15 @@ function copas.step(timeout)
     end
   end
 
-  local err = _select (timeout)
+  local err = _select(timeout)
   if err then
     if err == "timeout" then return false end
     return nil, err
   end
 
-  for tsk in tasks() do
+  for _, tsk in ipairs(_tasks) do
     for ev in tsk:events() do
-      tsk:tick (ev)
+      tsk:tick(ev)
     end
   end
   return true
