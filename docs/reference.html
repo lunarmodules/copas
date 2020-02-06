@@ -107,7 +107,7 @@ are used to register servers and to execute the main loop of Copas:</p>
         handlers. Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
         <code>socket.accept()</code>. The <code>init_func</code> function is an
-        optional initialization function that runs as a Copas thread. 
+        optional initialization function that runs as a Copas thread.
         The <code>timeout</code> parameter is optional,
         and is passed to the <code>copas.step()</code> function.
         The loop returns when <code>copas.finished() == true</code>.
@@ -213,13 +213,12 @@ exchange data with other services.</p>
     </dt>
     <dd>Sends data to a client socket just like <code>socket:send()</code>. The Copas version
     is buffered and does not block, allowing the multitasking of the other handlers and threads.
+    </br>
+    Note: only for TCP, UDP send doesn't block, hence doesn't require this function to be used.
     </dd>
 
     <dt><strong><code>copas.sendto(skt, datagram, ip, port)</code></strong></dt>
-    <dd>Sends data over a UDP socket just like LuaSocket
-    <code>socket:sendto()</code>. The Copas version does not block and allows
-    the multitasking of the other handlers and threads.
-    </dd>
+    <dd>(deprecated, since UDP sending doesn't block)</dd>
 
     <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>
     <dd>Pauses the current co-routine. Parameter <code>sleeptime</code> (in seconds) is optional
@@ -281,7 +280,7 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>timer:arm([initial_delay])</code></strong></dt>
-    <dd>Arms a timer that was previously cancelled or exited. Returns the timer. 
+    <dd>Arms a timer that was previously cancelled or exited. Returns the timer.
     The optional parameter <code>initial_delay</code>, determines the first delay.
     For example a recurring timer with <code>delay = 5</code>, and <code>initial_delay = 0</code> will
     execute immediately and then recur every 5 seconds.

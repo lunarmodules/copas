@@ -334,26 +334,9 @@ function copas.send(client, data, from, to)
   until false
 end
 
--- sends data to a client over UDP. Not available for TCP.
--- (this is a copy of send() method, adapted for sendto() use)
 function copas.sendto(client, data, ip, port)
-  local s, err
-
-  repeat
-    s, err = client:sendto(data, ip, port)
-    -- adds extra coroutine swap
-    -- garantees that high throughput doesn't take other threads to starvation
-    if (math.random(100) > 90) then
-      _writing_log[client] = gettime()
-      coroutine.yield(client, _writing)
-    end
-    if s or err ~= "timeout" then
-      _writing_log[client] = nil
-      return s, err
-    end
-    _writing_log[client] = gettime()
-    coroutine.yield(client, _writing)
-  until false
+  -- deprecated; for backward compatibility only, since UDP doesn't block on sending
+  return client:sendto(data, ip, port)
 end
 
 -- waits until connection is completed
@@ -495,10 +478,10 @@ local _skt_mt_udp = {__index = { }}
 for k,v in pairs(_skt_mt_tcp) do _skt_mt_udp[k] = _skt_mt_udp[k] or v end
 for k,v in pairs(_skt_mt_tcp.__index) do _skt_mt_udp.__index[k] = v end
 
-_skt_mt_udp.__index.sendto =      function (self, ...)
-                                    -- UDP sending is non-blocking, but we provide starvation prevention, so replace anyway
-                                    return copas.sendto (self.socket, ...)
-                                  end
+_skt_mt_udp.__index.send        = function(self, ...) return self.socket:send(...) end
+
+_skt_mt_udp.__index.sendto      = function(self, ...) return self.socket:sendto(...) end
+
 
 _skt_mt_udp.__index.receive =     function (self, size)
                                     return copas.receive (self.socket, (size or UDP_DATAGRAM_MAX))
@@ -618,7 +601,7 @@ do
     server:settimeout(timeout or 0)
     local co = coroutine.create(handler)
     _reading:insert(server)
-    _doTick (co, server)
+    _doTick(co, server)
   end
 
 
@@ -638,8 +621,10 @@ function copas.removeserver(server, keep_open)
   if mt == _skt_mt_tcp or mt == _skt_mt_udp then
     skt = server.socket
   end
+
   _servers:remove(skt)
-  _reading:remove(skt)  --TODO: udp; server==client hence could also be in the _writing set? should we clear that too?
+  _reading:remove(skt)
+
   if keep_open then
     return true
   end
