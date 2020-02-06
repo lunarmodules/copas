@@ -682,7 +682,7 @@ end
 local _readable_task = {} do
   function _readable_task:events()
     local i = 0
-    return function ()
+    return function()
              i = i + 1
              return self._evs [i]
            end
@@ -706,7 +706,7 @@ end
 local _writable_task = {} do
   function _writable_task:events()
     local i = 0
-    return function ()
+    return function()
              i = i + 1
              return self._evs [i]
            end
@@ -724,9 +724,18 @@ end
 
 -- sleeping threads task
 local _sleeping_task = {} do
-  function _sleeping_task:tick(time, ...)
-    _doTick(_sleeping:pop(time), ...)
+  function _sleeping_task:events()
+    local now = gettime()
+    return function()
+             return _sleeping:pop(now)
+           end
   end
+
+  function _sleeping_task:tick(co)
+    _doTick(co)
+  end
+
+  _tasks:add(_sleeping_task)
 end
 
 
@@ -848,8 +857,6 @@ end
 -- handled (or nil + error message)
 -------------------------------------------------------------------------------
 function copas.step(timeout)
-  _sleeping_task:tick(gettime())
-
   -- Need to wake up the select call in time for the next sleeping event
   local nextwait = _sleeping:getnext()
   if nextwait then
@@ -861,16 +868,18 @@ function copas.step(timeout)
   end
 
   local err = _select(timeout)
-  if err then
-    if err == "timeout" then return false end
-    return nil, err
-  end
 
   for _, tsk in ipairs(_tasks) do
     for ev in tsk:events() do
       tsk:tick(ev)
     end
   end
+
+  if err then
+    if err == "timeout" then return false end
+    return nil, err
+  end
+
   return true
 end
 
