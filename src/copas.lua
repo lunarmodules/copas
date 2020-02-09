@@ -24,6 +24,7 @@ local ssl -- only loaded upon demand
 
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocket
+local TIMEOUT_PRECISION = 0.1  -- 100ms
 local fnil = function() end
 
 local pcall = pcall
@@ -151,7 +152,7 @@ local _sleeping = {} do
   _sleeping.remove = fnil
 
   -- push a new timer on the heap
-  _sleeping.push = function(self, sleeptime, co)
+  function _sleeping:push(sleeptime, co)
     if sleeptime < 0 then
       lethargy[co] = true
     else
@@ -160,7 +161,7 @@ local _sleeping = {} do
   end
 
   -- find the thread that should wake up to the time, if any
-  _sleeping.pop = function(self, time)
+  function _sleeping:pop(time)
     if time < (heap:peekValue() or math.huge) then
       return
     end
@@ -169,20 +170,34 @@ local _sleeping = {} do
 
   -- additional methods for time management
   -----------------------------------------
-  _sleeping.getnext = function(self)  -- returns delay until next sleep expires, or nil if there is none
+  function _sleeping:getnext()  -- returns delay until next sleep expires, or nil if there is none
+    if self.resumelist[1] then
+      return 0
+    end
+
     local t = heap:peekValue()
-    return t and math.max(t - gettime(), 0) or nil
+    if t then
+      -- never report less than 0, because select() might block
+      return math.max(t - gettime(), 0)
+    end
   end
 
-  _sleeping.wakeup = function(self, co)
+  _sleeping.resumelist = {}  -- list of coroutines explicitly woken up
+
+  function _sleeping:wakeup(co)
     if lethargy[co] then
-      self:push(0, co)
       lethargy[co] = nil
+      self.resumelist[#self.resumelist + 1] = co
       return
     end
     if heap:remove(co) then
-      self:push(0, co)
+      self.resumelist[#self.resumelist + 1] = co
     end
+  end
+
+  _sleeping.done = function(self)
+    -- return true if we have nothing more to do
+    return heap:peekValue() == nil and self.resumelist[1] == nil
   end
 
 end   -- _sleeping
@@ -629,6 +644,8 @@ function copas.removeserver(server, keep_open)
   return server:close()
 end
 
+
+
 -------------------------------------------------------------------------------
 -- Adds an new coroutine thread to Copas dispatcher
 -------------------------------------------------------------------------------
@@ -647,6 +664,8 @@ function copas.removethread(thread)
   _canceled[thread] = _threads[thread or 0]
 end
 
+
+
 -------------------------------------------------------------------------------
 -- Sleep/pause management functions
 -------------------------------------------------------------------------------
@@ -654,14 +673,57 @@ end
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
 -- If sleeptime < 0 then it sleeps until explicitly woken up using 'wakeup'
 function copas.sleep(sleeptime)
-    coroutine.yield((sleeptime or 0), _sleeping)
+  coroutine.yield((sleeptime or 0), _sleeping)
 end
 
 -- Wakes up a sleeping coroutine 'co'.
 function copas.wakeup(co)
-    _sleeping:wakeup(co)
+  _sleeping:wakeup(co)
 end
 
+
+
+-------------------------------------------------------------------------------
+-- Timeout management
+-------------------------------------------------------------------------------
+local timerwheel = require("timerwheel").new({
+    precision = TIMEOUT_PRECISION,                -- timeout precision 100ms
+    ringsize = math.floor(60/TIMEOUT_PRECISION),  -- ring size 1 minute
+    err_handler = _deferror,
+  })
+
+
+do
+  local _timeouts = setmetatable({}, { __mode = "k" })
+
+  --- Sets the timeout for the current coroutine.
+  -- @param delay (in seconds)
+  -- @param callback function with signature: `function(coroutine)` where coroutine is the routine that timed-out
+  -- @return true
+  function copas.settimeout(delay, callback)
+    local co = coroutine.running()
+    local existing_timer = _timeouts[co]
+
+    if existing_timer then
+      timerwheel:cancel(existing_timer)
+    end
+
+    if delay > 0 then
+      _timeouts[co] = timerwheel:set(delay, callback, co)
+    else
+      _timeouts[co] = nil
+    end
+
+    return true
+  end
+
+end
+
+--- Cancels the timeout for the current coroutine.
+-- @return true
+function copas.canceltimeout()
+  return copas.settimeout(0)
+end
 
 
 -------------------------------------------------------------------------------
@@ -725,9 +787,43 @@ end
 -- sleeping threads task
 local _sleeping_task = {} do
   function _sleeping_task:events()
+    -- replace the resume list before iterating, so items placed in there
+    -- will indeed end up in the next copas step, not in this one
+    local resumelist = _sleeping.resumelist
+    _sleeping.resumelist = {}
+
     local now = gettime()
+
+    -- iterate in 3 phases; timers, resumelist, timeouts
+    local iter_func
+    iter_func = function()
+      local co = _sleeping:pop(now)
+      if co then
+        return co
+      end
+
+      -- no more timers, replace iter_func, moving to the resumelist
+      local i = 0
+      iter_func = function()
+        i = i + 1
+        local co = resumelist[i]
+        if co then
+          return co
+        end
+
+        -- no more tasks, moving to timeouts
+        -- this doesn't have an iterator, but just a function that executes
+        -- the expired timeout callbacks by itself
+        timerwheel:step()
+
+        return nil  -- end the iterator loop
+      end
+
+      return iter_func()
+    end
+
     return function()
-             return _sleeping:pop(now)
+             return iter_func()
            end
   end
 
@@ -736,68 +832,6 @@ local _sleeping_task = {} do
   end
 
   _tasks:add(_sleeping_task)
-end
-
-
--------------------------------------------------------------------------------
--- Timeout management
--------------------------------------------------------------------------------
--- TODO: use a more efficient implementation than these timers,
--- timerwheel for example
-local timer
-
--- cyclical reference, hence we replace the timer value on
--- first access. Can be removed after better timer is implemented.
-timer = setmetatable({}, {__index = function(self, key)
-  timer = require("copas.timer")
-  return timer[key]
-end})
-
-
-local _timeouts = setmetatable({}, { __mode = "k" })
-
---- Sets the timeout for the current coroutine.
--- @param delay (in seconds)
--- @param callback function with signature: `function(coroutine)` where coroutine is the routine that timed-out
--- @return true
-function copas.settimeout(delay, callback)
-  local co = coroutine.running()
-  local to = _timeouts[co]
-
-  if not to then
-    to = {}
-    _timeouts[co] = to
-  elseif to.timer then
-    to.timer:cancel()       -- already active, must cancel first
-  end
-
-  if delay > 0 then
-    to.co = co
-    to.callback = callback
-    to.timer = timer.new({
-      delay = delay,
-      params = to,
-      callback = function(timer_obj, to)
-        --print("timeout expired!")
-        to.callback(to.co)
-        to.co = nil
-        to.timer = nil
-        to.callback = nil
-      end
-    })
-  else
-    to.co = nil
-    to.timer = nil
-    to.callback = nil
-  end
-  return true
-end
-
-
---- Cancels the timeout for the current coroutine.
--- @return true
-function copas.canceltimeout()
-  return copas.settimeout(0, fnil)
 end
 
 
@@ -850,6 +884,8 @@ local _select do
   end
 end
 
+
+
 -------------------------------------------------------------------------------
 -- Dispatcher loop step.
 -- Listen to client requests and handles them
@@ -860,7 +896,11 @@ function copas.step(timeout)
   -- Need to wake up the select call in time for the next sleeping event
   local nextwait = _sleeping:getnext()
   if nextwait then
-    timeout = timeout and math.min(nextwait, timeout) or nextwait
+    if timeout then
+      timeout = math.min(nextwait, timeout, TIMEOUT_PRECISION)
+    else
+      timeout = math.min(nextwait, TIMEOUT_PRECISION)
+    end
   else
     if copas.finished() then
       return false
@@ -883,14 +923,16 @@ function copas.step(timeout)
   return true
 end
 
+
 -------------------------------------------------------------------------------
 -- Check whether there is something to do.
 -- returns false if there are no sockets for read/write nor tasks scheduled
 -- (which means Copas is in an empty spin)
 -------------------------------------------------------------------------------
 function copas.finished()
-  return #_reading == 0 and #_writing == 0 and not _sleeping:getnext()
+  return #_reading == 0 and #_writing == 0 and _sleeping:done()
 end
+
 
 -------------------------------------------------------------------------------
 -- Dispatcher endless loop.

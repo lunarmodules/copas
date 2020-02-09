@@ -1,5 +1,5 @@
 package = "Copas"
-version = "cvs-5"
+version = "cvs-6"
 source = {
   url = "git://github.com/keplerproject/copas.git"
 }
@@ -22,6 +22,7 @@ dependencies = {
    "luasocket >= 2.1",
    "coxpcall >= 1.14",
    "binaryheap >= 0.4",
+   "timerwheel >= 0.1",
 }
 build = {
    type = "builtin",

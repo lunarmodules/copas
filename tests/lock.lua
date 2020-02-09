@@ -53,7 +53,7 @@ copas.loop(function()
         --print(i, "got it!")
         success_count = success_count + 1
         if i == size/3 then
-          copas.sleep(2) -- keep it long enough for the next 500 to timeout
+          copas.sleep(3) -- keep it long enough for the next 500 to timeout
           --print(i, "releasing ")
           assert(lock1:release()) -- by now the 2nd 500 timed out
           --print(i, "destroying ")
