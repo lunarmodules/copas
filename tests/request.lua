@@ -3,7 +3,7 @@ local http = require("copas.http")
 
 local url = assert(arg[1], "missing url argument")
 print("Testing copas.http.request with url " .. url)
-local switches, max_switches = 0, 1000000
+local switches, max_switches = 0, 10000000
 local done = false
 
 copas.addthread(function()
