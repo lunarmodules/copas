@@ -145,6 +145,8 @@ local _sleeping = {} do
 
   local heap = binaryheap.minUnique()
   local lethargy = setmetatable({}, { __mode = "k" }) -- list of coroutines sleeping without a wakeup time
+  local resumelist = {}  -- list of coroutines explicitly woken up
+
 
   -- Required base implementation
   -----------------------------------------
@@ -171,7 +173,7 @@ local _sleeping = {} do
   -- additional methods for time management
   -----------------------------------------
   function _sleeping:getnext()  -- returns delay until next sleep expires, or nil if there is none
-    if self.resumelist[1] then
+    if resumelist[1] then
       return 0
     end
 
@@ -182,16 +184,20 @@ local _sleeping = {} do
     end
   end
 
-  _sleeping.resumelist = {}  -- list of coroutines explicitly woken up
+  function _sleeping:clear_resumelist()
+    local lst = resumelist
+    resumelist = {}
+    return lst
+  end
 
   function _sleeping:wakeup(co)
     if lethargy[co] then
       lethargy[co] = nil
-      self.resumelist[#self.resumelist + 1] = co
+      resumelist[#resumelist + 1] = co
       return
     end
     if heap:remove(co) then
-      self.resumelist[#self.resumelist + 1] = co
+      resumelist[#resumelist + 1] = co
     end
   end
 
@@ -199,7 +205,7 @@ local _sleeping = {} do
     -- return true if we have nothing more to do
     -- the timeout task doesn't qualify as "work" hence if the heap has only
     -- that, we consider it to be done.
-    return heap:size() == 1 and not self.resumelist[1]
+    return heap:size() == 1 and not resumelist[1]
   end
 
 end   -- _sleeping
@@ -781,9 +787,7 @@ local _sleeping_task = {} do
     -- replace the resume list before iterating, so items placed in there
     -- will indeed end up in the next copas step, not in this one, and not
     -- create a loop
-    local resumelist = _sleeping.resumelist
-    _sleeping.resumelist = {}
-
+    local resumelist = _sleeping:clear_resumelist()
     local now = gettime()
 
     local co = _sleeping:pop(now)
