@@ -197,7 +197,9 @@ local _sleeping = {} do
 
   _sleeping.done = function(self)
     -- return true if we have nothing more to do
-    return heap:peekValue() == nil and self.resumelist[1] == nil
+    -- the timeout task doesn't qualify as "work" hence if the heap has only
+    -- that, we consider it to be done.
+    return heap:size() == 1 and not self.resumelist[1]
   end
 
 end   -- _sleeping
@@ -686,15 +688,21 @@ end
 -------------------------------------------------------------------------------
 -- Timeout management
 -------------------------------------------------------------------------------
-local timerwheel = require("timerwheel").new({
-    precision = TIMEOUT_PRECISION,                -- timeout precision 100ms
-    ringsize = math.floor(60/TIMEOUT_PRECISION),  -- ring size 1 minute
-    err_handler = _deferror,
-  })
-
 
 do
-  local _timeouts = setmetatable({}, { __mode = "k" })
+  local timeout_register = setmetatable({}, { __mode = "k" })
+  local timerwheel = require("timerwheel").new({
+      precision = TIMEOUT_PRECISION,                -- timeout precision 100ms
+      ringsize = math.floor(60/TIMEOUT_PRECISION),  -- ring size 1 minute
+      err_handler = _deferror,
+    })
+
+  copas.addthread(function()
+    while true do
+      copas.sleep(TIMEOUT_PRECISION)
+      timerwheel:step()
+    end
+  end)
 
   --- Sets the timeout for the current coroutine.
   -- @param delay (in seconds)
@@ -702,16 +710,16 @@ do
   -- @return true
   function copas.settimeout(delay, callback)
     local co = coroutine.running()
-    local existing_timer = _timeouts[co]
+    local existing_timer = timeout_register[co]
 
     if existing_timer then
       timerwheel:cancel(existing_timer)
     end
 
     if delay > 0 then
-      _timeouts[co] = timerwheel:set(delay, callback, co)
+      timeout_register[co] = timerwheel:set(delay, callback, co)
     else
-      _timeouts[co] = nil
+      timeout_register[co] = nil
     end
 
     return true
@@ -729,9 +737,8 @@ end
 -------------------------------------------------------------------------------
 -- main tasks: manage readable and writable socket sets
 -------------------------------------------------------------------------------
--- a task is an object with 2 properties:
---   tsk:events()     -- returning an iterator for all events to handle for this task
---   tsk:tick(event)  -- a function to handle the event returned by the iterator
+-- a task is an object with a required method `step()` that deals with a
+-- single step for that task.
 
 local _tasks = {} do
   function _tasks:add(tsk)
@@ -742,15 +749,8 @@ end
 
 -- a task to check ready to read events
 local _readable_task = {} do
-  function _readable_task:events()
-    local i = 0
-    return function()
-             i = i + 1
-             return self._evs [i]
-           end
-  end
 
-  function _readable_task:tick(skt)
+  local function tick(skt)
     local handler = _servers[skt]
     if handler then
       _accept(skt, handler)
@@ -760,23 +760,28 @@ local _readable_task = {} do
     end
   end
 
+  function _readable_task:step()
+    for _, skt in ipairs(self._evs) do
+      tick(skt)
+    end
+  end
+
   _tasks:add(_readable_task)
 end
 
 
 -- a task to check ready to write events
 local _writable_task = {} do
-  function _writable_task:events()
-    local i = 0
-    return function()
-             i = i + 1
-             return self._evs [i]
-           end
-  end
 
-  function _writable_task:tick(skt)
+  local function tick(skt)
     _writing:remove(skt)
     _doTick(_writing:pop(skt), skt)
+  end
+
+  function _writable_task:step()
+    for _, skt in ipairs(self._evs) do
+      tick(skt)
+    end
   end
 
   _tasks:add(_writable_task)
@@ -786,49 +791,25 @@ end
 
 -- sleeping threads task
 local _sleeping_task = {} do
-  function _sleeping_task:events()
+
+  function _sleeping_task:step()
     -- replace the resume list before iterating, so items placed in there
-    -- will indeed end up in the next copas step, not in this one
+    -- will indeed end up in the next copas step, not in this one, and not
+    -- create a loop
     local resumelist = _sleeping.resumelist
     _sleeping.resumelist = {}
 
     local now = gettime()
 
-    -- iterate in 3 phases; timers, resumelist, timeouts
-    local iter_func
-    iter_func = function()
-      local co = _sleeping:pop(now)
-      if co then
-        return co
-      end
-
-      -- no more timers, replace iter_func, moving to the resumelist
-      local i = 0
-      iter_func = function()
-        i = i + 1
-        local co = resumelist[i]
-        if co then
-          return co
-        end
-
-        -- no more tasks, moving to timeouts
-        -- this doesn't have an iterator, but just a function that executes
-        -- the expired timeout callbacks by itself
-        timerwheel:step()
-
-        return nil  -- end the iterator loop
-      end
-
-      return iter_func()
+    local co = _sleeping:pop(now)
+    while co do
+      _doTick(co)
+      co = _sleeping:pop(now)
     end
 
-    return function()
-             return iter_func()
-           end
-  end
-
-  function _sleeping_task:tick(co)
-    _doTick(co)
+    for _, co in ipairs(resumelist) do
+      _doTick(co)
+    end
   end
 
   _tasks:add(_sleeping_task)
@@ -889,34 +870,22 @@ end
 -------------------------------------------------------------------------------
 -- Dispatcher loop step.
 -- Listen to client requests and handles them
--- Returns false if no data was handled (timeout), or true if there was data
+-- Returns false if no socket-data was handled, or true if there was data
 -- handled (or nil + error message)
 -------------------------------------------------------------------------------
 function copas.step(timeout)
   -- Need to wake up the select call in time for the next sleeping event
-  local nextwait = _sleeping:getnext()
-  if nextwait then
-    if timeout then
-      timeout = math.min(nextwait, timeout, TIMEOUT_PRECISION)
-    else
-      timeout = math.min(nextwait, TIMEOUT_PRECISION)
-    end
-  else
-    if copas.finished() then
-      return false
-    end
-  end
-
+  timeout = math.min(_sleeping:getnext(), timeout or math.huge)
   local err = _select(timeout)
 
   for _, tsk in ipairs(_tasks) do
-    for ev in tsk:events() do
-      tsk:tick(ev)
-    end
+    tsk:step()
   end
 
   if err then
-    if err == "timeout" then return false end
+    if err == "timeout" then
+      return false
+    end
     return nil, err
   end
 
