@@ -22,7 +22,7 @@ dependencies = {
    "luasocket >= 2.1",
    "coxpcall >= 1.14",
    "binaryheap >= 0.4",
-   "timerwheel >= 0.1",
+   "timerwheel >= 0.2",
 }
 build = {
    type = "builtin",

@@ -7,6 +7,7 @@ local copas = require "copas"
 local lock = require "copas.lock"
 local gettime = require("socket").gettime
 
+local test_complete = false
 copas.loop(function()
 
   local lock1 = lock.new(nil, true)  -- no re-entrant
@@ -95,5 +96,9 @@ copas.loop(function()
   assert(success_count == size/3)
   assert(timeout_count == size/3)
   assert(destroyed_count == size/3)
+
+  test_complete = true
 end)
+assert(test_complete, "test did not complete!")
+
 print("test success!")
