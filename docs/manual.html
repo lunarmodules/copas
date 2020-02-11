@@ -53,7 +53,7 @@
 <pre class="example">
 luarocks install copas
 </pre>
-<p>Note: LuaSec is not automatically installed as a dependency. If you want to use ssl with Copas, 
+<p>Note: LuaSec is not automatically installed as a dependency. If you want to use ssl with Copas,
 you need to manually install LuaSec as well.</p>
 
 <h2><a name="introduction"></a>Introduction to Copas</h2>
@@ -93,7 +93,7 @@ function echoHandler(skt)
 end
 </pre>
 
-<p>You may alternatively use <code>copas.wrap()</code> to let your code more close to a standard 
+<p>You may alternatively use <code>copas.wrap()</code> to let your code more close to a standard
 LuaSocket use:</p>
 
 <pre class="example">
@@ -130,8 +130,8 @@ server.</p>
 
 <p>
 Since Copas is coroutine based, using it within a Lua <code>pcall</code> or
-<code>xpcall</code> context does not work with Lua 5.1 yielding. If you need to use 
-any of those functions in your handler we strongly suggest using  
+<code>xpcall</code> context does not work with Lua 5.1 yielding. If you need to use
+any of those functions in your handler we strongly suggest using
 <a href="http://keplerproject.github.com/coxpcall/">coxpcall</a>, a coroutine safe
 version of the Lua 5.1 protected calls. For an example of this usage please check Xavante.
 </p>
@@ -299,13 +299,13 @@ end
 copas.addserver(server, handler, 1)
 copas.loop()
 </pre>
-<p>For UDP sockets the <code>receivefrom()</code> and <code>sendto()</code> 
-methods are available, both for copas and when the socket is wrapped. These 
+<p>For UDP sockets the <code>receivefrom()</code> and <code>sendto()</code>
+methods are available, both for copas and when the socket is wrapped. These
 methods cannot be used on TCP sockets.</p>
 <p><strong>IMPORTANT:</strong> UDP sockets do not have the notion of master and client sockets, so where a handler function can close the client socket for a TCP connection, a handler should never close a UDP socket, because the socket is the same as the server socket, hence closing it destroys the server.</p>
 <p><strong>NOTE:</strong> When using the <code>copas.receive([size])</code> method
 on a UDP socket, the <code>size</code> parameter is NOT optional as with regular
-luasocket UDP sockets. This limitation is removed when the socket is wrapped 
+luasocket UDP sockets. This limitation is removed when the socket is wrapped
 (it then defaults to 8192, the max UDP datagram size luasocket supports).</p>
 
 <h2><a name="tasks"></a>Adding tasks</h2>
@@ -334,7 +334,7 @@ end)
 
 copas.loop()
 </pre>
-<p>The example connects, echoes whatever it receives and exits upon receiving 'quit'. For an 
+<p>The example connects, echoes whatever it receives and exits upon receiving 'quit'. For an
 example passing arguments to a task, see the async http example below.</p>
 
 <h2><a name="timers"></a>Creating timers</h2>
@@ -358,10 +358,11 @@ end)
 </pre>
 <p>The example simply prints a message once every second, but gets cancelled right after the first one.</p>
 
-<h2><a name="locks"></a>Using locks</h2>
-<p>Since Copas allows to asynchroneously schedule tasks, locks might be required
-to protect resources from concurrent access. In this case the <code>copas.lock</code> class
-can be used. A lock will ensure that the coroutine running will be yielded until
+<h2><a name="synchronization"></a>Synchronization primitives</h2>
+<p>Since Copas allows to asynchroneously schedule tasks, synchronization might be required
+to protect resources from concurrent access. In this case the <code>copas.lock</code> and
+<code>copas.semaphore</code> classes
+can be used. The lock/semaphore will ensure that the coroutine running will be yielded until
 the protected resource becomes available, without blocking other threads.
 </p>
 <pre class="example">
@@ -402,7 +403,7 @@ function handler(skt)
 end
 </pre>
 <p>
-A simpler handler would wrap the handler function to do the wrapping and 
+A simpler handler would wrap the handler function to do the wrapping and
 handshake before the handler gets called;
 </p>
 <pre class="example">
@@ -480,7 +481,7 @@ while condition do
 end
 </pre>
 <p>
-When using your own main loop, you should consider manually setting the 
+When using your own main loop, you should consider manually setting the
 <code>copas.running</code> flag.
 </p>
 

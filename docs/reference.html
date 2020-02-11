@@ -266,6 +266,45 @@ exchange data with other services.</p>
     <dd>Releases the currently held lock. Returns <code>true</code> or <code>nil + error</code>.
     </dd>
 
+    <dt><strong><code>semaphore:get_count()</code></strong></dt>
+    <dd>Returns the number of resources currently available in the semaphore.
+    </dd>
+
+    <dt><strong><code>semaphore:get_wait()</code></strong></dt>
+    <dd>Returns the total number of resources requested by all currently waiting threads minus
+    the available resources. Such that <code>sempahore:give(semaphore:get_wait())</code> will
+    release all waiting threads and leave the semaphore with 0 resources. If there are no waiting threads
+    then the result will be 0, and the number of resources in the semaphore will be greater than or equal to 0.
+    </dd>
+
+    <dt><strong><code>semaphore:give([given])</code></strong></dt>
+    <dd>Gives resources to the semaphore. Parameter <code>given</code> is the number of resources
+    given to the semaphore, if omitted it defaults to 1.
+    If the total resources in the semaphore exceed the maximum, then it will be capped at the
+    maximum. In that case the result will be <code>nil + "too many"</code>.
+    </dd>
+
+    <dt><strong><code>semaphore.new(max, [start], [timeout])</code></strong></dt>
+    <dd>Creates and returns a new semaphore (fifo).
+    <code>max</code> specifies the maximum number of resources the semaphore can hold.
+    The optional <code>start</code> parameter (default 0) specifies the number of resources upon creation.
+    The <code>timeout</code> specifies the default timeout for the lock in
+    seconds, and defaults to 10.
+    </dd>
+
+    <dt><strong><code>semaphore:take([requested], [timeout])</code></strong></dt>
+    <dd>Takes resources from the semaphore. Parameter <code>requested</code> is the number of resources
+    requested from the semaphore, if omitted it defaults to 1.</br>
+    If not enough resources are available it
+    will yield and wait until enough resources are available, or a timeout occurs. The exception is when
+    <code>timeout</code> is set to 0, in that case it will immediately return without yielding if there are
+    not enough resources available.</br>
+    The optional <code>timeout</code> parameter can be used to override the default timeout as set upon
+    semaphore creation.
+    Returns <code>true</code> upon success or <code>nil + "timeout"</code> on a timeout. In case more
+    resources are requested than maximum available the error will be <code>"too many"</code>.
+    </dd>
+
     <dt><strong><code>timer.new(options)</code></strong></dt>
     <dd>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
     <ul>

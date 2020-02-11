@@ -25,6 +25,7 @@ install:
 	cp src/copas/limit.lua $(DESTDIR)$(LUA_DIR)/copas/limit.lua
 	cp src/copas/timer.lua $(DESTDIR)$(LUA_DIR)/copas/timer.lua
 	cp src/copas/lock.lua $(DESTDIR)$(LUA_DIR)/copas/lock.lua
+	cp src/copas/semaphore.lua $(DESTDIR)$(LUA_DIR)/copas/semaphore.lua
 
 tests/certs/clientA.pem:
 	cd ./tests/certs && \
@@ -53,6 +54,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/semaphore.lua
 	$(LUA) $(DELIM)
 
 coverage:
