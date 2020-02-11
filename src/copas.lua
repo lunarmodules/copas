@@ -201,11 +201,15 @@ local _sleeping = {} do
     end
   end
 
-  _sleeping.done = function(self)
+  -- @param tos number of timeouts running
+  function _sleeping:done(tos)
     -- return true if we have nothing more to do
-    -- the timeout task doesn't qualify as "work" hence if the heap has only
-    -- that, we consider it to be done.
-    return heap:size() == 1 and not resumelist[1]
+    -- the timeout task doesn't qualify as work (fallbacks only),
+    -- the lethargy also doesn't qualify as work ('dead' tasks),
+    -- but the combination of a timeout + a lethargy can be work
+    return heap:size() == 1       -- 1 means only the timeout-timer task is running
+           and not resumelist[1]  -- nothing to resume right now
+           and not (tos > 0 and next(lethargy))
   end
 
 end   -- _sleeping
@@ -695,6 +699,11 @@ do
     end
   end)
 
+  -- get the number of timeouts running
+  function copas.gettimeouts()
+    return timerwheel:count()
+  end
+
   --- Sets the timeout for the current coroutine.
   -- @param delay (in seconds)
   -- @param callback function with signature: `function(coroutine)` where coroutine is the routine that timed-out
@@ -888,7 +897,7 @@ end
 -- (which means Copas is in an empty spin)
 -------------------------------------------------------------------------------
 function copas.finished()
-  return #_reading == 0 and #_writing == 0 and _sleeping:done()
+  return #_reading == 0 and #_writing == 0 and _sleeping:done(copas.gettimeouts())
 end
 
 
