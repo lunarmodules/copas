@@ -705,10 +705,10 @@ do
   end
 
   --- Sets the timeout for the current coroutine.
-  -- @param delay (in seconds)
+  -- @param delay delay (seconds), use 0 to cancel the timerout
   -- @param callback function with signature: `function(coroutine)` where coroutine is the routine that timed-out
   -- @return true
-  function copas.settimeout(delay, callback)
+  function copas.timeout(delay, callback)
     local co = coroutine.running()
     local existing_timer = timeout_register[co]
 
@@ -725,12 +725,6 @@ do
     return true
   end
 
-end
-
---- Cancels the timeout for the current coroutine.
--- @return true
-function copas.canceltimeout()
-  return copas.settimeout(0)
 end
 
 

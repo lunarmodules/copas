@@ -129,7 +129,7 @@ function semaphore:take(requested, timeout)
   local co = coroutine.running()
   self.to_flags[co] = nil
   registry[co] = self
-  copas.settimeout(to, timeout_handler)
+  copas.timeout(to, timeout_handler)
 
   self.queue[self.q_tail] = {
     co = co,
@@ -145,7 +145,7 @@ function semaphore:take(requested, timeout)
     return nil, "timeout"
   end
 
-  copas.canceltimeout()
+  copas.timeout(0)
 
   return true
 end

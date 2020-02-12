@@ -121,7 +121,7 @@ function lock:get(timeout)
 
     -- set up timeout
     registry[co] = self
-    copas.settimeout(timeout, timeout_handler)
+    copas.timeout(timeout, timeout_handler)
 
     start_time = gettime()
     copas.sleep(-1)
@@ -131,7 +131,7 @@ function lock:get(timeout)
 
     --print("released ", co, err)
     if err ~= "timeout" then
-      copas.canceltimeout()
+      copas.timeout(0)
     end
     if err then
       self.errors[co] = nil
