@@ -139,13 +139,34 @@ end
 
 
 
+-- Threads immediately resumable
+local _resumable = {} do
+  local resumelist = {}
+
+  function _resumable:push(co)
+    resumelist[#resumelist + 1] = co
+  end
+
+  function _resumable:clear_resumelist()
+    local lst = resumelist
+    resumelist = {}
+    return lst
+  end
+
+  function _resumable:done()
+    return resumelist[1] == nil
+  end
+
+end
+
+
+
 -- Similar to the socket set above, but tailored for the use of
 -- sleeping threads
 local _sleeping = {} do
 
   local heap = binaryheap.minUnique()
   local lethargy = setmetatable({}, { __mode = "k" }) -- list of coroutines sleeping without a wakeup time
-  local resumelist = {}  -- list of coroutines explicitly woken up
 
 
   -- Required base implementation
@@ -157,6 +178,8 @@ local _sleeping = {} do
   function _sleeping:push(sleeptime, co)
     if sleeptime < 0 then
       lethargy[co] = true
+    elseif sleeptime == 0 then
+      _resumable:push(co)
     else
       heap:insert(gettime() + sleeptime, co)
     end
@@ -173,10 +196,6 @@ local _sleeping = {} do
   -- additional methods for time management
   -----------------------------------------
   function _sleeping:getnext()  -- returns delay until next sleep expires, or nil if there is none
-    if resumelist[1] then
-      return 0
-    end
-
     local t = heap:peekValue()
     if t then
       -- never report less than 0, because select() might block
@@ -184,20 +203,14 @@ local _sleeping = {} do
     end
   end
 
-  function _sleeping:clear_resumelist()
-    local lst = resumelist
-    resumelist = {}
-    return lst
-  end
-
   function _sleeping:wakeup(co)
     if lethargy[co] then
       lethargy[co] = nil
-      resumelist[#resumelist + 1] = co
+      _resumable:push(co)
       return
     end
     if heap:remove(co) then
-      resumelist[#resumelist + 1] = co
+      _resumable:push(co)
     end
   end
 
@@ -208,7 +221,6 @@ local _sleeping = {} do
     -- the lethargy also doesn't qualify as work ('dead' tasks),
     -- but the combination of a timeout + a lethargy can be work
     return heap:size() == 1       -- 1 means only the timeout-timer task is running
-           and not resumelist[1]  -- nothing to resume right now
            and not (tos > 0 and next(lethargy))
   end
 
@@ -410,7 +422,7 @@ function copas.dohandshake(skt, sslt)
 end
 
 -- flushes a client write buffer (deprecated)
-function copas.flush(client)
+function copas.flush()
 end
 
 -- wraps a TCP socket to use Copas methods (send, receive, flush and settimeout)
@@ -787,24 +799,38 @@ end
 local _sleeping_task = {} do
 
   function _sleeping_task:step()
-    -- replace the resume list before iterating, so items placed in there
-    -- will indeed end up in the next copas step, not in this one, and not
-    -- create a loop
-    local resumelist = _sleeping:clear_resumelist()
     local now = gettime()
 
     local co = _sleeping:pop(now)
     while co do
-      _doTick(co)
+      -- we're pushing them to _resumable, since that list will be replaced before
+      -- executing. This prevents tasks running twice in a row with sleep(0) for example.
+      -- So here we won't execute, but at _resumable step which is next
+      _resumable:push(co)
       co = _sleeping:pop(now)
     end
+  end
+
+  _tasks:add(_sleeping_task)
+end
+
+
+
+-- resumable threads task
+local _resumable_task = {} do
+
+  function _resumable_task:step()
+    -- replace the resume list before iterating, so items placed in there
+    -- will indeed end up in the next copas step, not in this one, and not
+    -- create a loop
+    local resumelist = _resumable:clear_resumelist()
 
     for _, co in ipairs(resumelist) do
       _doTick(co)
     end
   end
 
-  _tasks:add(_sleeping_task)
+  _tasks:add(_resumable_task)
 end
 
 
@@ -867,7 +893,12 @@ end
 -------------------------------------------------------------------------------
 function copas.step(timeout)
   -- Need to wake up the select call in time for the next sleeping event
-  timeout = math.min(_sleeping:getnext(), timeout or math.huge)
+  if not _resumable:done() then
+    timeout = 0
+  else
+    timeout = math.min(_sleeping:getnext(), timeout or math.huge)
+  end
+
   local err = _select(timeout)
 
   for _, tsk in ipairs(_tasks) do
@@ -891,7 +922,7 @@ end
 -- (which means Copas is in an empty spin)
 -------------------------------------------------------------------------------
 function copas.finished()
-  return #_reading == 0 and #_writing == 0 and _sleeping:done(copas.gettimeouts())
+  return #_reading == 0 and #_writing == 0 and _resumable:done() and _sleeping:done(copas.gettimeouts())
 end
 
 
