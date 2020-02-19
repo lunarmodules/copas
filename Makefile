@@ -56,6 +56,8 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/semaphore.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/errhandlers.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/tcptimeout.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/udptimeout.lua
 	$(LUA) $(DELIM)
 
 coverage:

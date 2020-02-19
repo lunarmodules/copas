@@ -160,7 +160,8 @@ are used to register servers and to execute the main loop of Copas:</p>
         coroutine and any previous callback set will no longer be called.</br>
         <strong>NOTE:</strong> The timeouts are a low-level Copas feature, and
         should only be used to wrap an explicit yield to the Copas scheduler. They
-        should not be used to wrap user code.
+        should not be used to wrap user code.</br>
+        For setting socket timeouts see <code>copas.settimeout()</code> below.
     </dd>
 </dl>
 
@@ -219,6 +220,12 @@ exchange data with other services.</p>
 
     <dt><strong><code>copas.sendto(skt, datagram, ip, port)</code></strong></dt>
     <dd>(deprecated, since UDP sending doesn't block)</dd>
+
+    <dt><strong><code>copas.settimeout(skt, [timeout])</code></strong></dt>
+    <dd>Sets the timeout (in seconds) for a socket. The default is to not have a timeout and wait
+    indefinitely. If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.
+    </dd>
 
     <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>
     <dd>Pauses the current co-routine. Parameter <code>sleeptime</code> (in seconds) is optional

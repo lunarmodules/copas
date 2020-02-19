@@ -2,6 +2,10 @@
 --
 -- Run the test file, it should exit successfully without hanging.
 
+-- make sure we are pointing to the local copas first
+package.path = string.format("../src/?.lua;%s", package.path)
+
+
 local copas = require("copas")
 local socket = require("socket")
 
@@ -21,7 +25,7 @@ end
 -- send `quit\n` to cause server to disconnect client
 -- stops listen server after provided number of echos
 local function singleuseechoserver(die_after)
-  local die_after = die_after or 1
+  die_after = die_after or 1
   local server = socket.udp()
   server:setsockname("127.0.0.1", 0) -- "localhost" fails because of IPv6 error
   local ip, port = server:getsockname()
