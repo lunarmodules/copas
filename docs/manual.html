@@ -264,6 +264,10 @@ function handle(skt)
 end
 </pre>
 
+<p>Note that by default Copas might return different timeout errors than the
+traditional Lua libraries. Checkout <code>copas.useSocketTimeoutErrors()</code>
+for more information.</p>
+
 <p>Finally, to run the dispatcher loop you just call:</p>
 
 <pre class="example">

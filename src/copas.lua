@@ -228,6 +228,10 @@ end   -- _sleeping
 
 
 
+-------------------------------------------------------------------------------
+-- Tracking coroutines and sockets
+-------------------------------------------------------------------------------
+
 local _servers = newsocketset() -- servers being handled
 local _threads = setmetatable({}, {__mode = "k"})  -- registered threads added with addthread()
 local _canceled = setmetatable({}, {__mode = "k"}) -- threads that are canceled and pending removal
@@ -240,11 +244,99 @@ local _writing_log = {}
 
 local _reading = newsocketset() -- sockets currently being read
 local _writing = newsocketset() -- sockets currently being written
-local _isTimeout = {      -- set of errors indicating a timeout
-  ["timeout"] = true,     -- default LuaSocket timeout
-  ["wantread"] = true,    -- LuaSec specific timeout
-  ["wantwrite"] = true,   -- LuaSec specific timeout
+local _isSocketTimeout = { -- set of errors indicating a socket-timeout
+  ["timeout"] = true,      -- default LuaSocket timeout
+  ["wantread"] = true,     -- LuaSec specific timeout
+  ["wantwrite"] = true,    -- LuaSec specific timeout
 }
+
+-------------------------------------------------------------------------------
+-- Coroutine based socket timeouts.
+-------------------------------------------------------------------------------
+
+local usertimeouts = setmetatable({}, {
+    __mode = "k",
+    __index = function(self, skt)
+      -- if there is no timeout found, we insert one automatically,
+      -- a 10 year timeout as substitute for the default "blocking" should do
+      self[skt] = 10*365*24*60*60
+      return self[skt]
+    end,
+  })
+
+local useSocketTimeoutErrors = setmetatable({},{ __mode = "k" })
+
+
+-- sto = socket-time-out
+local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
+
+  local socket_register = setmetatable({}, { __mode = "k" })    -- socket by coroutine
+  local operation_register = setmetatable({}, { __mode = "k" }) -- operation "read"/"write" by coroutine
+  local timeout_flags = setmetatable({}, { __mode = "k" })      -- true if timedout, by coroutine
+
+
+  local function socket_callback(co)
+    local skt = socket_register[co]
+    local queue = operation_register[co]
+
+    -- flag the timeout and resume the coroutine
+    timeout_flags[co] = true
+    _resumable:push(co)
+
+    -- clear the socket from the current queue
+    if queue == "read" then
+      _reading:remove(skt)
+    elseif queue == "write" then
+      _writing:remove(skt)
+    else
+      error("bad queue name; expected 'read'/'write', got: "..tostring(queue))
+    end
+  end
+
+
+  -- Sets a socket timeout.
+  -- Calling it as `sto_timeout()` will cancel the timeout.
+  -- @param queue (string) the queue the socket is currently in, must be either "read" or "write"
+  -- @param skt (socket) the socket on which to operate
+  -- @return true
+  function sto_timeout(skt, queue)
+    local co = coroutine.running()
+    socket_register[co] = skt
+    operation_register[co] = queue
+    timeout_flags[co] = nil
+    if skt then
+      copas.timeout(usertimeouts[skt], socket_callback)
+    else
+      copas.timeout(0)
+    end
+    return true
+  end
+
+
+  -- Changes the timeout to a different queue (read/write).
+  -- Only usefull with ssl-handshakes and "wantread", "wantwrite" errors, when
+  -- the queue has to be changed, so the timeout handler knows where to find the socket.
+  -- @param queue (string) the new queue the socket is in, must be either "read" or "write"
+  -- @return true
+  function sto_change_queue(queue)
+    operation_register[coroutine.running()] = queue
+    return true
+  end
+
+
+  -- Responds with `true` if the operation timed-out.
+  function sto_timed_out()
+    return timeout_flags[coroutine.running()]
+  end
+
+
+  -- Returns the poroper timeout error
+  function sto_error(err)
+    return useSocketTimeoutErrors[coroutine.running()] and err or "timeout"
+  end
+end
+
+
 
 -------------------------------------------------------------------------------
 -- Coroutine based socket I/O functions.
@@ -252,6 +344,21 @@ local _isTimeout = {      -- set of errors indicating a timeout
 
 local function isTCP(socket)
   return string.sub(tostring(socket),1,3) ~= "udp"
+end
+
+
+function copas.settimeout(skt, timeout)
+
+  if timeout ~= nil and type(timeout) ~= "number" then
+    return nil, "timeout must be a 'nil' or a number"
+  end
+
+  if timeout and timeout < 0 then
+    timeout = nil    -- negative is same as nil; blocking indefinitely
+  end
+
+  usertimeouts[skt] = timeout
+  return true
 end
 
 -- reads a pattern from a client and yields to the reading set on timeouts
@@ -262,19 +369,35 @@ function copas.receive(client, pattern, part)
   local s, err
   pattern = pattern or "*l"
   local current_log = _reading_log
+  sto_timeout(client, "read")
+
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or (not _isTimeout[err]) then
+
+    if s then
       current_log[client] = nil
+      sto_timeout()
       return s, err, part
+
+    elseif not _isSocketTimeout[err] then
+      current_log[client] = nil
+      sto_timeout()
+      return s, err, part
+
+    elseif sto_timed_out() then
+      current_log[client] = nil
+      return nil, sto_error(err)
     end
-    if err == "wantwrite" then
+
+    if err == "wantwrite" then -- wantwrite may be returned during SSL renegotiations
       current_log = _writing_log
       current_log[client] = gettime()
+      sto_change_queue("write")
       coroutine.yield(client, _writing)
     else
       current_log = _reading_log
       current_log[client] = gettime()
+      sto_change_queue("read")
       coroutine.yield(client, _reading)
     end
   until false
@@ -285,12 +408,26 @@ end
 function copas.receivefrom(client, size)
   local s, err, port
   size = size or UDP_DATAGRAM_MAX
+  sto_timeout(client, "read")
+
   repeat
     s, err, port = client:receivefrom(size) -- upon success err holds ip address
-    if s or err ~= "timeout" then
+
+    if s then
       _reading_log[client] = nil
+      sto_timeout()
       return s, err, port
+
+    elseif err ~= "timeout" then
+      _reading_log[client] = nil
+      sto_timeout()
+      return s, err, port
+
+    elseif sto_timed_out() then
+      _reading_log[client] = nil
+      return nil, sto_error(err)
     end
+
     _reading_log[client] = gettime()
     coroutine.yield(client, _reading)
   until false
@@ -302,19 +439,35 @@ function copas.receivePartial(client, pattern, part)
   local s, err
   pattern = pattern or "*l"
   local current_log = _reading_log
+  sto_timeout(client, "read")
+
   repeat
     s, err, part = client:receive(pattern, part)
-    if s or ((type(pattern)=="number") and part~="" and part ~=nil ) or (not _isTimeout[err]) then
+
+    if s or (type(pattern) == "number" and part ~= "" and part ~= nil) then
       current_log[client] = nil
+      sto_timeout()
       return s, err, part
+
+    elseif not _isSocketTimeout[err] then
+      current_log[client] = nil
+      sto_timeout()
+      return s, err, part
+
+    elseif sto_timed_out() then
+      current_log[client] = nil
+      return nil, sto_error(err)
     end
+
     if err == "wantwrite" then
       current_log = _writing_log
       current_log[client] = gettime()
+      sto_change_queue("write")
       coroutine.yield(client, _writing)
     else
       current_log = _reading_log
       current_log[client] = gettime()
+      sto_change_queue("read")
       coroutine.yield(client, _reading)
     end
   until false
@@ -328,8 +481,11 @@ function copas.send(client, data, from, to)
   from = from or 1
   local lastIndex = from - 1
   local current_log = _writing_log
+  sto_timeout(client, "write")
+
   repeat
     s, err, lastIndex = client:send(data, lastIndex + 1, to)
+
     -- adds extra coroutine swap
     -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
@@ -340,17 +496,31 @@ function copas.send(client, data, from, to)
         coroutine.yield(client, _reading)
       end
     end
-    if s or (not _isTimeout[err]) then
+
+    if s then
       current_log[client] = nil
-      return s, err,lastIndex
+      sto_timeout()
+      return s, err, lastIndex
+
+    elseif not _isSocketTimeout[err] then
+      current_log[client] = nil
+      sto_timeout()
+      return s, err, lastIndex
+
+    elseif sto_timed_out() then
+      current_log[client] = nil
+      return nil, sto_error(err)
     end
+
     if err == "wantread" then
       current_log = _reading_log
       current_log[client] = gettime()
+      sto_change_queue("read")
       coroutine.yield(client, _reading)
     else
       current_log = _writing_log
       current_log[client] = gettime()
+      sto_change_queue("write")
       coroutine.yield(client, _writing)
     end
   until false
@@ -365,23 +535,31 @@ end
 function copas.connect(skt, host, port)
   skt:settimeout(0)
   local ret, err, tried_more_than_once
+  sto_timeout(skt, "write")
+
   repeat
-    ret, err = skt:connect (host, port)
+    ret, err = skt:connect(host, port)
+
     -- non-blocking connect on Windows results in error "Operation already
     -- in progress" to indicate that it is completing the request async. So essentially
     -- it is the same as "timeout"
     if ret or (err ~= "timeout" and err ~= "Operation already in progress") then
+      _writing_log[skt] = nil
+      sto_timeout()
       -- Once the async connect completes, Windows returns the error "already connected"
       -- to indicate it is done, so that error should be ignored. Except when it is the
       -- first call to connect, then it was already connected to something else and the
       -- error should be returned
       if (not ret) and (err == "already connected" and tried_more_than_once) then
-        ret = 1
-        err = nil
+        return 1
       end
-      _writing_log[skt] = nil
       return ret, err
+
+    elseif sto_timed_out() then
+      _writing_log[skt] = nil
+      return nil, sto_error(err)
     end
+
     tried_more_than_once = tried_more_than_once or true
     _writing_log[skt] = gettime()
     coroutine.yield(skt, _writing)
@@ -405,18 +583,36 @@ function copas.dohandshake(skt, sslt)
   local nskt, err = ssl.wrap(skt, sslt)
   if not nskt then return error(err) end
   local queue
-  nskt:settimeout(0)
+  nskt:settimeout(0)  -- non-blocking on the ssl-socket
+  copas.settimeout(nskt, usertimeouts[skt]) -- copy copas user-timeout to newly wrapped one
+  sto_timeout(nskt, "write")
+
   repeat
     local success, err = nskt:dohandshake()
+
     if success then
+      sto_timeout()
       return nskt
+
+    elseif not _isSocketTimeout[err] then
+      sto_timeout()
+      return error(err)
+
+    elseif sto_timed_out() then
+      return nil, sto_error(err)
+
     elseif err == "wantwrite" then
+      sto_change_queue("write")
       queue = _writing
+
     elseif err == "wantread" then
+      sto_change_queue("read")
       queue = _reading
+
     else
       error(err)
     end
+
     coroutine.yield(nskt, queue)
   until false
 end
@@ -437,7 +633,7 @@ local _skt_mt_tcp = {
                           end,
 
                    receive = function (self, pattern, prefix)
-                               if (self.timeout==0) then
+                               if usertimeouts[self.socket] == 0 then
                                  return copas.receivePartial(self.socket, pattern, prefix)
                                end
                                return copas.receive(self.socket, pattern, prefix)
@@ -448,8 +644,7 @@ local _skt_mt_tcp = {
                            end,
 
                    settimeout = function (self, time)
-                                  self.timeout=time
-                                  return true
+                                  return copas.settimeout(self.socket, time)
                                 end,
 
                    -- TODO: socket.connect is a shortcut, and must be provided with an alternative
@@ -542,6 +737,7 @@ end
 --- Wraps a handler in a function that deals with wrapping the socket and doing the
 -- optional ssl handshake.
 function copas.handler(handler, sslparams)
+  -- TODO: pass a timeout value to set, and use during handshake
   return function (skt, ...)
     skt = copas.wrap(skt)
     if sslparams then skt:dohandshake(sslparams) end
@@ -575,6 +771,13 @@ function copas.setErrorHandler (err, default)
   else
     _errhandlers[coroutine.running()] = err
   end
+end
+
+-- if `bool` is truthy, then the original socket errors will be returned in case of timeouts;
+-- `timeout, wantread, wantwrite, Operation already in progress`. If falsy, it will always
+-- return `timeout`.
+function copas.useSocketTimeoutErrors(bool)
+  useSocketTimeoutErrors[coroutine.running()] = not not bool -- force to a boolean
 end
 
 -------------------------------------------------------------------------------
