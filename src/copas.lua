@@ -554,18 +554,27 @@ end
 -- Error handling
 --------------------------------------------------
 
-local _errhandlers = {}   -- error handler per coroutine
+local _errhandlers = setmetatable({}, { __mode = "k" })   -- error handler per coroutine
 
-function copas.setErrorHandler (err)
-  local co = coroutine.running()
-  if co then
-    _errhandlers [co] = err
+local function _deferror(msg, co, skt)
+  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), tostring(co), tostring(skt))
+  if type(co) == "thread" then
+    -- regular Copas coroutine
+    msg = debug.traceback(co, msg)
+  else
+    -- not a coroutine, but the main thread, this happens if a timeout callback
+    -- (see `copas.timeout` causes an error (those callbacks run on the main thread).
+    msg = debug.traceback(msg, 2)
   end
+  print(msg)
 end
 
-local function _deferror (msg, co, skt)
-  print(msg, co, skt)
-  print(debug.traceback(co))
+function copas.setErrorHandler (err, default)
+  if default then
+    _deferror = err
+  else
+    _errhandlers[coroutine.running()] = err
+  end
 end
 
 -------------------------------------------------------------------------------
@@ -701,7 +710,7 @@ do
   local timerwheel = require("timerwheel").new({
       precision = TIMEOUT_PRECISION,                -- timeout precision 100ms
       ringsize = math.floor(60/TIMEOUT_PRECISION),  -- ring size 1 minute
-      err_handler = _deferror,
+      err_handler = function(...) return _deferror(...) end,
     })
 
   copas.addthread(function()
