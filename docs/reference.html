@@ -225,17 +225,27 @@ exchange data with other services.</p>
     <dd>Sets the timeout (in seconds) for a socket. The default is to not have a timeout and wait
     indefinitely. If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
     Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.</br>
-    </br>
-    Note: in case of using ssl/tls connections, the error might also be either
-    <code>"wantread"</code> or <code>"wantwrite"</code>. These can be returned at any point
-    if during a read or write ops a ssl-renegotiation happens. Due to platform difference
-    the <code>connect</code> method may also return "Operation already in progress" as timeout error message.
+    See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
     </dd>
 
     <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>
     <dd>Pauses the current co-routine. Parameter <code>sleeptime</code> (in seconds) is optional
     and defaults to 0. If <code>sleeptime &lt 0</code>
     then it will sleep until explicitly woken by a call to <code>copas.wakeup()</code>.
+    </dd>
+
+    <dt><strong><code>copas.useSocketTimeoutErrors([bool])</code></strong></dt>
+    <dd>Sets the timeout errors to return for the current co-routine.
+    The default is <code>false</code>, meaning
+    that a timeout error will always return an error string <code>"timeout"</code>.
+    If you are porting an existing application to Copas and want LuaSocket or LuaSec
+    compatible error messages then set it to <code>true</code>.</br>
+    </br>
+    In case of using socket timeout errors, they can also be <code>"wantread"</code>
+    or <code>"wantwrite"</code> when using ssl/tls connections. These can be returned at any point
+    if during a read or write operation an ssl-renegotiation happens.</br>
+    Due to platform difference the <code>connect</code> method may also return
+    <code>"Operation already in progress"</code> as a timeout error message.
     </dd>
 
     <dt><strong><code>copas.wakeup(co)</code></strong></dt>

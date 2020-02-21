@@ -264,8 +264,11 @@ local usertimeouts = setmetatable({}, {
     end,
   })
 
+local useSocketTimeoutErrors = setmetatable({},{ __mode = "k" })
+
+
 -- sto = socket-time-out
-local sto_timeout, sto_timed_out, sto_change_queue do
+local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
 
   local socket_register = setmetatable({}, { __mode = "k" })    -- socket by coroutine
   local operation_register = setmetatable({}, { __mode = "k" }) -- operation "read"/"write" by coroutine
@@ -325,6 +328,12 @@ local sto_timeout, sto_timed_out, sto_change_queue do
   function sto_timed_out()
     return timeout_flags[coroutine.running()]
   end
+
+
+  -- Returns the poroper timeout error
+  function sto_error(err)
+    return useSocketTimeoutErrors[coroutine.running()] and err or "timeout"
+  end
 end
 
 
@@ -377,7 +386,7 @@ function copas.receive(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
-      return nil, err
+      return nil, sto_error(err)
     end
 
     if err == "wantwrite" then -- wantwrite may be returned during SSL renegotiations
@@ -416,7 +425,7 @@ function copas.receivefrom(client, size)
 
     elseif sto_timed_out() then
       _reading_log[client] = nil
-      return nil, err
+      return nil, sto_error(err)
     end
 
     _reading_log[client] = gettime()
@@ -447,7 +456,7 @@ function copas.receivePartial(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
-      return nil, err
+      return nil, sto_error(err)
     end
 
     if err == "wantwrite" then
@@ -500,7 +509,7 @@ function copas.send(client, data, from, to)
 
     elseif sto_timed_out() then
       current_log[client] = nil
-      return nil, err
+      return nil, sto_error(err)
     end
 
     if err == "wantread" then
@@ -548,7 +557,7 @@ function copas.connect(skt, host, port)
 
     elseif sto_timed_out() then
       _writing_log[skt] = nil
-      return nil, err
+      return nil, sto_error(err)
     end
 
     tried_more_than_once = tried_more_than_once or true
@@ -590,7 +599,7 @@ function copas.dohandshake(skt, sslt)
       return error(err)
 
     elseif sto_timed_out() then
-      return nil, err
+      return nil, sto_error(err)
 
     elseif err == "wantwrite" then
       sto_change_queue("write")
@@ -762,6 +771,13 @@ function copas.setErrorHandler (err, default)
   else
     _errhandlers[coroutine.running()] = err
   end
+end
+
+-- if `bool` is truthy, then the original socket errors will be returned in case of timeouts;
+-- `timeout, wantread, wantwrite, Operation already in progress`. If falsy, it will always
+-- return `timeout`.
+function copas.useSocketTimeoutErrors(bool)
+  useSocketTimeoutErrors[coroutine.running()] = not not bool -- force to a boolean
 end
 
 -------------------------------------------------------------------------------

@@ -81,7 +81,7 @@ if platform == "mac" then
   -- this test fails on a Mac, looks like the 'listen(0)' isn't being honoured
   print("\nSkipping test on Mac!\n")
 else
-  function tests.connect_timeout()
+  function tests.connect_timeout_copas()
     local server = socket.tcp()
     server:bind("localhost", 0)
     server:listen(0) -- zero backlog, single connection will block further connections
@@ -97,6 +97,32 @@ else
       client:settimeout(0.01)
       local status, err = client:connect(ip, port)
       assert(status == nil, "connect somehow succeeded")
+      assert(err == "timeout", "connect failed with non-timeout error: "..tostring(err))
+      client:close()
+    end)
+
+    copas.loop()
+  end
+
+
+  function tests.connect_timeout_socket()
+    local server = socket.tcp()
+    server:bind("localhost", 0)
+    server:listen(0) -- zero backlog, single connection will block further connections
+    -- note: not servicing connections
+    local ip, port = server:getsockname()
+
+    copas.addthread(function()
+      copas.useSocketTimeoutErrors(true)
+      -- fill server's implicit connection backlog
+      socket.connect(ip,port)
+
+      local client = socket.tcp()
+      client = copas.wrap(client)
+      client:settimeout(0.01)
+      local status, err = client:connect(ip, port)
+      assert(status == nil, "connect somehow succeeded")
+      -- we test for a different error message becasue we expect socket errors, not copas ones
       assert(err == "Operation already in progress", "connect failed with non-timeout error: "..tostring(err))
       client:close()
     end)
