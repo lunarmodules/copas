@@ -142,10 +142,13 @@ are used to register servers and to execute the main loop of Copas:</p>
         be (un)set. So when using your own main loop, consider manually setting the flag.
     </dd>
 
-    <dt><strong><code>copas.setErrorHandler(func)</code></strong></dt>
-    <dd>Sets the error handling function for the current thread. Any
-        errors will be forwarded to the handler, which will receive the
-        error, coroutine, and socket as arguments.
+    <dt><strong><code>copas.setErrorHandler(func, [default])</code></strong></dt>
+    <dd>Sets the error handling function for the current thread. If <code>default</code>
+        is truthy, then the handler will become the new default, used for all threads
+        that do not have their own set.
+        Any errors will be forwarded to this handler, which will receive the
+        error, coroutine, and socket as arguments. See the Copas source code
+        on how to deal with the arguments when implementing your own.
     </dd>
 
     <dt><strong><code>copas.timeout(delay, callback)</code></strong></dt>
