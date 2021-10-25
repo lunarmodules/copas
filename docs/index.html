@@ -118,6 +118,9 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
                 <li>Added: semaphore class, see module "copas.semaphore"</li>
                 <li>Added: option to override the default errorhandler, and fixes to the handler</li>
                 <li>Added: copas.settimeout() so Copas can manage its own timeouts instead of spinning forever</li>
+                <li>[breaking] Change: copas.addserver() now uses the timeout value as a copas timeout,
+                    instead of a luasocket timeout. The client sockets for incoming connections will
+                    inherit the timeout from the server socket.</li>
 	</ul></dd>
 
     <dt><strong>Copas 2.0.2</strong> [2017]</dt>

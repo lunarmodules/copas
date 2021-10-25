@@ -68,7 +68,8 @@ are used to register servers and to execute the main loop of Copas:</p>
         <code>socket.bind()</code>.<br />
         <code>handler</code> is a function that receives a LuaSocket client socket
         and handles the communication with that client.<br />
-        <code>timeout</code> is the timeout for blocking I/O in seconds.
+        <code>timeout</code> is the timeout in seconds. Upon accepting connections,
+        the timeout will be inherited by TCP client sockets (only applies to TCP).<br />
         The handler will be executed in parallel with other threads and the
         registered handlers as long as it uses the Copas socket functions.
     </dd>
@@ -249,7 +250,7 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>copas.wakeup(co)</code></strong></dt>
-    <dd><code>co</code> is the coroutine to wakeup.
+    <dd><code>co</code> is the coroutine to wakeup, see <code>copas.sleep()</code>.
     </dd>
 
     <dt><strong><code>copas.wrap(skt [, sslparams] )</code></strong></dt>
