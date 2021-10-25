@@ -814,6 +814,7 @@ local function _accept(server_skt, handler)
   local client_skt = server_skt:accept()
   if client_skt then
     client_skt:settimeout(0)
+    copas.settimeout(client_skt, usertimeouts[server_skt]) -- copy server socket timeout settings
     local co = coroutine.create(handler)
     _doTick(co, client_skt)
   end
@@ -826,15 +827,21 @@ end
 
 do
   local function addTCPserver(server, handler, timeout)
-    server:settimeout(timeout or 0)
+    server:settimeout(0)
     _servers[server] = handler
     _reading:insert(server)
+    if timeout then
+      copas.settimeout(server, timeout)
+    end
   end
 
   local function addUDPserver(server, handler, timeout)
-    server:settimeout(timeout or 0)
+    server:settimeout(0)
     local co = coroutine.create(handler)
     _reading:insert(server)
+    if timeout then
+      copas.settimeout(server, timeout)
+    end
     _doTick(co, server)
   end
 
