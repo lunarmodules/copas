@@ -173,6 +173,11 @@ the clients, and by threads registered with <code>addthread</code> to
 exchange data with other services.</p>
 
 <dl class="reference">
+    <dt><strong><code>copas.close(skt)</code></strong></dt>
+    <dd>Closes the socket. Any read/write operations in progress will return
+    with an error.
+    </dd>
+
     <dt><strong><code>copas.connect(skt, address, port)</code></strong></dt>
     <dd>Connects and transforms a master socket to a client just like LuaSocket
     <code>socket:connect()</code>. The Copas version does not block and allows

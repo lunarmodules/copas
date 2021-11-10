@@ -40,6 +40,7 @@ tests/certs/clientA.pem:
 certs: tests/certs/clientA.pem
 
 test: certs
+	$(LUA) $(DELIM) $(PKGPATH) tests/close.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/connecttwice.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/errhandlers.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/exit.lua
