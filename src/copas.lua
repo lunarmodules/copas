@@ -87,14 +87,17 @@ local function newsocketset()
     local reverse = {}
 
     -- Adds a socket to the set, does nothing if it exists
+    -- @return skt if added, or nil if it existed
     function set:insert(skt)
       if not reverse[skt] then
         self[#self + 1] = skt
         reverse[skt] = #self
+        return skt
       end
     end
 
     -- Removes socket from the set, does nothing if not found
+    -- @return skt if removed, or nil if it wasn't in the set
     function set:remove(skt)
       local index = reverse[skt]
       if index then
@@ -105,6 +108,7 @@ local function newsocketset()
           reverse[top] = index
           self[index] = top
         end
+        return skt
       end
     end
 
@@ -242,6 +246,8 @@ local _canceled = setmetatable({}, {__mode = "k"}) -- threads that are canceled 
 local _reading_log = {}
 local _writing_log = {}
 
+local _closed = {} -- track sockets that have been closed (list/array)
+
 local _reading = newsocketset() -- sockets currently being read
 local _writing = newsocketset() -- sockets currently being written
 local _isSocketTimeout = { -- set of errors indicating a socket-timeout
@@ -344,6 +350,12 @@ end
 
 local function isTCP(socket)
   return string.sub(tostring(socket),1,3) ~= "udp"
+end
+
+
+function copas.close(skt, ...)
+  _closed[#_closed+1] = skt
+  return skt:close(...)
 end
 
 
@@ -657,7 +669,9 @@ local _skt_mt_tcp = {
                      return res, err
                    end,
 
-                   close = function(self, ...) return self.socket:close(...) end,
+                   close = function(self, ...)
+                     return copas.close(self.socket, ...)
+                   end,
 
                    -- TODO: socket.bind is a shortcut, and must be provided with an alternative
                    bind = function(self, ...) return self.socket:bind(...) end,
@@ -1065,8 +1079,24 @@ local _select do
     local err
     local now = gettime()
 
+    -- remove any closed sockets to prevent select from hanging on them
+    if _closed[1] then
+      for i, skt in ipairs(_closed) do
+        _closed[i] = { _reading:remove(skt), _writing:remove(skt) }
+      end
+    end
+
     _readable_task._events, _writable_task._events, err = socket.select(_reading, _writing, timeout)
     local r_events, w_events = _readable_task._events, _writable_task._events
+
+    -- inject closed sockets in readable/writeable task so they can error out properly
+    if _closed[1] then
+      for i, skts in ipairs(_closed) do
+        _closed[i] = nil
+        r_events[#r_events+1] = skts[1]
+        w_events[#w_events+1] = skts[2]
+      end
+    end
 
     if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
       last_cleansing = now
