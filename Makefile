@@ -40,23 +40,23 @@ tests/certs/clientA.pem:
 certs: tests/certs/clientA.pem
 
 test: certs
-	$(LUA) $(DELIM) $(PKGPATH) tests/largetransfer.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'http://www.google.com'
-	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'https://www.google.nl'
-	$(LUA) $(DELIM) $(PKGPATH) tests/httpredirect.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/limit.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/connecttwice.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/errhandlers.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/exit.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/exittest.lua
+	#$(LUA) $(DELIM) $(PKGPATH) tests/httpredirect.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/largetransfer.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/limit.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removeserver.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removethread.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/sleep.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'http://www.google.com'
+	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'https://www.google.nl'
 	$(LUA) $(DELIM) $(PKGPATH) tests/semaphore.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/errhandlers.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/sleep.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tcptimeout.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/udptimeout.lua
 	$(LUA) $(DELIM)
 
