@@ -58,6 +58,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/sleep.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tcptimeout.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/tls-sni.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/udptimeout.lua
 	$(LUA) $(DELIM)
 
