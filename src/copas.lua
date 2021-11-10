@@ -986,7 +986,7 @@ local _readable_task = {} do
   end
 
   function _readable_task:step()
-    for _, skt in ipairs(self._evs) do
+    for _, skt in ipairs(self._events) do
       tick(skt)
     end
   end
@@ -1004,7 +1004,7 @@ local _writable_task = {} do
   end
 
   function _writable_task:step()
-    for _, skt in ipairs(self._evs) do
+    for _, skt in ipairs(self._events) do
       tick(skt)
     end
   end
@@ -1065,8 +1065,8 @@ local _select do
     local err
     local now = gettime()
 
-    _readable_task._evs, _writable_task._evs, err = socket.select(_reading, _writing, timeout)
-    local r_evs, w_evs = _readable_task._evs, _writable_task._evs
+    _readable_task._events, _writable_task._events, err = socket.select(_reading, _writing, timeout)
+    local r_events, w_events = _readable_task._events, _writable_task._events
 
     if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
       last_cleansing = now
@@ -1074,27 +1074,27 @@ local _select do
       -- Check all sockets selected for reading, and check how long they have been waiting
       -- for data already, without select returning them as readable
       for skt,time in pairs(_reading_log) do
-        if not r_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+        if not r_events[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
           -- This one timedout while waiting to become readable, so move
           -- it in the readable list and try and read anyway, despite not
           -- having been returned by select
           _reading_log[skt] = nil
-          r_evs[#r_evs + 1] = skt
-          r_evs[skt] = #r_evs
+          r_events[#r_events + 1] = skt
+          r_events[skt] = #r_events
         end
       end
 
       -- Do the same for writing
       for skt,time in pairs(_writing_log) do
-        if not w_evs[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+        if not w_events[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
           _writing_log[skt] = nil
-          w_evs[#w_evs + 1] = skt
-          w_evs[skt] = #w_evs
+          w_events[#w_events + 1] = skt
+          w_events[skt] = #w_events
         end
       end
     end
 
-    if err == "timeout" and #r_evs + #w_evs > 0 then
+    if err == "timeout" and #r_events + #w_events > 0 then
       return nil
     else
       return err
