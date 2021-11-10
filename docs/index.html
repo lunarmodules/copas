@@ -102,6 +102,7 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <dl class="history">
     <dt><strong>Copas</strong> [unreleased]</dt>
 	<dd><ul>
+        <li>Added: support for SNI on TLS connections #81 (@amyspark)</li>
         <li>Fixed: closing sockets from another thread would make the read/write ops hang #104</li>
         <li>Fixed: coxpcall dependency in limit.lua #63 (Francois Perrad)</li>
         <li>Change: update deprecated tls default to tls 1.2 in (copas.http)</li>

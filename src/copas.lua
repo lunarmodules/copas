@@ -348,10 +348,18 @@ end
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
 
-local function isTCP(socket)
-  return string.sub(tostring(socket),1,3) ~= "udp"
-end
+-- Returns "tcp"" for plain TCP and "ssl" for ssl-wrapped sockets, so truthy
+-- for tcp based, and falsy for udp based.
+local isTCP do
+  local lookup = {
+    tcp = "tcp",
+    SSL = "ssl",
+  }
 
+  function isTCP(socket)
+    return lookup[tostring(socket):sub(1,3)]
+  end
+end
 
 function copas.close(skt, ...)
   _closed[#_closed+1] = skt
@@ -578,9 +586,79 @@ function copas.connect(skt, host, port)
   until false
 end
 
+
+-- Wraps a tcp socket in an ssl socket and configures it. If the socket was
+-- already wrapped, it does nothing and returns the socket.
+-- @param wrap_params the parameters for the ssl-context
+-- @return wrapped socket, or throws an error
+local function ssl_wrap(skt, wrap_params)
+  if isTCP(skt) == "ssl" then return skt end -- was already wrapped
+  if not wrap_params then
+    error("cannot wrap socket into a secure socket (using 'ssl.wrap()') without parameters/context")
+  end
+
+  ssl = ssl or require("ssl")
+  local nskt, err = ssl.wrap(skt, wrap_params)
+  if not nskt then
+    return error(err) -- throw a hard error, because we do not want to silently ignore this one!!
+  end
+  nskt:settimeout(0)  -- non-blocking on the ssl-socket
+  copas.settimeout(nskt, usertimeouts[skt]) -- copy copas user-timeout to newly wrapped one
+  return nskt
+end
+
+
+-- For each luasec method we have a subtable, allows for future extension.
+-- Required structure:
+-- {
+--   wrap = ... -- parameter to 'wrap()'; the ssl parameter table, or the context object
+--   sni = {                  -- parameters to 'sni()'
+--     names = string | table -- 1st parameter
+--     strict = bool          -- 2nd parameter
+--   }
+-- }
+local function normalize_sslt(sslt)
+  local t = type(sslt)
+  local r = setmetatable({}, {
+    __index = function(self, key)
+      -- a bug if this happens, here as a sanity check, just being careful since
+      -- this is security stuff
+      error("accessing unknown 'ssl_params' table key: "..tostring(key))
+    end,
+  })
+  if t == "nil" then
+    r.wrap = false
+    r.sni = false
+
+  elseif t == "table" then
+    if sslt.mode or sslt.protocol then
+      -- has the mandatory fields for the ssl-params table for handshake
+      -- backward compatibility
+      r.wrap = sslt
+      r.sni = false
+    else
+      -- has the target definition, copy our known keys
+      r.wrap = sslt.wrap or false -- 'or false' because we do not want nils
+      r.sni = sslt.sni or false -- 'or false' because we do not want nils
+    end
+
+  elseif t == "userdata" then
+    -- it's an ssl-context object for the handshake
+    -- backward compatibility
+    r.wrap = sslt
+    r.sni = false
+
+  else
+    error("ssl parameters; did not expect type "..tostring(sslt))
+  end
+
+  return r
+end
+
+
 ---
 -- Peforms an (async) ssl handshake on a connected TCP client socket.
--- NOTE: replace all previous socket references, with the returned new ssl wrapped socket
+-- NOTE: if not ssl-wrapped already, then replace all previous socket references, with the returned new ssl wrapped socket
 -- Throws error and does not return nil+error, as that might silently fail
 -- in code like this;
 --   copas.addserver(s1, function(skt)
@@ -588,16 +666,15 @@ end
 --       skt:dohandshake()   --> without explicit error checking, this fails silently and
 --       skt:send(body)      --> continues unencrypted
 -- @param skt Regular LuaSocket CLIENT socket object
--- @param sslt Table with ssl parameters
+-- @param wrap_params Table with ssl parameters
 -- @return wrapped ssl socket, or throws an error
-function copas.dohandshake(skt, sslt)
+function copas.dohandshake(skt, wrap_params)
   ssl = ssl or require("ssl")
-  local nskt, err = ssl.wrap(skt, sslt)
-  if not nskt then return error(err) end
-  local queue
-  nskt:settimeout(0)  -- non-blocking on the ssl-socket
-  copas.settimeout(nskt, usertimeouts[skt]) -- copy copas user-timeout to newly wrapped one
+
+  local nskt = ssl_wrap(skt, wrap_params)
+
   sto_timeout(nskt, "write")
+  local queue
 
   repeat
     local success, err = nskt:dohandshake()
@@ -608,7 +685,7 @@ function copas.dohandshake(skt, sslt)
 
     elseif not _isSocketTimeout[err] then
       sto_timeout()
-      return error(err)
+      error("TLS/SSL handshake failed: " .. tostring(err))
 
     elseif sto_timed_out() then
       return nil, sto_error(err)
@@ -622,7 +699,7 @@ function copas.dohandshake(skt, sslt)
       queue = _reading
 
     else
-      error(err)
+      error("TLS/SSL handshake failed: " .. tostring(err))
     end
 
     coroutine.yield(nskt, queue)
@@ -635,74 +712,85 @@ end
 
 -- wraps a TCP socket to use Copas methods (send, receive, flush and settimeout)
 local _skt_mt_tcp = {
-                   __tostring = function(self)
-                                  return tostring(self.socket).." (copas wrapped)"
-                                end,
-                   __index = {
+      __tostring = function(self)
+        return tostring(self.socket).." (copas wrapped)"
+      end,
 
-                   send = function (self, data, from, to)
-                            return copas.send (self.socket, data, from, to)
-                          end,
+      __index = {
+        send = function (self, data, from, to)
+          return copas.send (self.socket, data, from, to)
+        end,
 
-                   receive = function (self, pattern, prefix)
-                               if usertimeouts[self.socket] == 0 then
-                                 return copas.receivePartial(self.socket, pattern, prefix)
-                               end
-                               return copas.receive(self.socket, pattern, prefix)
-                             end,
+        receive = function (self, pattern, prefix)
+          if usertimeouts[self.socket] == 0 then
+            return copas.receivePartial(self.socket, pattern, prefix)
+          end
+          return copas.receive(self.socket, pattern, prefix)
+        end,
 
-                   flush = function (self)
-                             return copas.flush(self.socket)
-                           end,
+        flush = function (self)
+          return copas.flush(self.socket)
+        end,
 
-                   settimeout = function (self, time)
-                                  return copas.settimeout(self.socket, time)
-                                end,
+        settimeout = function (self, time)
+          return copas.settimeout(self.socket, time)
+        end,
 
-                   -- TODO: socket.connect is a shortcut, and must be provided with an alternative
-                   -- if ssl parameters are available, it will also include a handshake
-                   connect = function(self, ...)
-                     local res, err = copas.connect(self.socket, ...)
-                     if res and self.ssl_params then
-                       res, err = self:dohandshake()
-                     end
-                     return res, err
-                   end,
+        -- TODO: socket.connect is a shortcut, and must be provided with an alternative
+        -- if ssl parameters are available, it will also include a handshake
+        connect = function(self, ...)
+          local res, err = copas.connect(self.socket, ...)
+          if res then
+            if self.ssl_params.sni then self:sni() end
+            if self.ssl_params.wrap then res, err = self:dohandshake() end
+          end
+          return res, err
+        end,
 
-                   close = function(self, ...)
-                     return copas.close(self.socket, ...)
-                   end,
+        close = function(self, ...)
+          return copas.close(self.socket, ...)
+        end,
 
-                   -- TODO: socket.bind is a shortcut, and must be provided with an alternative
-                   bind = function(self, ...) return self.socket:bind(...) end,
+        -- TODO: socket.bind is a shortcut, and must be provided with an alternative
+        bind = function(self, ...) return self.socket:bind(...) end,
 
-                   -- TODO: is this DNS related? hence blocking?
-                   getsockname = function(self, ...) return self.socket:getsockname(...) end,
+        -- TODO: is this DNS related? hence blocking?
+        getsockname = function(self, ...) return self.socket:getsockname(...) end,
 
-                   getstats = function(self, ...) return self.socket:getstats(...) end,
+        getstats = function(self, ...) return self.socket:getstats(...) end,
 
-                   setstats = function(self, ...) return self.socket:setstats(...) end,
+        setstats = function(self, ...) return self.socket:setstats(...) end,
 
-                   listen = function(self, ...) return self.socket:listen(...) end,
+        listen = function(self, ...) return self.socket:listen(...) end,
 
-                   accept = function(self, ...) return self.socket:accept(...) end,
+        accept = function(self, ...) return self.socket:accept(...) end,
 
-                   setoption = function(self, ...) return self.socket:setoption(...) end,
+        setoption = function(self, ...) return self.socket:setoption(...) end,
 
-                   -- TODO: is this DNS related? hence blocking?
-                   getpeername = function(self, ...) return self.socket:getpeername(...) end,
+        -- TODO: is this DNS related? hence blocking?
+        getpeername = function(self, ...) return self.socket:getpeername(...) end,
 
-                   shutdown = function(self, ...) return self.socket:shutdown(...) end,
+        shutdown = function(self, ...) return self.socket:shutdown(...) end,
 
-                   dohandshake = function(self, sslt)
-                     self.ssl_params = sslt or self.ssl_params
-                     local nskt, err = copas.dohandshake(self.socket, self.ssl_params)
-                     if not nskt then return nskt, err end
-                     self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
-                     return self
-                   end,
+        sni = function(self, names, strict)
+          local sslp = self.ssl_params
+          self.socket = ssl_wrap(self.socket, sslp.wrap)
+          if names == nil then
+            names = sslp.sni.names
+            strict = sslp.sni.strict
+          end
+          return self.socket:sni(names, strict)
+        end,
 
-               }}
+        dohandshake = function(self, wrap_params)
+          local nskt, err = copas.dohandshake(self.socket, wrap_params or self.ssl_params.wrap)
+          if not nskt then return nskt, err end
+          self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
+          return self
+        end,
+
+      }
+}
 
 -- wraps a UDP socket, copy of TCP one adapted for UDP.
 local _skt_mt_udp = {__index = { }}
@@ -741,10 +829,10 @@ function copas.wrap (skt, sslt)
     return skt -- already wrapped
   end
   skt:settimeout(0)
-  if not isTCP(skt) then
-    return  setmetatable ({socket = skt}, _skt_mt_udp)
+  if isTCP(skt) then
+    return setmetatable ({socket = skt, ssl_params = normalize_sslt(sslt)}, _skt_mt_tcp)
   else
-    return  setmetatable ({socket = skt, ssl_params = sslt}, _skt_mt_tcp)
+    return setmetatable ({socket = skt}, _skt_mt_udp)
   end
 end
 
@@ -753,8 +841,10 @@ end
 function copas.handler(handler, sslparams)
   -- TODO: pass a timeout value to set, and use during handshake
   return function (skt, ...)
-    skt = copas.wrap(skt)
-    if sslparams then skt:dohandshake(sslparams) end
+    skt = copas.wrap(skt, sslparams) -- this call will normalize the sslparams table
+    local sslp = skt.ssl_params
+    if sslp.sni then skt:sni(sslp.sni.names, sslp.sni.strict) end
+    if sslp.wrap then skt:dohandshake(sslp.wrap) end
     return handler(skt, ...)
   end
 end
