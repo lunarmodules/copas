@@ -74,7 +74,7 @@ as Lua 5.1 to 5.3</p>
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 2.0.2 and was developed for Lua 5.1 to 5.3.</p>
+<p>Current version is 3.0.0 and was developed for Lua 5.1 to 5.3.</p>
 
 <h2><a name="download"></a>Download</h2>
 
@@ -100,29 +100,29 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
-    <dt><strong>Copas</strong> [unreleased]</dt>
+    <dt><strong>Copas 3.0.0</strong> [12/Nov/2021]</dt>
 	<dd><ul>
-        <li>Added: support for SNI on TLS connections #81 (@amyspark)</li>
-        <li>Fixed: closing sockets from another thread would make the read/write ops hang #104</li>
-        <li>Fixed: coxpcall dependency in limit.lua #63 (Francois Perrad)</li>
-        <li>Change: update deprecated tls default to tls 1.2 in (copas.http)</li>
-        <li>Fixed: CI now generates the certificates for testing, on unix make can be used, on Windows generate them manually</li>
-        <li>Fixed: type in wrapped udp:setpeername was actually calling udp:getpeername</li>
-        <li>Added: copas.removethread() added to be able to forcefully remove a previously added thread</li>
-        <li>Fixed: default error handler didn't print the stacktrace</li>
-        <li>Change: performance improvement in big limit-sets</li>
-        <li>Fixed: small memory leak when sleeping until woken</li>
-        <li>Change: copas.loop() now takes an optional initialization function</li>
-        <li>Added: timer class, see module "copas.timer"</li>
-        <li>Added: timeout interface copas.timeout()</li>
-        <li>Added: lock class, see module "copas.lock"</li>
-        <li>Fixed: do not wrap udp:sendto() method, since udp send doesn't block</li>
-        <li>Added: semaphore class, see module "copas.semaphore"</li>
-        <li>Added: option to override the default errorhandler, and fixes to the handler</li>
-        <li>Added: copas.settimeout() so Copas can manage its own timeouts instead of spinning forever</li>
         <li>[breaking] Change: copas.addserver() now uses the timeout value as a copas timeout,
             instead of a luasocket timeout. The client sockets for incoming connections will
             inherit the timeout from the server socket.</li>
+        <li>Added: support for SNI on TLS connections #81 (@amyspark)</li>
+        <li>Added: copas.settimeout() so Copas can manage its own timeouts instead of spinning forever (Patrick Barrett )</li>
+        <li>Added: timer class, see module "copas.timer"</li>
+        <li>Added: lock class, see module "copas.lock"</li>
+        <li>Added: semaphore class, see module "copas.semaphore"</li>
+        <li>Added: timeout interface copas.timeout()</li>
+        <li>Added: option to override the default errorhandler, and fixes to the handler</li>
+        <li>Added: copas.removethread() added to be able to forcefully remove a previously added thread</li>
+        <li>Added: copas.loop() now takes an optional initialization function</li>
+        <li>Fixed: closing sockets from another thread would make the read/write ops hang #104</li>
+        <li>Fixed: coxpcall dependency in limit.lua #63 (Francois Perrad)</li>
+        <li>Fixed: CI now generates the certificates for testing, on unix make can be used, on Windows generate them manually</li>
+        <li>Fixed: type in wrapped udp:setpeername was actually calling udp:getpeername</li>
+        <li>Fixed: default error handler didn't print the stacktrace</li>
+        <li>Fixed: small memory leak when sleeping until woken</li>
+        <li>Fixed: do not wrap udp:sendto() method, since udp send doesn't block</li>
+        <li>Change: performance improvement in big limit-sets (Francisco Castro)</li>
+        <li>Change: update deprecated tls default to tls 1.2 in (copas.http)</li>
 	</ul></dd>
 
     <dt><strong>Copas 2.0.2</strong> [2017]</dt>

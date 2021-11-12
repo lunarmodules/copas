@@ -1,4 +1,4 @@
-# Copas 2.0
+# Copas 3.0
 
 [![Build Status](https://travis-ci.org/keplerproject/copas.png?branch=master)](https://travis-ci.org/keplerproject/copas)
 [![Coverage Status](https://coveralls.io/repos/github/keplerproject/copas/badge.svg?branch=master)](https://coveralls.io/github/keplerproject/copas?branch=master)
@@ -18,3 +18,16 @@ luarocks install copas
 ```
 
 For more details see [the documentation](http://keplerproject.github.io/copas/).
+
+### Releasing a new version
+
+ - update changelog in docs (`index.html`, update `history` and `status` sections)
+ - update version in `copas.lua`
+ - update version at the top of this README,
+ - update copyright years if needed
+ - update rockspec
+ - commit as `release X.Y.Z`
+ - tag as `vX_Y_Z` and as `X.Y.Z`
+ - push commit and tag
+ - upload to luarocks
+ - test luarocks installation
