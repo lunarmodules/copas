@@ -37,6 +37,28 @@ function semaphore.new(max, start, seconds)
 end
 
 
+do
+  local destroyed_func = function()
+    return nil, "destroyed"
+  end
+
+  local destroyed_semaphore_mt = {
+    __index = function()
+      return destroyed_func
+    end
+  }
+
+  -- destroy a semaphore.
+  -- Releases all waiting threads with `nil+"destroyed"`
+  function semaphore:destroy()
+    self:give(math.huge)
+    self.destroyed = true
+    setmetatable(self, destroyed_semaphore_mt)
+    return true
+  end
+end
+
+
 -- Gives resources.
 -- @param given (optional, default 1) number of resources to return. If more
 -- than the maximum are returned then it will be capped at the maximum and
@@ -107,7 +129,7 @@ end
 -- @param requested (optional, default 1) the number of resources requested
 -- @param timeout (optional, defaults to semaphore timeout) timeout in
 -- seconds. If 0 it will either succeed or return immediately with error "timeout"
--- @return true
+-- @return true, or nil+"destroyed"
 function semaphore:take(requested, timeout)
   requested = requested or 1
   if self.q_tail == 1 and self.count >= requested then
@@ -143,6 +165,8 @@ function semaphore:take(requested, timeout)
     -- a timeout happened
     self.to_flags[co] = nil
     return nil, "timeout"
+  elseif self.destroyed then
+    return nil, "destroyed"
   end
 
   copas.timeout(0)

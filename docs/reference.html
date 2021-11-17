@@ -292,7 +292,8 @@ exchange data with other services.</p>
 
     <dt><strong><code>lock:destroy()</code></strong></dt>
     <dd>Will destroy the lock and release all waiting threads. The result for those
-    threads will be <code>nil + "destroyed" + wait_time</code>.
+    threads will be <code>nil + "destroyed" + wait_time</code>, any new call on any
+    method will return <code>nil + "destroyed"</code> from here on.
     </dd>
 
     <dt><strong><code>lock:get([timeout])</code></strong></dt>
@@ -315,6 +316,12 @@ exchange data with other services.</p>
 
     <dt><strong><code>lock:release()</code></strong></dt>
     <dd>Releases the currently held lock. Returns <code>true</code> or <code>nil + error</code>.
+    </dd>
+
+    <dt><strong><code>semaphore:destroy()</code></strong></dt>
+    <dd>Will destroy the sempahore and release all waiting threads. The result for those
+    threads will be <code>nil + "destroyed"</code>, any new call on any
+    method will return <code>nil + "destroyed"</code> from here on.
     </dd>
 
     <dt><strong><code>semaphore:get_count()</code></strong></dt>

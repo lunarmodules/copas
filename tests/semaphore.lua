@@ -72,6 +72,37 @@ copas.loop(function()
   assert(err == "too many")
   assert(sema:get_count() == 10)
 
+  -- validate destroying
+  assert(sema:take(sema:get_count())) -- empty the semaphore
+  assert(sema:get_count() == 0, "should be empty now")
+  local state = 0
+  copas.addthread(function()
+    local ok, err = sema:take(5)
+    if ok then
+      print("got 5, this is unexpected")
+    elseif err == "destroyed" then
+      state = state + 1
+    end
+  end)
+  copas.addthread(function()
+    local ok, err = sema:take(5)
+    if ok then
+      print("got 5, this is unexpected")
+    elseif err == "destroyed" then
+      state = state + 1
+    end
+  end)
+  copas.sleep(0.1)
+  assert(sema:destroy())
+  copas.sleep(0.1)
+  assert(state == 2, "expected 2 thread to error with 'destroyed'")
+
+  -- only returns errors from now on, on all methods
+  ok, err = sema:destroy();   assert(ok == nil and err == "destroyed", "expected an error")
+  ok, err = sema:give(1);     assert(ok == nil and err == "destroyed", "expected an error")
+  ok, err = sema:take(1);     assert(ok == nil and err == "destroyed", "expected an error")
+  ok, err = sema:get_count(); assert(ok == nil and err == "destroyed", "expected an error")
+
   test_complete = true
 end)
 assert(test_complete, "test did not complete!")
