@@ -331,6 +331,65 @@ exchange data with other services.</p>
     <dd>Releases the currently held lock. Returns <code>true</code> or <code>nil + error</code>.
     </dd>
 
+    <dt><strong><code>queue:add_worker(func)</code></strong></dt>
+    <dd>Adds a worker that will handle whatever is passed into the queue. Can be called
+    multiple times to add more workers. The function <code>func</code> is wrapped and added
+    as a copas thread. The threads automatically exit when the queue is destroyed.
+    Worker function signature: <code>function(item)</code> (Note: worker functions run
+    unprotected, so wrap code in an (x)pcall if errors are expected, otherwise the
+    worker will exit on an error, and queue handling will stop).
+    Returns the coroutine added, or <code>nil+"destroyed"</code>
+    </dd>
+
+    <dt><strong><code>queue:destroy()</code></strong></dt>
+    <dd>Destroys a queue immediately. Abandons what is left in the queue.
+    Releases all waiting calls to <code>queue:pop()</code> with <code>nil+"destroyed"</code>.
+    Returns <code>true</code>, or <code>nil+"destroyed"</code>
+    </dd>
+
+    <dt><strong><code>queue:finish([timeout], [no_destroy_on_timeout])</code></strong></dt>
+    <dd>Finishes a queue. Calls <code>queue:stop()</code> and then waits for the queue to run
+    empty (and be destroyed) before returning.
+    Parameter <code>no_destroy_on_timeout</code> indicates if the queue is not to be forcefully
+    destroyed on a timeout (abandonning what ever is left in the queue).
+    Returns <code>true</code>, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>.
+    </dd>
+
+    <dt><strong><code>queue:get_size()</code></strong></dt>
+    <dd>Gets the number of items in the queue currently.
+    Returns <code>number</code> or <code>nil + "destroyed"</code>.
+    </dd>
+
+    <dt><strong><code>queue:get_workers()</code></strong></dt>
+    <dd>Returns a list/array of current workers (coroutines) handling the queue.
+    (only the workers added by <code>queue:add_worker()</code>, and still active,
+    will be in the list).
+    Returns <code>list</code> or <code>nil + "destroyed"</code>.
+    </dd>
+
+    <dt><strong><code>queue.new()</code></strong></dt>
+    <dd>Creates and returns a new queue.
+    </dd>
+
+    <dt><strong><code>queue:pop([timeout])</code></strong></dt>
+    <dd>Will pop an item from the queue. If there are no items in the queue it will yield
+    until there are or a timeout happens (exception is when <code>timeout == 0</code>, then it will
+    not yield but return immediately, be careful not to create a hanging loop!). Timeout defaults
+    to the default time-out of a semaphore.
+    Returns an item, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>.
+    </dd>
+
+    <dt><strong><code>queue:push(item)</code></strong></dt>
+    <dd>Will push a new item in the queue. Item can be any type, including 'nil'.
+    Returns <code>true</code> or <code>nil + "destroyed"</code>.
+    </dd>
+
+    <dt><strong><code>queue:stop()</code></strong></dt>
+    <dd>Instructs the queue to stop. It will no longer accept calls to <code>queue:push()</code>,
+    and will call <code>queue:destroy()</code> once the queue is empty.
+    Returns <code>true</code> or <code>nil + "destroyed"</code>.
+    </dd>
+
     <dt><strong><code>semaphore:destroy()</code></strong></dt>
     <dd>Will destroy the sempahore and release all waiting threads. The result for those
     threads will be <code>nil + "destroyed"</code>, any new call on any

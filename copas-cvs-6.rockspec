@@ -44,6 +44,7 @@ build = {
       ["copas.timer"] = "src/copas/timer.lua",
       ["copas.lock"] = "src/copas/lock.lua",
       ["copas.semaphore"] = "src/copas/semaphore.lua",
+      ["copas.queue"] = "src/copas/queue.lua",
    },
    copy_directories = {
       "docs",
