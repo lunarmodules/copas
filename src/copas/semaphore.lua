@@ -19,7 +19,7 @@ function semaphore.new(max, start, seconds)
   if timeout < 0 then
     error("expected timeout (2nd argument) to be a number greater than or equal to 0, got: " .. tostring(seconds), 2)
   end
-  if max < 1 then
+  if type(max) ~= "number" or max < 1 then
     error("expected max resources (1st argument) to be a number greater than 0, got: " .. tostring(max), 2)
   end
 
@@ -111,6 +111,13 @@ local function timeout_handler(co)
   --print("checking timeout ", co)
 
   for i = self.q_tip, self.q_tail do
+-- TODO: fix error below
+-- ....3.2/1.19.3.2/luarocks/share/lua/5.1/copas/semaphore.lua:113: attempt to index local 'self' (a nil value) (coroutine: nil, socket: nil)
+-- stack traceback:
+--         ....3.2/1.19.3.2/luarocks/share/lua/5.1/copas/semaphore.lua:113: in function <....3.2/1.19.3.2/luarocks/share/lua/5.1/copas/semaphore.lua:109>
+--         [C]: in function 'xpcall'
+--         ....3.2/1.19.3.2/luarocks/share/lua/5.1/timerwheel/init.lua:136: in function 'step'
+--         ...resty@1.19.3.2/1.19.3.2/luarocks/share/lua/5.1/copas.lua:1103: in function <...resty@1.19.3.2/1.19.3.2/luarocks/share/lua/5.1/copas.lua:1100>
     local item = self.queue[i]
     if item and co == item.co then
       self.queue[i] = nil
