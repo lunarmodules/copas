@@ -259,8 +259,11 @@ local _isSocketTimeout = { -- set of errors indicating a socket-timeout
 -------------------------------------------------------------------------------
 -- Coroutine based socket timeouts.
 -------------------------------------------------------------------------------
-
-local usertimeouts = setmetatable({}, {
+local user_timeouts_connect
+local user_timeouts_send
+local user_timeouts_receive
+do
+  local timeout_mt = {
     __mode = "k",
     __index = function(self, skt)
       -- if there is no timeout found, we insert one automatically,
@@ -268,7 +271,12 @@ local usertimeouts = setmetatable({}, {
       self[skt] = 10*365*24*60*60
       return self[skt]
     end,
-  })
+  }
+
+  user_timeouts_connect = setmetatable({}, timeout_mt)
+  user_timeouts_send = setmetatable({}, timeout_mt)
+  user_timeouts_receive = setmetatable({}, timeout_mt)
+end
 
 local useSocketTimeoutErrors = setmetatable({},{ __mode = "k" })
 
@@ -304,14 +312,19 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
   -- Calling it as `sto_timeout()` will cancel the timeout.
   -- @param queue (string) the queue the socket is currently in, must be either "read" or "write"
   -- @param skt (socket) the socket on which to operate
+  -- @param use_connect_to (bool) timeout to use is determined based on queue (read/write) or if this
+  -- is truthy, it is the connect timeout.
   -- @return true
-  function sto_timeout(skt, queue)
+  function sto_timeout(skt, queue, use_connect_to)
     local co = coroutine.running()
     socket_register[co] = skt
     operation_register[co] = queue
     timeout_flags[co] = nil
     if skt then
-      copas.timeout(usertimeouts[skt], socket_callback)
+      local to = (use_connect_to and user_timeouts_connect[skt]) or
+                 (queue == "read" and user_timeouts_receive[skt]) or
+                 user_timeouts_send[skt]
+      copas.timeout(to, socket_callback)
     else
       copas.timeout(0)
     end
@@ -367,17 +380,53 @@ function copas.close(skt, ...)
 end
 
 
+
+-- nil or negative is indefinitly
 function copas.settimeout(skt, timeout)
-
-  if timeout ~= nil and type(timeout) ~= "number" then
-    return nil, "timeout must be a 'nil' or a number"
+  timeout = timeout or -1
+  if type(timeout) ~= "number" then
+    return nil, "timeout must be 'nil' or a number"
   end
 
-  if timeout and timeout < 0 then
-    timeout = nil    -- negative is same as nil; blocking indefinitely
+  return copas.settimeouts(skt, timeout, timeout, timeout)
+end
+
+-- negative is indefinitly, nil means do not change
+function copas.settimeouts(skt, connect, send, read)
+
+  if connect ~= nil and type(connect) ~= "number" then
+    return nil, "connect timeout must be 'nil' or a number"
+  end
+  if connect then
+    if connect < 0 then
+      connect = nil
+    end
+    user_timeouts_connect[skt] = connect
   end
 
-  usertimeouts[skt] = timeout
+
+  if send ~= nil and type(send) ~= "number" then
+    return nil, "send timeout must be 'nil' or a number"
+  end
+  if send then
+    if send < 0 then
+      send = nil
+    end
+    user_timeouts_send[skt] = send
+  end
+
+
+  if read ~= nil and type(read) ~= "number" then
+    return nil, "read timeout must be 'nil' or a number"
+  end
+  if read then
+    if read < 0 then
+      read = nil
+    end
+    user_timeouts_receive[skt] = read
+  end
+
+
   return true
 end
 
@@ -555,7 +604,7 @@ end
 function copas.connect(skt, host, port)
   skt:settimeout(0)
   local ret, err, tried_more_than_once
-  sto_timeout(skt, "write")
+  sto_timeout(skt, "write", true)
 
   repeat
     ret, err = skt:connect(host, port)
@@ -603,7 +652,8 @@ local function ssl_wrap(skt, wrap_params)
     return error(err) -- throw a hard error, because we do not want to silently ignore this one!!
   end
   nskt:settimeout(0)  -- non-blocking on the ssl-socket
-  copas.settimeout(nskt, usertimeouts[skt]) -- copy copas user-timeout to newly wrapped one
+  copas.settimeouts(nskt, user_timeouts_connect[skt],
+    user_timeouts_send[skt], user_timeouts_receive[skt]) -- copy copas user-timeout to newly wrapped one
   return nskt
 end
 
@@ -673,7 +723,7 @@ function copas.dohandshake(skt, wrap_params)
 
   local nskt = ssl_wrap(skt, wrap_params)
 
-  sto_timeout(nskt, "write")
+  sto_timeout(nskt, "write", true)
   local queue
 
   repeat
@@ -722,7 +772,7 @@ local _skt_mt_tcp = {
         end,
 
         receive = function (self, pattern, prefix)
-          if usertimeouts[self.socket] == 0 then
+          if user_timeouts_receive[self.socket] == 0 then
             return copas.receivePartial(self.socket, pattern, prefix)
           end
           return copas.receive(self.socket, pattern, prefix)
@@ -734,6 +784,10 @@ local _skt_mt_tcp = {
 
         settimeout = function (self, time)
           return copas.settimeout(self.socket, time)
+        end,
+
+        settimeouts = function (self, connect, send, receive)
+          return copas.settimeouts(self.socket, connect, send, receive)
         end,
 
         -- TODO: socket.connect is a shortcut, and must be provided with an alternative
@@ -817,6 +871,11 @@ _skt_mt_udp.__index.setsockname = function(self, ...) return self.socket:setsock
 
                                     -- do not close client, as it is also the server for udp.
 _skt_mt_udp.__index.close       = function(self, ...) return true end
+
+_skt_mt_udp.__index.settimeouts = function (self, connect, send, receive)
+                                    return copas.settimeouts(self.socket, connect, send, receive)
+                                  end
+
 
 
 ---
@@ -918,7 +977,8 @@ local function _accept(server_skt, handler)
   local client_skt = server_skt:accept()
   if client_skt then
     client_skt:settimeout(0)
-    copas.settimeout(client_skt, usertimeouts[server_skt]) -- copy server socket timeout settings
+    copas.settimeouts(client_skt, user_timeouts_connect[server_skt],  -- copy server socket timeout settings
+      user_timeouts_send[server_skt], user_timeouts_receive[server_skt])
     local co = coroutine.create(handler)
     _doTick(co, client_skt)
   end
