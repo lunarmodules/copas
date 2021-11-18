@@ -278,8 +278,21 @@ exchange data with other services.</p>
     <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
     </dd>
 
-    <dt><strong><code>sock:settimeout(...)</code></strong></dt>
-    <dd>Equivalent to the LuaSocket method (after <code>copas.wrap</code>).
+    <dt><strong><code>sock:settimeout([timeout])</code></strong></dt>
+    <dd>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>).
+    The default is to not have a timeout and wait indefinitely. This method is compatible
+    with LuaSocket, but sets all three timeouts to the same value.<br/>
+    <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
+    <code>sock:settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.<br/>
+    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+    </dd>
+
+    <dt><strong><code>sock:settimeouts([connect], [send], [receive])</code></strong></dt>
+    <dd>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>).
+    The default is to not have a timeout and wait indefinitely.<br/>
+    <strong>Important:</strong> this behaviour is different from
+    <code>sock:settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
+    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
     </dd>
 
     <dt><strong><code>sock:sni(...)</code></strong></dt>
@@ -502,8 +515,21 @@ servers.</br>
     <dd>(deprecated, since UDP sending doesn't block)</dd>
 
     <dt><strong><code>copas.settimeout(skt, [timeout])</code></strong></dt>
-    <dd>Sets the timeout (in seconds) for a socket. The default is to not have a timeout and wait
-    indefinitely. If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+    <dd>Sets the timeout (in seconds) for a socket. A negative timout or absent timeout (<code>nil</code>)
+    will wait indefinitely.<br/>
+    <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
+    <code>copas.settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.<br/>
+    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.</br>
+    See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
+    </dd>
+
+    <dt><strong><code>copas.settimeouts(skt, [connect], [send], [receive])</code></strong></dt>
+    <dd>Sets the timeouts (in seconds) for a socket. The default is to not have a timeout and wait
+    indefinitely.<br/>
+    <strong>Important:</strong> this behaviour is different from
+    <code>copas.settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
+    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
     Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.</br>
     See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
     </dd>
