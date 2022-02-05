@@ -1,3 +1,6 @@
 .DS_Store
 **/*.srl
 **/*.pem
+*.rock
+luacov.report.out
+luacov.stats.out
