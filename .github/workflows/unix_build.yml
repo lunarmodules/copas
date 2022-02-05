@@ -1,0 +1,45 @@
+name: "Unix build"
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        luaVersion: ["5.1", "5.2", "5.3", "5.4", "luajit-2.1.0-beta3"]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: leafo/gh-actions-lua@v8
+      with:
+        luaVersion: ${{ matrix.luaVersion }}
+
+    - uses: leafo/gh-actions-luarocks@v4
+
+    - name: dependencies
+      run: |
+        luarocks install luacov-coveralls
+        luarocks install luasec
+
+    - name: generate test certificates
+      run: |
+        make certs
+
+    - name: build
+      run: |
+        luarocks make
+
+    - name: test
+      run: |
+        make coverage
+
+    - name: Report test coverage
+      if: success()
+      continue-on-error: true
+      run: luacov-coveralls
+      env:
+        COVERALLS_REPO_TOKEN: ${{ github.token }}
