@@ -27,7 +27,7 @@ description = {
    homepage = "https://github.com/"..github_account_name.."/"..github_repo_name,
 }
 dependencies = {
-   "lua >= 5.1, < 5.4",
+   "lua >= 5.1, < 5.5",
    "luasocket >= 2.1",
    "coxpcall >= 1.14",
    "binaryheap >= 0.4",
