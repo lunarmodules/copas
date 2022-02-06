@@ -1,0 +1,4 @@
+modules = {
+   ["copas"] = "src/copas.lua",
+   ["copas.*"] = "src"
+}
