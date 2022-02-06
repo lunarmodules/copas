@@ -1,7 +1,7 @@
 local package_name = "copas"
 local package_version = "cvs"
 local rockspec_revision = "6"
-local github_account_name = "keplerproject"
+local github_account_name = "lunarmodules"
 local github_repo_name = package_name
 
 
