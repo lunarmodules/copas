@@ -9,6 +9,10 @@ local socket = require("socket")
 local ssl = require("ssl")
 local server
 
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
+  pcall = require("coxpcall").pcall         -- luacheck: ignore
+end
+
 local server_params = {
   wrap = {
     mode = "server",
