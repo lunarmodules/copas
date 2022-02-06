@@ -4,7 +4,7 @@
 [![Coveralls code coverage](https://img.shields.io/coveralls/github/keplerproject/copas?logo=coveralls)](https://coveralls.io/github/keplerproject/copas)
 [![Luacheck](https://github.com/keplerproject/copas/workflows/Luacheck/badge.svg)](https://github.com/keplerproject/copas/actions)
 [![SemVer](https://img.shields.io/github/v/tag/keplerproject/copas?color=brightgreen&label=SemVer&logo=semver&sort=semver)](CHANGELOG.md)
-
+[![Licence](http://img.shields.io/badge/Licence-MIT-brightgreen.svg)](LICENSE)
 
 Copas is a dispatcher based on coroutines that can be used for asynchronous networking. For example TCP or UDP based servers. But it also features timers and client support for http(s), ftp and smtp requests.
 
