@@ -65,7 +65,7 @@ test: certs
 coverage:
 	$(RM) luacov.stats.out
 	$(MAKE) test LUA="$(LUA) -lluacov"
-	luacov src/copas
+	luacov
 
 clean:
 	$(RM) luacov.stats.out luacov.report.out
