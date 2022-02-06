@@ -68,6 +68,10 @@ local function runtest()
         copas.sleep(1)
         print(i, "seconds:", socket.gettime()-start)
         i = i + 1
+        if i > 60 then
+          print"timeout"
+          os.exit(1)
+        end
       end
     end)
 
