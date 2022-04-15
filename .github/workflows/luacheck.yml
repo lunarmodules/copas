@@ -9,5 +9,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - uses: leafo/gh-actions-lua@v9
+      - uses: leafo/gh-actions-luarocks@v4
+      - name: Lint rockspecs
+        run: |
+          for i in $(find . -type f -name "*.rockspec"); do echo $i; luarocks lint $i || exit 1; done
       - name: Luacheck
         uses: lunarmodules/luacheck@v0
