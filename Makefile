@@ -26,6 +26,7 @@ install:
 	cp src/copas/timer.lua $(DESTDIR)$(LUA_DIR)/copas/timer.lua
 	cp src/copas/lock.lua $(DESTDIR)$(LUA_DIR)/copas/lock.lua
 	cp src/copas/semaphore.lua $(DESTDIR)$(LUA_DIR)/copas/semaphore.lua
+	cp src/copas/queue.lua $(DESTDIR)$(LUA_DIR)/copas/queue.lua
 
 tests/certs/clientA.pem:
 	cd ./tests/certs && \
@@ -50,6 +51,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/limit.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/queue.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removeserver.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removethread.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'http://www.google.com'
