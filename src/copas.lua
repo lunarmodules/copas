@@ -1113,8 +1113,10 @@ do
 
     if delay > 0 then
       timeout_register[co] = timerwheel:set(delay, callback, co)
-    else
+    elseif delay == 0 then
       timeout_register[co] = nil
+    else
+      error("timout value must be greater than or equal to 0, got: "..tostring(delay))
     end
 
     return true
