@@ -12,8 +12,8 @@ local registry = setmetatable({}, { __mode="kv" })
 
 -- create a new semaphore
 -- @param max maximum number of resources the semaphore can hold (this maximum does NOT include resources that have been given but not yet returned).
--- @param seconds (optional, default 10) default semaphore timeout in seconds
 -- @param start (optional, default 0) the initial resources available
+-- @param seconds (optional, default 10) default semaphore timeout in seconds
 function semaphore.new(max, start, seconds)
   local timeout = tonumber(seconds or DEFAULT_TIMEOUT) or -1
   if timeout < 0 then
@@ -111,13 +111,6 @@ local function timeout_handler(co)
   --print("checking timeout ", co)
 
   for i = self.q_tip, self.q_tail do
--- TODO: fix error below
--- ....3.2/1.19.3.2/luarocks/share/lua/5.1/copas/semaphore.lua:113: attempt to index local 'self' (a nil value) (coroutine: nil, socket: nil)
--- stack traceback:
---         ....3.2/1.19.3.2/luarocks/share/lua/5.1/copas/semaphore.lua:113: in function <....3.2/1.19.3.2/luarocks/share/lua/5.1/copas/semaphore.lua:109>
---         [C]: in function 'xpcall'
---         ....3.2/1.19.3.2/luarocks/share/lua/5.1/timerwheel/init.lua:136: in function 'step'
---         ...resty@1.19.3.2/1.19.3.2/luarocks/share/lua/5.1/copas.lua:1103: in function <...resty@1.19.3.2/1.19.3.2/luarocks/share/lua/5.1/copas.lua:1100>
     local item = self.queue[i]
     if item and co == item.co then
       self.queue[i] = nil
@@ -172,11 +165,13 @@ function semaphore:take(requested, timeout)
     -- a timeout happened
     self.to_flags[co] = nil
     return nil, "timeout"
-  elseif self.destroyed then
-    return nil, "destroyed"
   end
 
   copas.timeout(0)
+
+  if self.destroyed then
+    return nil, "destroyed"
+  end
 
   return true
 end
