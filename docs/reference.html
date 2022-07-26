@@ -152,7 +152,7 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dt><strong><code>copas.finished()</code></strong></dt>
     <dd>Checks whether anything remains to be done.<br />
         Returns <code>false</code> when the socket lists for reading and writing
-        are empty and there is not another (sleeping) task to execute.</br>
+        are empty and there is not another (sleeping) task to execute.<br />
         <strong>NOTE:</strong> when tasks or sockets have been scheduled/setup this
         function will return <code>true</code> even if the loop has not yet started.
         See also <code>copas.running</code>.
@@ -220,7 +220,7 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dd>This is the data-structure that is passed to the <code>copas.handler</code>, and
         <code>copas.wrap</code> functions. Passing the structure will allow Copas to take
         care of the entire TLS handshake process.
-        </br>The structure is set up to mimic the LuaSec functions for the handshake.
+        <br />The structure is set up to mimic the LuaSec functions for the handshake.
         <pre class="example">
 {
   wrap = table | context,    -- parameter to LuaSec 'wrap()'
@@ -311,10 +311,10 @@ exchange data with other services.</p>
 
     <dt><strong><code>lock:get([timeout])</code></strong></dt>
     <dd>Will try and acquire the lock. The optional <code>timeout</code> can be
-    used to override the timeout value set when the lock was created.</br>
+    used to override the timeout value set when the lock was created.<br />
     If the the lock is not available, the coroutine will yield until either the
     lock becomes available, or it times out. The one exception is when
-    <code>timeout</code> is 0, then it will immediately return without yielding.</br>
+    <code>timeout</code> is 0, then it will immediately return without yielding.<br />
     Upon success, it will return the <code>wait-time</code> in seconds. Upon failure it will
     return <code>nil + error + wait-time</code>. Upon a timeout the error value will
     be "timeout".
@@ -424,11 +424,11 @@ exchange data with other services.</p>
 
     <dt><strong><code>semaphore:take([requested], [timeout])</code></strong></dt>
     <dd>Takes resources from the semaphore. Parameter <code>requested</code> is the number of resources
-    requested from the semaphore, if omitted it defaults to 1.</br>
+    requested from the semaphore, if omitted it defaults to 1.<br />
     If not enough resources are available it
     will yield and wait until enough resources are available, or a timeout occurs. The exception is when
     <code>timeout</code> is set to 0, in that case it will immediately return without yielding if there are
-    not enough resources available.</br>
+    not enough resources available.<br />
     The optional <code>timeout</code> parameter can be used to override the default timeout as set upon
     semaphore creation.
     Returns <code>true</code> upon success or <code>nil + "timeout"</code> on a timeout. In case more
@@ -464,28 +464,28 @@ exchange data with other services.</p>
 <h3>High level request functions</h3>
 
 <p>The last ones are the higher level client functions to perform requests to (remote)
-servers.</br>
+servers.
 </p>
 
 <dl class="reference">
-    <dt><strong><code>copas.http.request(url [, body])</code></strong> or</br>
+    <dt><strong><code>copas.http.request(url [, body])</code></strong> or<br />
         <strong><code>copas.http.request(requestparams)</code></strong></dt>
     <dd>Performs an http or https request, identical to the LuaSocket and LuaSec
     implementations, but wrapped in an async operation. As opposed to the original
     implementations, this one also allows for redirects cross scheme (http to https and
-    viceversa).</br>
-    </br>
+    viceversa).<br />
+    <br />
     <strong>Note:</strong> https to http redirects are not allowed by
     default, but only when <code>requestparams.redirect == "all"</code>
     </dd>
 
-    <dt><strong><code>copas.ftp.put(url, content)</code></strong> or</br>
+    <dt><strong><code>copas.ftp.put(url, content)</code></strong> or<br />
         <strong><code>copas.ftp.put(requestparams)</code></strong></dt>
     <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
     an async operation.
     </dd>
 
-    <dt><strong><code>copas.ftp.get(url)</code></strong> or</br>
+    <dt><strong><code>copas.ftp.get(url)</code></strong> or<br />
         <strong><code>copas.ftp.get(requestparams)</code></strong></dt>
     <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
     an async operation.
@@ -540,16 +540,16 @@ servers.</br>
     returns the new ssl-socket on success, or throws an error on failure.
     </dd>
 
-    <dt><strong><code>copas.flush(skt)</code></strong></br></dt>
+    <dt><strong><code>copas.flush(skt)</code></strong><br /></dt>
     <dd>(deprecated)</dd>
 
-    <dt><strong><code>copas.receive(skt [, pattern])</code></strong> (TCP) or</br>
+    <dt><strong><code>copas.receive(skt [, pattern])</code></strong> (TCP) or<br />
     <strong><code>copas.receive(size)</code></strong> (UDP)
     </dt>
     <dd>Reads data from a client socket according to a pattern just like LuaSocket
     <code>socket:receive()</code>. The Copas version does not block and allows
-    the multitasking of the other handlers and threads.</br>
-    </br>
+    the multitasking of the other handlers and threads.<br />
+    <br />
     <strong>Note:</strong> for UDP sockets the <code>size</code> parameter is NOT
     optional. For the wrapped function <code>socket:receive([size])</code> it is
     optional again.
@@ -561,12 +561,12 @@ servers.</br>
     the multitasking of the other handlers and threads.
     </dd>
 
-    <dt><strong><code>copas.send(skt, data [, i [, j]])</code></strong> (TCP) or</br>
+    <dt><strong><code>copas.send(skt, data [, i [, j]])</code></strong> (TCP) or<br />
     <strong><code>copas.send(skt, datagram)</code></strong> (UDP)
     </dt>
     <dd>Sends data to a client socket just like <code>socket:send()</code>. The Copas version
-    is buffered and does not block, allowing the multitasking of the other handlers and threads.</br>
-    </br>
+    is buffered and does not block, allowing the multitasking of the other handlers and threads.<br />
+    <br />
     Note: only for TCP, UDP send doesn't block, hence doesn't require this function to be used.
     </dd>
 
@@ -579,7 +579,7 @@ servers.</br>
     <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
     <code>copas.settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
-    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.</br>
+    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.<br />
     See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
     </dd>
 
@@ -589,7 +589,7 @@ servers.</br>
     <strong>Important:</strong> this behaviour is different from
     <code>copas.settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
-    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.</br>
+    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.<br />
     See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
     </dd>
 
@@ -601,8 +601,8 @@ servers.</br>
     <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
     It returns <code>false</code> when no data was handled (timeout) or
     <code>true</code> if there was data handled (or alternatively nil + error
-    message in case of errors).</br>
-    </br>
+    message in case of errors).<br />
+    <br />
     <strong>NOTE:</strong> the <code>copas.running</code> flag will not automatically
     be (un)set. So when using your own main loop, consider manually setting the flag.
     </dd>
@@ -610,15 +610,15 @@ servers.</br>
     <dt><strong><code>copas.timeout(delay, callback)</code></strong></dt>
     <dd>Creates a timeout timer for the current coroutine. The <code>delay</code>
     is the timeout in seconds, and the <code>callback</code> will
-    be called upon an actual timeout occuring.</br>
-    Calling it with <code>delay = 0</code> will cancel the timeout.</br>
+    be called upon an actual timeout occuring.<br />
+    Calling it with <code>delay = 0</code> will cancel the timeout.<br />
     Calling it repeatedly will simply replace the timeout on the current
-    coroutine and any previous callback set will no longer be called.</br>
-    </br>
+    coroutine and any previous callback set will no longer be called.<br />
+    <br />
     <strong>NOTE:</strong> The timeouts are a low-level Copas feature, and
     should only be used to wrap an explicit yield to the Copas scheduler. They
-    should not be used to wrap user code.</br>
-    </br>
+    should not be used to wrap user code.<br />
+    <br />
     For usage examples see the <code>lock</code> and <code>semaphore</code>
     implementations.
     </dd>
@@ -628,11 +628,11 @@ servers.</br>
     The default is <code>false</code>, meaning
     that a timeout error will always return an error string <code>"timeout"</code>.
     If you are porting an existing application to Copas and want LuaSocket or LuaSec
-    compatible error messages then set it to <code>true</code>.</br>
-    </br>
+    compatible error messages then set it to <code>true</code>.<br />
+    <br />
     In case of using socket timeout errors, they can also be <code>"wantread"</code>
     or <code>"wantwrite"</code> when using ssl/tls connections. These can be returned at any point
-    if during a read or write operation an ssl-renegotiation happens.</br>
+    if during a read or write operation an ssl-renegotiation happens.<br />
     Due to platform difference the <code>connect</code> method may also return
     <code>"Operation already in progress"</code> as a timeout error message.
     </dd>
