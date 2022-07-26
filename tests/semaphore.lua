@@ -95,13 +95,50 @@ copas.loop(function()
   copas.sleep(0.1)
   assert(sema:destroy())
   copas.sleep(0.1)
-  assert(state == 2, "expected 2 thread to error with 'destroyed'")
+  assert(state == 2, "expected 2 threads to error with 'destroyed'")
 
   -- only returns errors from now on, on all methods
   ok, err = sema:destroy();   assert(ok == nil and err == "destroyed", "expected an error")
   ok, err = sema:give(1);     assert(ok == nil and err == "destroyed", "expected an error")
   ok, err = sema:take(1);     assert(ok == nil and err == "destroyed", "expected an error")
   ok, err = sema:get_count(); assert(ok == nil and err == "destroyed", "expected an error")
+
+
+
+  -- timeouts get cancelled upon destruction
+  -- we set a timeout to 0.5 seconds, then destroy the semaphore
+  -- the timeout should not execute
+  -- Reproduce https://github.com/lunarmodules/copas/issues/118
+  local track_table = setmetatable({}, { __mode = "v" })
+  local sema = semaphore.new(10, 0, 0.5)
+  track_table.sema = sema
+  local state = 0
+  track_table.coro = copas.addthread(function()
+    local ok, err = sema:take(1)
+    if ok then
+      print("got one, this is unexpected")
+    elseif err == "destroyed" then
+      state = state + 1
+    end
+  end)
+  copas.sleep(0.1)
+  assert(sema:destroy())
+  copas.sleep(0.1)
+  assert(state == 1, "expected 1 thread to error with 'destroyed'")
+  sema = nil
+
+  local errors = 0
+  copas.setErrorHandler(function(msg)
+    print("got error: "..tostring(msg))
+    print("--------------------------------------")
+    errors = errors + 1
+  end, true)
+
+  collectgarbage()  -- collect garbage to force eviction from the semaphore registry
+  collectgarbage()
+
+  copas.sleep(0.5) -- wait for the timeout to expire if it is still set
+  assert(errors == 0, "expected no errors")
 
   test_complete = true
 end)
