@@ -102,32 +102,43 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <dl class="history">
     <dt><strong>Copas x.x.x</strong> [unreleased]</dt>
 	<dd><ul>
-        <li>Added: added sempahore:destroy()</li>
-        <li>Added: copas.settimeouts, to set separate timeouts for connect, send, receive</li>
+        <li>Added: added <code>sempahore:destroy()</code></li>
+        <li>Added: <code>copas.settimeouts</code>, to set separate timeouts for connect, send, receive</li>
         <li>Added: queue class, see module "copas.queue"</li>
+        <li>Added: names for sockets and coroutines:
+            <ul>
+                <li><code>copas.addserver()</code> has a 4th argument; name, to name the server socket</li>
+                <li><code>copas.addnamedthread()</code> is new and identical to <code>copas.addthread()</code>,
+                but also accepts a name</li>
+                <li><code>copas.setsocketname()</code>, <code>copas.getsocketname()</code>,
+                <code>copas.setthreadname()</code>, <code>copas.getthreadname()</code> added to manage names</li>
+                <li><code>copas.debug.start()</code> and <code>copas.debug.end()</code> to enable debug
+                logging for the scheduler itself.</li>
+            </ul>
+        </li>
 	</ul></dd>
 
     <dt><strong>Copas 3.0.0</strong> [12/Nov/2021]</dt>
 	<dd><ul>
-        <li>[breaking] Change: copas.addserver() now uses the timeout value as a copas timeout,
+        <li>[breaking] Change: <code>copas.addserver()</code> now uses the timeout value as a copas timeout,
             instead of a luasocket timeout. The client sockets for incoming connections will
             inherit the timeout from the server socket.</li>
         <li>Added: support for SNI on TLS connections #81 (@amyspark)</li>
-        <li>Added: copas.settimeout() so Copas can manage its own timeouts instead of spinning forever (Patrick Barrett )</li>
+        <li>Added: <code>copas.settimeout()</code> so Copas can manage its own timeouts instead of spinning forever (Patrick Barrett )</li>
         <li>Added: timer class, see module "copas.timer"</li>
         <li>Added: lock class, see module "copas.lock"</li>
         <li>Added: semaphore class, see module "copas.semaphore"</li>
-        <li>Added: timeout interface copas.timeout()</li>
+        <li>Added: timeout interface <code>copas.timeout()</code></li>
         <li>Added: option to override the default errorhandler, and fixes to the handler</li>
-        <li>Added: copas.removethread() added to be able to forcefully remove a previously added thread</li>
-        <li>Added: copas.loop() now takes an optional initialization function</li>
+        <li>Added: <code>copas.removethread()</code> added to be able to forcefully remove a previously added thread</li>
+        <li>Added: <code>copas.loop()</code> now takes an optional initialization function</li>
         <li>Fixed: closing sockets from another thread would make the read/write ops hang #104</li>
         <li>Fixed: coxpcall dependency in limit.lua #63 (Francois Perrad)</li>
         <li>Fixed: CI now generates the certificates for testing, on unix make can be used, on Windows generate them manually</li>
-        <li>Fixed: type in wrapped udp:setpeername was actually calling udp:getpeername</li>
+        <li>Fixed: type in wrapped <code>udp:setpeername</code> was actually calling <code>udp:getpeername</code></li>
         <li>Fixed: default error handler didn't print the stacktrace</li>
         <li>Fixed: small memory leak when sleeping until woken</li>
-        <li>Fixed: do not wrap udp:sendto() method, since udp send doesn't block</li>
+        <li>Fixed: do not wrap <code>udp:sendto()</code> method, since udp send doesn't block</li>
         <li>Change: performance improvement in big limit-sets (Francisco Castro)</li>
         <li>Change: update deprecated tls default to tls 1.2 in (copas.http)</li>
 	</ul></dd>

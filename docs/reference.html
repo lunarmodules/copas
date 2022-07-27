@@ -81,7 +81,8 @@ local function connection_handler(skt)
 
 end
 
-copas.addserver(server_socket, copas.handler(connection_handler, ssl_params))
+copas.addserver(server_socket, copas.handler(connection_handler,
+    ssl_params), "my_TCP_server")
 
 copas.loop()
 </pre>
@@ -103,6 +104,7 @@ copas.addthread(function()
     }
 
     local sock = copas.wrap(socket.tcp(), ssl_params)
+    copas.setsocketname("my_TCP_client", sock)
     assert(sock:connect(host, port))
 
     local data, err = sock:receive("*l")
@@ -121,17 +123,29 @@ copas.loop()
 are used to register servers and to execute the main loop of Copas:</p>
 
 <dl class="reference">
-    <dt><strong><code>copas.addserver(server, handler[, timeout])</code></strong></dt>
+    <dt><strong><code>copas.addserver(server, handler[, timeout[, name]])</code></strong></dt>
     <dd>Adds a new <code>server</code> and its <code>handler</code> to the dispatcher
         using an optional <code>timeout</code>.<br />
         <code>server</code> is a LuaSocket server socket created using
         <code>socket.bind()</code>.<br />
         <code>handler</code> is a function that receives a LuaSocket client socket
-        and handles the communication with that client.<br />
+        and handles the communication with that client.
+        The handler will be executed in parallel with other threads and
+        registered handlers as long as it uses the Copas socket functions.<br />
         <code>timeout</code> is the timeout in seconds. Upon accepting connections,
         the timeout will be inherited by TCP client sockets (only applies to TCP).<br />
-        The handler will be executed in parallel with other threads and the
-        registered handlers as long as it uses the Copas socket functions.
+        <code>name</code> is the internal name to use for this socket. The handler threads and
+        (in case of TCP) the incoming client connections will get a name derived from the server socket.<br />
+        <ul>
+            <li>TCP: client-socket name: <code>"[server_name]:client_XX"</code> and the handler thread
+            <code>"[server_name]:handler_XX"</code> where <code>XX</code> is a sequential number matching
+            between the client-socket and handler.</li>
+            <li>UDP: the handler thread will be named <code>"[server_name]:handler"</code></li>
+        </ul>
+    </dd>
+
+    <dt><strong><code>coro = copas.addnamedthread(func [, name [, ...]])</code></strong></dt>
+    <dd>Same as <code>copas.addthread</code>, but also names the new thread.
     </dd>
 
     <dt><strong><code>coro = copas.addthread(func [, ...])</code></strong></dt>
@@ -158,6 +172,15 @@ are used to register servers and to execute the main loop of Copas:</p>
         See also <code>copas.running</code>.
     </dd>
 
+    <dt><strong><code>copas.getsocketname(skt)</code></strong></dt>
+        <dd>Returns the name for the socket.
+    </dd>
+
+    <dt><strong><code>copas.getthreadname([co])</code></strong></dt>
+        <dd>Returns the name for the coroutine/thread. If not given defaults to the
+        currently running coroutine.
+    </dd>
+
     <dt><strong><code>func = copas.handler(connhandler [, sslparams])</code></strong></dt>
         <dd>Wraps the <code>connhandler</code> function. Returns a new function that
         wraps the client socket, and (if <code>sslparams</code> is provided) performs
@@ -171,7 +194,8 @@ are used to register servers and to execute the main loop of Copas:</p>
         handlers. Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
         <code>socket.accept()</code>. The <code>init_func</code> function is an
-        optional initialization function that runs as a Copas thread.
+        optional initialization function that runs as a Copas thread
+        (with name <code>"copas_initializer"</code>).
         The <code>timeout</code> parameter is optional,
         and is passed to the <code>copas.step()</code> function.
         The loop returns when <code>copas.finished() == true</code>.
@@ -204,6 +228,15 @@ are used to register servers and to execute the main loop of Copas:</p>
         Any errors will be forwarded to this handler, which will receive the
         error, coroutine, and socket as arguments. See the Copas source code
         on how to deal with the arguments when implementing your own.
+    </dd>
+
+    <dt><strong><code>copas.setsocketname(name, skt)</code></strong></dt>
+        <dd>Sets the name for the socket.
+    </dd>
+
+    <dt><strong><code>copas.setthreadname(name [,co])</code></strong></dt>
+        <dd>Sets the name for the coroutine/thread. <code>co</code> defaults to the
+        currently running coroutine.
     </dd>
 
     <dt><strong><code>copas.wrap(skt [, sslparams] )</code></strong></dt>
@@ -367,8 +400,19 @@ exchange data with other services.</p>
     Returns <code>list</code> or <code>nil + "destroyed"</code>.
     </dd>
 
-    <dt><strong><code>queue.new()</code></strong></dt>
-    <dd>Creates and returns a new queue.
+    <dt><strong><code>queue.name</code></strong></dt>
+    <dd>A field set to name of the queue. See <code>queue.new()</code>.
+    </dd>
+
+    <dt><strong><code>queue.new([options])</code></strong></dt>
+    <dd>Creates and returns a new queue. The <code>options</code> table has the following
+    fields:
+    <ul>
+        <li><code>options.name</code>: (optional) the name for the queue, the default name will be
+        <code>"copas_queue_XX"</code>. The name will be used to name any workers
+        added to the queue using <code>queue:add_worker()</code>, their name will be
+        <code>"[queue_name]:worker_XX"</code></li>
+    </ul>
     </dd>
 
     <dt><strong><code>queue:pop([timeout])</code></strong></dt>
@@ -438,6 +482,8 @@ exchange data with other services.</p>
     <dt><strong><code>timer.new(options)</code></strong></dt>
     <dd>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
     <ul>
+        <li><code>options.name</code>: (optional) the name for the timer, the default name will be
+        <code>"copas_timer_XX"</code>. The name will be used to name the timer thread.</li>
         <li><code>options.recurring</code> boolean</li>
         <li><code>options.delay</code> expiry delay in seconds</li>
         <li><code>options.initial_delay</code> (optional) see <code>timer:arm()</code></li>
@@ -635,6 +681,26 @@ servers.
     if during a read or write operation an ssl-renegotiation happens.<br />
     Due to platform difference the <code>connect</code> method may also return
     <code>"Operation already in progress"</code> as a timeout error message.
+    </dd>
+
+</dl>
+
+<h3>Copas debugging functions</h3>
+
+<p>These functions are mainly used for debugging Copas itself and should be considered experimental.</p>
+
+<dl class="reference">
+
+    <dt><strong><code>copas.debug.start([logger] [, core])</code></strong></dt>
+    <dd>This will internally replace coroutine handler functions to provide log output to
+    the provided <code>logger</code> function. The logger signature is <code>function(...)</code>
+    and the default value is the global <code>print()</code> function.<br />
+    If the <code>core</code> parameter is truthy, then also the Copas core timer will be
+    logged (very noisy).
+    </dd>
+
+    <dt><strong><code>copas.debug.stop()</code></strong></dt>
+    <dd>Stops the debug output being generated.
     </dd>
 
 </dl>

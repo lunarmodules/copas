@@ -95,7 +95,9 @@ local object_names = setmetatable({}, {
   __mode = "k",
   __index = function(self, key)
     local name = tostring(key)
-    rawset(self, key, name)
+    if key ~= nil then
+      rawset(self, key, name)
+    end
     return name
   end
 })
@@ -672,13 +674,17 @@ local function ssl_wrap(skt, wrap_params)
   end
 
   ssl = ssl or require("ssl")
-  local nskt, err = ssl.wrap(skt, wrap_params)
-  if not nskt then
-    return error(err) -- throw a hard error, because we do not want to silently ignore this one!!
-  end
+  local nskt = assert(ssl.wrap(skt, wrap_params)) -- assert, because we do not want to silently ignore this one!!
+
   nskt:settimeout(0)  -- non-blocking on the ssl-socket
   copas.settimeouts(nskt, user_timeouts_connect[skt],
     user_timeouts_send[skt], user_timeouts_receive[skt]) -- copy copas user-timeout to newly wrapped one
+
+  local sock_name = object_names[skt]
+  if sock_name ~= tostring(skt) then
+    -- socket had a custom name, so copy it over
+    object_names[nskt] = sock_name
+  end
   return nskt
 end
 
@@ -941,7 +947,7 @@ end
 local _errhandlers = setmetatable({}, { __mode = "k" })   -- error handler per coroutine
 
 local function _deferror(msg, co, skt)
-  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), tostring(co), tostring(skt))
+  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), object_names[co], object_names[skt])
   if type(co) == "thread" then
     -- regular Copas coroutine
     msg = debug.traceback(co, msg)
@@ -1011,7 +1017,9 @@ local _accept do
       client_skt:settimeout(0)
       copas.settimeouts(client_skt, user_timeouts_connect[server_skt],  -- copy server socket timeout settings
         user_timeouts_send[server_skt], user_timeouts_receive[server_skt])
+
       local co = coroutine_create(handler)
+      object_names[co] = object_names[server_skt] .. ":handler_" .. count
       _doTick(co, client_skt)
     end
   end
@@ -1022,8 +1030,11 @@ end
 -------------------------------------------------------------------------------
 
 do
-  local function addTCPserver(server, handler, timeout)
+  local function addTCPserver(server, handler, timeout, name)
     server:settimeout(0)
+    if name then
+      object_names[server] = name
+    end
     _servers[server] = handler
     _reading:insert(server)
     if timeout then
@@ -1031,9 +1042,13 @@ do
     end
   end
 
-  local function addUDPserver(server, handler, timeout)
+  local function addUDPserver(server, handler, timeout, name)
     server:settimeout(0)
     local co = coroutine_create(handler)
+    if name then
+      object_names[server] = name
+    end
+    object_names[co] = object_names[server]..":handler"
     _reading:insert(server)
     if timeout then
       copas.settimeout(server, timeout)
@@ -1043,9 +1058,6 @@ do
 
 
   function copas.addserver(server, handler, timeout, name)
-    if name then
-      object_names[server] = name
-    end
     if isTCP(server) then
       addTCPserver(server, handler, timeout, name)
     else
@@ -1455,10 +1467,10 @@ do
         debug_log("yielding '", name, "' to SLEEP for ", skt," seconds")
 
       elseif queue == _writing then
-        debug_log("yielding '", name, "' to WRITE to '", object_names[skt], "'")
+        debug_log("yielding '", name, "' to WRITE on '", object_names[skt], "'")
 
       elseif queue == _reading then
-        debug_log("yielding '", name, "' to READ from '", object_names[skt], "'")
+        debug_log("yielding '", name, "' to READ on '", object_names[skt], "'")
 
       else
         debug_log("thread '", name, "' yielding to unexpected queue; ", tostring(queue), " (", type(queue), ")", debug.traceback())
@@ -1499,9 +1511,7 @@ do
 
   function copas.debug.start(logger, core)
     log_core = core
-    debug_log = logger or function(...)
-      print(table.concat {...} )
-    end
+    debug_log = logger or print
     coroutine_yield = debug_yield
     coroutine_resume = debug_resume
     coroutine_create = debug_create
