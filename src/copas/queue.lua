@@ -7,16 +7,29 @@ local Queue = {}
 Queue.__index = Queue
 
 
+local new_name do
+  local count = 0
+
+  function new_name()
+    count = count + 1
+    return "copas_queue_" .. count
+  end
+end
+
+
 -- Creates a new Queue instance
-function Queue.new()
+function Queue.new(opts)
+  opts = opts or {}
   local self = {}
   setmetatable(self, Queue)
+  self.name = opts.name or new_name()
   self.sema = Sema.new(10^9)
   self.head = 1
   self.tail = 1
   self.list = {}
   self.workers = setmetatable({}, { __mode = "k" })
   self.stopping = false
+  self.worker_id = 0
   return self
 end
 
@@ -128,7 +141,11 @@ end
 function Queue:add_worker(worker)
   assert(type(worker) == "function", "expected worker to be a function")
   local coro
-  coro = copas.addthread(function()
+
+  self.worker_id = self.worker_id + 1
+  local worker_name = self.name .. ":worker_" .. self.worker_id
+
+  coro = copas.addnamedthread(function()
     copas.sleep(0) -- TODO: remove after adding into copas.addthread
     while true do
       local item = self:pop(10*365*24*60*60) -- wait forever (10yr)
@@ -138,7 +155,7 @@ function Queue:add_worker(worker)
       worker(item)
     end
     self.workers[coro] = nil
-  end)
+  end, worker_name)
 
   self.workers[coro] = true
   return coro

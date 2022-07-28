@@ -6,6 +6,15 @@ local timer = {}
 timer.__index = timer
 
 
+local new_name do
+  local count = 0
+
+  function new_name()
+    count = count + 1
+    return "copas_timer_" .. count
+  end
+end
+
 
 do
   local function expire_func(self, initial_delay)
@@ -37,7 +46,7 @@ do
     end
 
     self.cancelled = false
-    self.co = copas.addthread(expire_func, self, initial_delay or self.delay)
+    self.co = copas.addnamedthread(expire_func, self.name, self, initial_delay or self.delay)
     return self
   end
 end
@@ -73,6 +82,7 @@ function timer.new(opts)
   assert(opts.delay >= 0, "delay must be greater than or equal to 0")
   assert(type(opts.callback) == "function", "expected callback to be a function")
   return setmetatable({
+    name = opts.name or new_name(),
     delay = opts.delay,
     callback = opts.callback,
     recurring = not not opts.recurring,

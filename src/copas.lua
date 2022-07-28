@@ -61,6 +61,19 @@ function socket.newtry(finalizer)
          end
 end
 
+
+-- nil-safe versions for pack/unpack
+local _unpack = unpack or table.unpack
+local unpack = function(t, i, j) return _unpack(t, i or 1, j or t.n or #t) end
+local pack = function(...) return { n = select("#", ...), ...} end
+
+
+local coroutine_create = coroutine.create
+local coroutine_running = coroutine.running
+local coroutine_yield = coroutine.yield
+local coroutine_resume = coroutine.resume
+
+
 local copas = {}
 
 -- Meta information is public even if beginning with an "_"
@@ -74,6 +87,20 @@ copas.autoclose = true
 -- indicator for the loop running
 copas.running = false
 
+
+-------------------------------------------------------------------------------
+-- Object names, to track names of thread/coroutines and sockets
+-------------------------------------------------------------------------------
+local object_names = setmetatable({}, {
+  __mode = "k",
+  __index = function(self, key)
+    local name = tostring(key)
+    if key ~= nil then
+      rawset(self, key, name)
+    end
+    return name
+  end
+})
 
 -------------------------------------------------------------------------------
 -- Simple set implementation
@@ -316,7 +343,7 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
   -- is truthy, it is the connect timeout.
   -- @return true
   function sto_timeout(skt, queue, use_connect_to)
-    local co = coroutine.running()
+    local co = coroutine_running()
     socket_register[co] = skt
     operation_register[co] = queue
     timeout_flags[co] = nil
@@ -338,20 +365,20 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
   -- @param queue (string) the new queue the socket is in, must be either "read" or "write"
   -- @return true
   function sto_change_queue(queue)
-    operation_register[coroutine.running()] = queue
+    operation_register[coroutine_running()] = queue
     return true
   end
 
 
   -- Responds with `true` if the operation timed-out.
   function sto_timed_out()
-    return timeout_flags[coroutine.running()]
+    return timeout_flags[coroutine_running()]
   end
 
 
   -- Returns the poroper timeout error
   function sto_error(err)
-    return useSocketTimeoutErrors[coroutine.running()] and err or "timeout"
+    return useSocketTimeoutErrors[coroutine_running()] and err or "timeout"
   end
 end
 
@@ -462,12 +489,12 @@ function copas.receive(client, pattern, part)
       current_log = _writing_log
       current_log[client] = gettime()
       sto_change_queue("write")
-      coroutine.yield(client, _writing)
+      coroutine_yield(client, _writing)
     else
       current_log = _reading_log
       current_log[client] = gettime()
       sto_change_queue("read")
-      coroutine.yield(client, _reading)
+      coroutine_yield(client, _reading)
     end
   until false
 end
@@ -498,7 +525,7 @@ function copas.receivefrom(client, size)
     end
 
     _reading_log[client] = gettime()
-    coroutine.yield(client, _reading)
+    coroutine_yield(client, _reading)
   until false
 end
 
@@ -532,12 +559,12 @@ function copas.receivePartial(client, pattern, part)
       current_log = _writing_log
       current_log[client] = gettime()
       sto_change_queue("write")
-      coroutine.yield(client, _writing)
+      coroutine_yield(client, _writing)
     else
       current_log = _reading_log
       current_log[client] = gettime()
       sto_change_queue("read")
-      coroutine.yield(client, _reading)
+      coroutine_yield(client, _reading)
     end
   until false
 end
@@ -560,9 +587,9 @@ function copas.send(client, data, from, to)
     if (math.random(100) > 90) then
       current_log[client] = gettime()   -- TODO: how to handle this??
       if current_log == _writing_log then
-        coroutine.yield(client, _writing)
+        coroutine_yield(client, _writing)
       else
-        coroutine.yield(client, _reading)
+        coroutine_yield(client, _reading)
       end
     end
 
@@ -585,12 +612,12 @@ function copas.send(client, data, from, to)
       current_log = _reading_log
       current_log[client] = gettime()
       sto_change_queue("read")
-      coroutine.yield(client, _reading)
+      coroutine_yield(client, _reading)
     else
       current_log = _writing_log
       current_log[client] = gettime()
       sto_change_queue("write")
-      coroutine.yield(client, _writing)
+      coroutine_yield(client, _writing)
     end
   until false
 end
@@ -631,7 +658,7 @@ function copas.connect(skt, host, port)
 
     tried_more_than_once = tried_more_than_once or true
     _writing_log[skt] = gettime()
-    coroutine.yield(skt, _writing)
+    coroutine_yield(skt, _writing)
   until false
 end
 
@@ -647,13 +674,17 @@ local function ssl_wrap(skt, wrap_params)
   end
 
   ssl = ssl or require("ssl")
-  local nskt, err = ssl.wrap(skt, wrap_params)
-  if not nskt then
-    return error(err) -- throw a hard error, because we do not want to silently ignore this one!!
-  end
+  local nskt = assert(ssl.wrap(skt, wrap_params)) -- assert, because we do not want to silently ignore this one!!
+
   nskt:settimeout(0)  -- non-blocking on the ssl-socket
   copas.settimeouts(nskt, user_timeouts_connect[skt],
     user_timeouts_send[skt], user_timeouts_receive[skt]) -- copy copas user-timeout to newly wrapped one
+
+  local sock_name = object_names[skt]
+  if sock_name ~= tostring(skt) then
+    -- socket had a custom name, so copy it over
+    object_names[nskt] = sock_name
+  end
   return nskt
 end
 
@@ -752,7 +783,7 @@ function copas.dohandshake(skt, wrap_params)
       error("TLS/SSL handshake failed: " .. tostring(err))
     end
 
-    coroutine.yield(nskt, queue)
+    coroutine_yield(nskt, queue)
   until false
 end
 
@@ -916,7 +947,7 @@ end
 local _errhandlers = setmetatable({}, { __mode = "k" })   -- error handler per coroutine
 
 local function _deferror(msg, co, skt)
-  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), tostring(co), tostring(skt))
+  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), object_names[co], object_names[skt])
   if type(co) == "thread" then
     -- regular Copas coroutine
     msg = debug.traceback(co, msg)
@@ -932,7 +963,7 @@ function copas.setErrorHandler (err, default)
   if default then
     _deferror = err
   else
-    _errhandlers[coroutine.running()] = err
+    _errhandlers[coroutine_running()] = err
   end
 end
 
@@ -940,7 +971,7 @@ end
 -- `timeout, wantread, wantwrite, Operation already in progress`. If falsy, it will always
 -- return `timeout`.
 function copas.useSocketTimeoutErrors(bool)
-  useSocketTimeoutErrors[coroutine.running()] = not not bool -- force to a boolean
+  useSocketTimeoutErrors[coroutine_running()] = not not bool -- force to a boolean
 end
 
 -------------------------------------------------------------------------------
@@ -957,7 +988,7 @@ local function _doTick (co, skt, ...)
     return
   end
 
-  local ok, res, new_q = coroutine.resume(co, skt, ...)
+  local ok, res, new_q = coroutine_resume(co, skt, ...)
 
   if ok and res and new_q then
     new_q:insert (res)
@@ -972,26 +1003,38 @@ local function _doTick (co, skt, ...)
 end
 
 
--- accepts a connection on socket input
-local function _accept(server_skt, handler)
-  local client_skt = server_skt:accept()
-  if client_skt then
-    client_skt:settimeout(0)
-    copas.settimeouts(client_skt, user_timeouts_connect[server_skt],  -- copy server socket timeout settings
-      user_timeouts_send[server_skt], user_timeouts_receive[server_skt])
-    local co = coroutine.create(handler)
-    _doTick(co, client_skt)
+local _accept do
+  local client_counters = setmetatable({}, { __mode = "k" })
+
+  -- accepts a connection on socket input
+  function _accept(server_skt, handler)
+    local client_skt = server_skt:accept()
+    if client_skt then
+      local count = (client_counters[server_skt] or 0) + 1
+      client_counters[server_skt] = count
+      object_names[client_skt] = object_names[server_skt] .. ":client_" .. count
+
+      client_skt:settimeout(0)
+      copas.settimeouts(client_skt, user_timeouts_connect[server_skt],  -- copy server socket timeout settings
+        user_timeouts_send[server_skt], user_timeouts_receive[server_skt])
+
+      local co = coroutine_create(handler)
+      object_names[co] = object_names[server_skt] .. ":handler_" .. count
+      _doTick(co, client_skt)
+    end
   end
 end
-
 
 -------------------------------------------------------------------------------
 -- Adds a server/handler pair to Copas dispatcher
 -------------------------------------------------------------------------------
 
 do
-  local function addTCPserver(server, handler, timeout)
+  local function addTCPserver(server, handler, timeout, name)
     server:settimeout(0)
+    if name then
+      object_names[server] = name
+    end
     _servers[server] = handler
     _reading:insert(server)
     if timeout then
@@ -999,9 +1042,13 @@ do
     end
   end
 
-  local function addUDPserver(server, handler, timeout)
+  local function addUDPserver(server, handler, timeout, name)
     server:settimeout(0)
-    local co = coroutine.create(handler)
+    local co = coroutine_create(handler)
+    if name then
+      object_names[server] = name
+    end
+    object_names[co] = object_names[server]..":handler"
     _reading:insert(server)
     if timeout then
       copas.settimeout(server, timeout)
@@ -1010,11 +1057,11 @@ do
   end
 
 
-  function copas.addserver(server, handler, timeout)
+  function copas.addserver(server, handler, timeout, name)
     if isTCP(server) then
-      addTCPserver(server, handler, timeout)
+      addTCPserver(server, handler, timeout, name)
     else
-      addUDPserver(server, handler, timeout)
+      addUDPserver(server, handler, timeout, name)
     end
   end
 end
@@ -1041,20 +1088,30 @@ end
 -------------------------------------------------------------------------------
 -- Adds an new coroutine thread to Copas dispatcher
 -------------------------------------------------------------------------------
-function copas.addthread(handler, ...)
+function copas.addnamedthread(handler, name, ...)
   -- create a coroutine that skips the first argument, which is always the socket
   -- passed by the scheduler, but `nil` in case of a task/thread
-  local thread = coroutine.create(function(_, ...)
+  local thread = coroutine_create(function(_, ...)
     -- TODO: this should be added to not immediately execute the thread
     -- it should only schedule and then return to the calling code
     -- Enabling this breaks the "limitset".
     -- copas.sleep(0)
     return handler(...)
   end)
+  if name then
+    object_names[thread] = name
+  end
+
   _threads[thread] = true -- register this thread so it can be removed
   _doTick (thread, nil, ...)
   return thread
 end
+
+
+function copas.addthread(handler, ...)
+  return copas.addnamedthread(handler, nil, ...)
+end
+
 
 function copas.removethread(thread)
   -- if the specified coroutine is registered, add it to the canceled table so
@@ -1071,7 +1128,7 @@ end
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
 -- If sleeptime < 0 then it sleeps until explicitly woken up using 'wakeup'
 function copas.sleep(sleeptime)
-  coroutine.yield((sleeptime or 0), _sleeping)
+  coroutine_yield((sleeptime or 0), _sleeping)
 end
 
 -- Wakes up a sleeping coroutine 'co'.
@@ -1093,12 +1150,12 @@ do
       err_handler = function(...) return _deferror(...) end,
     })
 
-  copas.addthread(function()
+  copas.addnamedthread(function()
     while true do
       copas.sleep(TIMEOUT_PRECISION)
       timerwheel:step()
     end
-  end)
+  end, "copas_core_timer")
 
   -- get the number of timeouts running
   function copas.gettimeouts()
@@ -1110,7 +1167,7 @@ do
   -- @param callback function with signature: `function(coroutine)` where coroutine is the routine that timed-out
   -- @return true
   function copas.timeout(delay, callback)
-    local co = coroutine.running()
+    local co = coroutine_running()
     local existing_timer = timeout_register[co]
 
     if existing_timer then
@@ -1339,7 +1396,7 @@ end
 -------------------------------------------------------------------------------
 function copas.loop(initializer, timeout)
   if type(initializer) == "function" then
-    copas.addthread(initializer)
+    copas.addnamedthread(initializer, "copas_initializer")
   else
     timeout = initializer or timeout
   end
@@ -1348,5 +1405,127 @@ function copas.loop(initializer, timeout)
   while not copas.finished() do copas.step(timeout) end
   copas.running = false
 end
+
+
+-------------------------------------------------------------------------------
+-- Naming sockets and coroutines.
+-------------------------------------------------------------------------------
+do
+  local function realsocket(skt)
+    local mt = getmetatable(skt)
+    if mt == _skt_mt_tcp or mt == _skt_mt_udp then
+      return skt.socket
+    else
+      return skt
+    end
+  end
+
+
+  function copas.setsocketname(name, skt)
+    assert(type(name) == "string", "expected arg #1 to be a string")
+    skt = assert(realsocket(skt), "expected arg #2 to be a socket")
+    object_names[skt] = name
+  end
+
+
+  function copas.getsocketname(skt)
+    skt = assert(realsocket(skt), "expected arg #1 to be a socket")
+    return object_names[skt]
+  end
+end
+
+
+function copas.setthreadname(name, coro)
+  assert(type(name) == "string", "expected arg #1 to be a string")
+  coro = coro or coroutine_running()
+  assert(type(coro) == "thread", "expected arg #2 to be a coroutine or nil")
+  object_names[coro] = name
+end
+
+
+function copas.getthreadname(coro)
+  coro = coro or coroutine_running()
+  assert(type(coro) == "thread", "expected arg #1 to be a coroutine or nil")
+  return object_names[coro]
+end
+
+-------------------------------------------------------------------------------
+-- Debug functionality.
+-------------------------------------------------------------------------------
+do
+  copas.debug = {}
+
+  local log_core    -- if truthy, the core-timer will also be logged
+  local debug_log   -- function used as logger
+
+
+  local debug_yield = function(skt, queue)
+    local name = object_names[coroutine.running()]
+
+    if log_core or name ~= "copas_core_timer" then
+      if queue == _sleeping then
+        debug_log("yielding '", name, "' to SLEEP for ", skt," seconds")
+
+      elseif queue == _writing then
+        debug_log("yielding '", name, "' to WRITE on '", object_names[skt], "'")
+
+      elseif queue == _reading then
+        debug_log("yielding '", name, "' to READ on '", object_names[skt], "'")
+
+      else
+        debug_log("thread '", name, "' yielding to unexpected queue; ", tostring(queue), " (", type(queue), ")", debug.traceback())
+      end
+    end
+
+    return coroutine.yield(skt, queue)
+  end
+
+
+  local debug_resume = function(coro, skt, ...)
+    local name = object_names[coro]
+
+    if skt then
+      debug_log("resuming '", name, "' for socket '", object_names[skt], "'")
+    else
+      if log_core or name ~= "copas_core_timer" then
+        debug_log("resuming '", name, "'")
+      end
+    end
+    return coroutine.resume(coro, skt, ...)
+  end
+
+
+  local debug_create = function(f)
+    local f_wrapped = function(...)
+      local results = pack(f(...))
+      debug_log("exiting '", object_names[coroutine.running()], "'")
+      return unpack(results)
+    end
+
+    return coroutine.create(f_wrapped)
+  end
+
+
+  debug_log = function() end
+
+
+  function copas.debug.start(logger, core)
+    log_core = core
+    debug_log = logger or print
+    coroutine_yield = debug_yield
+    coroutine_resume = debug_resume
+    coroutine_create = debug_create
+  end
+
+
+  function copas.debug.stop()
+    debug_log = function() end
+    coroutine_yield = coroutine.yield
+    coroutine_resume = coroutine.resume
+    coroutine_create = coroutine.create
+  end
+
+end
+
 
 return copas
