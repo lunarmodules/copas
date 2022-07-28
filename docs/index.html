@@ -102,6 +102,9 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <dl class="history">
     <dt><strong>Copas x.x.x</strong> [unreleased]</dt>
 	<dd><ul>
+        <li>Fixed: yielding to the Copas scheduler from user-code now throws a proper error and
+        no longer breaks the loop. Breaking the loop could also happen if a thread terminated with
+        at leaast 2 return values.</li>
         <li>Added: added <code>sempahore:destroy()</code></li>
         <li>Added: <code>copas.settimeouts</code>, to set separate timeouts for connect, send, receive</li>
         <li>Added: queue class, see module "copas.queue"</li>

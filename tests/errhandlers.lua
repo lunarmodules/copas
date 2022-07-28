@@ -74,6 +74,25 @@ if _VERSION ~= "Lua 5.1" then
 end
 
 
+tests.yielding_from_user_code_fails = function()
+  local old_print = print
+  local msg
+  print = function(errmsg)   --luacheck: ignore
+    msg = errmsg
+    --old_print(msg)
+  end
+
+  copas.loop(function()
+    copas.sleep(1)
+    coroutine.yield() -- directly yield to Copas
+  end)
+
+  print = old_print   --luacheck: ignore
+
+  assert(msg:find("coroutine.yield was called without a resume first, user-code cannot yield to Copas", 1, true), "got:\n"..msg)
+end
+
+
 tests.handler_gets_called_if_set = function()
   local call_count = 0
   copas.loop(function()

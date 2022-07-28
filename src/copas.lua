@@ -72,6 +72,7 @@ local coroutine_create = coroutine.create
 local coroutine_running = coroutine.running
 local coroutine_yield = coroutine.yield
 local coroutine_resume = coroutine.resume
+local coroutine_status = coroutine.status
 
 
 local copas = {}
@@ -988,18 +989,33 @@ local function _doTick (co, skt, ...)
     return
   end
 
+  -- res: the socket (being read/write on) or the time to sleep
+  -- new_q: either _writing, _reading, or _sleeping
   local ok, res, new_q = coroutine_resume(co, skt, ...)
 
-  if ok and res and new_q then
+  if new_q == _reading or new_q == _writing or new_q == _sleeping then
+    -- we're yielding to a new queue
     new_q:insert (res)
     new_q:push (res, co)
-  else
-    if not ok then pcall (_errhandlers [co] or _deferror, res, co, skt) end
-    if skt and copas.autoclose and isTCP(skt) then
-      skt:close() -- do not auto-close UDP sockets, as the handler socket is also the server socket
-    end
-    _errhandlers [co] = nil
+    return
   end
+
+  -- coroutine is terminating
+
+  if ok and coroutine_status(co) ~= "dead" then
+    -- it called coroutine.yield from a non-Copas function which is unexpected
+    ok = false
+    res = "coroutine.yield was called without a resume first, user-code cannot yield to Copas"
+  end
+
+  if not ok then
+    pcall(_errhandlers[co] or _deferror, res, co, skt)
+  end
+
+  if skt and copas.autoclose and isTCP(skt) then
+    skt:close() -- do not auto-close UDP sockets, as the handler socket is also the server socket
+  end
+  _errhandlers[co] = nil
 end
 
 
