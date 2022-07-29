@@ -111,6 +111,9 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         [breaking]: this changes behavior, auto-close is now determined when accepting the connection, and no longer when
         terminating the handler thread. This will only affect users that dynamically change <code>copas.autoclose</code>
         at runtime.</li>
+        <li>Fixed: http requests would not set SNI defaults. Setting fields <code>protocol</code>,
+        <code>options</code>, and <code>verify</code> directly on the http options table is now deprecated. Instead
+        specify <code>sslparams</code>, similar to other SSL/TLS functions.</li>
         <li>Added: added <code>sempahore:destroy()</code></li>
         <li>Added: <code>copas.settimeouts</code>, to set separate timeouts for connect, send, receive</li>
         <li>Added: queue class, see module "copas.queue"</li>
