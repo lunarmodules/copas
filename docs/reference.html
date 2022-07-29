@@ -157,7 +157,8 @@ are used to register servers and to execute the main loop of Copas:</p>
     </dd>
 
     <dt><strong><code>copas.autoclose</code></strong></dt>
-    <dd>Constant that controls whether sockets are automatically closed.<br />
+    <dd>Boolean that controls whether sockets are automatically closed (defaults to <code>true</code>).
+        This only applies to incoming connections accepted on a TCP server socket.<br />
         When a TCP handler function completes and terminates, then the client
         socket will be automatically closed when <code>copas.autoclose</code> is
         truthy.

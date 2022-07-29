@@ -103,8 +103,14 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
     <dt><strong>Copas x.x.x</strong> [unreleased]</dt>
 	<dd><ul>
         <li>Fixed: yielding to the Copas scheduler from user-code now throws a proper error and
-        no longer breaks the loop. Breaking the loop could also happen if a thread terminated with
-        at leaast 2 return values.</li>
+        no longer breaks the loop. Breaking the loop could also happen if a thread returned with
+        at least 2 return values.</li>
+        <li>Fixed: wrongly auto-closing sockets. Upon exiting a coroutine, sockets would be automatically
+        closed. This should only be the case for accepted TCP connections on a TCP server socket. This caused issues
+        for sockets shared between threads.<br />
+        [breaking]: this changes behavior, auto-close is now determined when accepting the connection, and no longer when
+        terminating the handler thread. This will only affect users that dynamically change <code>copas.autoclose</code>
+        at runtime.</li>
         <li>Added: added <code>sempahore:destroy()</code></li>
         <li>Added: <code>copas.settimeouts</code>, to set separate timeouts for connect, send, receive</li>
         <li>Added: queue class, see module "copas.queue"</li>
