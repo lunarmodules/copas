@@ -704,6 +704,15 @@ servers.
     <dd>Stops the debug output being generated.
     </dd>
 
+    <dt><strong><code>debug_socket = copas.debug.socket(socket)</code></strong></dt>
+    <dd>This wraps the socket in a debug-wrapper. This will for each method call on the
+    socket object print the method, the parameters and the return values. Check the source
+    code on how to add additional introspection using extra callbacks etc.<br />
+    <p>Extremely noisy and experimental!</p>
+    <p>NOTE 1: for TLS you'll probably need to first do the TLS handshake.</p>
+    <p>NOTE 2: this is separate from the other debugging functions.</p>
+    </dd>
+
 </dl>
 
 

@@ -55,7 +55,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/removeserver.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removethread.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'http://www.google.com'
-	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'https://www.google.nl'
+	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'https://www.google.nl' true
 	$(LUA) $(DELIM) $(PKGPATH) tests/semaphore.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/sleep.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tcptimeout.lua

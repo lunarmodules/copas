@@ -930,7 +930,9 @@ function copas.wrap (skt, sslt)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then
     return skt -- already wrapped
   end
+
   skt:settimeout(0)
+
   if isTCP(skt) then
     return setmetatable ({socket = skt, ssl_params = normalize_sslt(sslt)}, _skt_mt_tcp)
   else
@@ -1546,6 +1548,7 @@ do
   debug_log = function() end
 
 
+  -- enables debug output for all coroutine operations.
   function copas.debug.start(logger, core)
     log_core = core
     debug_log = logger or print
@@ -1555,6 +1558,7 @@ do
   end
 
 
+  -- disables debug output for coroutine operations.
   function copas.debug.stop()
     debug_log = function() end
     coroutine_yield = coroutine.yield
@@ -1562,6 +1566,148 @@ do
     coroutine_create = coroutine.create
   end
 
+  do
+    local call_id = 0
+
+    -- Description table of socket functions for debug output.
+    -- each socket function name has TWO entries;
+    -- 'name_in' and 'name_out', each being an array of names/descriptions of respectively
+    -- input parameters and return values.
+    -- If either table has a 'callback' key, then that is a function that will be called
+    -- with the parameters/return-values for further inspection.
+    local args = {
+      settimeout_in = {
+        "socket ",
+        "seconds",
+        "mode   ",
+      },
+      settimeout_out = {
+        "success",
+        "error  ",
+      },
+      connect_in = {
+        "socket ",
+        "address",
+        "port   ",
+      },
+      connect_out = {
+        "success",
+        "error  ",
+      },
+      getfd_in = {
+        "socket ",
+        -- callback = function(...)
+        --   print(debug.traceback("called from:", 4))
+        -- end,
+      },
+      getfd_out = {
+        "fd",
+      },
+      send_in = {
+        "socket   ",
+        "data     ",
+        "idx-start",
+        "idx-end  ",
+      },
+      send_out = {
+        "last-idx-send    ",
+        "error            ",
+        "err-last-idx-send",
+      },
+      receive_in = {
+        "socket ",
+        "pattern",
+        "prefix ",
+      },
+      receive_out = {
+        "received    ",
+        "error       ",
+        "partial data",
+      },
+      dirty_in = {
+        "socket",
+        -- callback = function(...)
+        --   print(debug.traceback("called from:", 4))
+        -- end,
+      },
+      dirty_out = {
+        "data in read-buffer",
+      },
+      close_in = {
+        "socket",
+        -- callback = function(...)
+        --   print(debug.traceback("called from:", 4))
+        -- end,
+      },
+      close_out = {
+        "success",
+        "error",
+      },
+    }
+    local function print_call(func, msg, ...)
+      print(msg)
+      local arg = pack(...)
+      local desc = args[func] or {}
+      for i = 1, math.max(arg.n, #desc) do
+        local value = arg[i]
+        if type(value) == "string" then
+          print("\t"..(desc[i] or i)..": '"..tostring(value).."' ("..type(value).." #"..#value..")")
+        else
+          print("\t"..(desc[i] or i)..": '"..tostring(value).."' ("..type(value)..")")
+        end
+      end
+      if desc.callback then
+        desc.callback(...)
+      end
+    end
+
+    local debug_mt = {
+      __index = function(self, key)
+        local value = self.__original_socket[key]
+        if type(value) ~= "function" then
+          return value
+        end
+        return function(self2, ...)
+            local my_id = call_id + 1
+            call_id = my_id
+            local results
+
+            if self2 ~= self then
+              -- there is no self
+              print_call(tostring(key).."_in", my_id .. "-calling '"..tostring(key) .. "' with; ", self, ...)
+              results = pack(value(self, ...))
+            else
+              print_call(tostring(key).."_in", my_id .. "-calling '" .. tostring(key) .. "' with; ", self.__original_socket, ...)
+              results = pack(value(self.__original_socket, ...))
+            end
+            print_call(tostring(key).."_out", my_id .. "-results '"..tostring(key) .. "' returned; ", unpack(results))
+            return unpack(results)
+          end
+      end,
+      __tostring = function(self)
+        return tostring(self.__original_socket)
+      end
+    }
+
+
+    -- wraps a socket (copas or luasocket) in a debug version printing all calls
+    -- and their parameters/return values. Extremely noisy!
+    -- returns the wrapped socket.
+    -- NOTE: only for plain sockets, will not support TLS
+    function copas.debug.socket(original_skt)
+      if (getmetatable(original_skt) == _skt_mt_tcp) or (getmetatable(original_skt) == _skt_mt_udp) then
+        -- already wrapped as Copas socket, so recurse with the original luasocket one
+        original_skt.socket = copas.debug.socket(original_skt.socket)
+        return original_skt
+      end
+
+      local proxy = setmetatable({
+        __original_socket = original_skt
+      }, debug_mt)
+
+      return proxy
+    end
+  end
 end
 
 
