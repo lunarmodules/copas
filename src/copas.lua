@@ -1131,10 +1131,7 @@ function copas.addnamedthread(handler, name, ...)
   -- create a coroutine that skips the first argument, which is always the socket
   -- passed by the scheduler, but `nil` in case of a task/thread
   local thread = coroutine_create(function(_, ...)
-    -- TODO: this should be added to not immediately execute the thread
-    -- it should only schedule and then return to the calling code
-    -- Enabling this breaks the "limitset".
-    -- copas.sleep(0)
+    copas.sleep(0)
     return handler(...)
   end)
   if name then

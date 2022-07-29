@@ -22,7 +22,6 @@ install:
 	cp src/copas/ftp.lua $(DESTDIR)$(LUA_DIR)/copas/ftp.lua
 	cp src/copas/smtp.lua $(DESTDIR)$(LUA_DIR)/copas/smtp.lua
 	cp src/copas/http.lua $(DESTDIR)$(LUA_DIR)/copas/http.lua
-	cp src/copas/limit.lua $(DESTDIR)$(LUA_DIR)/copas/limit.lua
 	cp src/copas/timer.lua $(DESTDIR)$(LUA_DIR)/copas/timer.lua
 	cp src/copas/lock.lua $(DESTDIR)$(LUA_DIR)/copas/lock.lua
 	cp src/copas/semaphore.lua $(DESTDIR)$(LUA_DIR)/copas/semaphore.lua
@@ -48,7 +47,6 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/exittest.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/httpredirect.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/largetransfer.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/limit.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/queue.lua

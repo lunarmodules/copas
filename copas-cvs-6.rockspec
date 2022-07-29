@@ -40,7 +40,6 @@ build = {
       ["copas.http"] = "src/copas/http.lua",
       ["copas.ftp"] = "src/copas/ftp.lua",
       ["copas.smtp"] = "src/copas/smtp.lua",
-      ["copas.limit"] = "src/copas/limit.lua",
       ["copas.timer"] = "src/copas/timer.lua",
       ["copas.lock"] = "src/copas/lock.lua",
       ["copas.semaphore"] = "src/copas/semaphore.lua",

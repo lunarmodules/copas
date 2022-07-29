@@ -102,6 +102,10 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <dl class="history">
     <dt><strong>Copas x.x.x</strong> [unreleased]</dt>
 	<dd><ul>
+        <li>[breaking] Change: removed the "limitset". Its functionality can easily be recreated with
+        the new "queue" class, which is a better abstraction.</li>
+        <li>[breaking] Change: threads added through <code>copas.addthread</code> or
+        <code>copas.addnamedthread</code> will now be "scheduled", instead of immediately started.</li>
         <li>Fixed: yielding to the Copas scheduler from user-code now throws a proper error and
         no longer breaks the loop. Breaking the loop could also happen if a thread returned with
         at least 2 return values.</li>
