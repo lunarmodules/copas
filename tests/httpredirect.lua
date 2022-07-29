@@ -56,7 +56,7 @@ copas.addthread(function()
           assert(skt:receive())
           local response =
               "HTTP/1.1 302 Found" .. crlf ..
-              "Location: http://www.thijsschreijer.nl/blog/" .. crlf .. crlf
+              "Location: http://www.httpvshttps.com" .. crlf .. crlf
           assert(skt:send(response))
           skt:close()
       end)
@@ -64,17 +64,17 @@ copas.addthread(function()
       local _, code, headers = doreq("http://localhost:9876/")  -- http --> http redirect
       copas.removeserver(server)  -- immediately close server again
       assert(tonumber(code)==200)
-      assert(headers.location == "http://www.thijsschreijer.nl/blog/")
+      assert(headers.location == "http://www.httpvshttps.com")
       print("http  -> http  redirect OK!")
       copas.addthread(function()
-        local result, code = doreq("https://goo.gl/tBfqNu")  -- https --> http security test case
+        local result, code = doreq("https://bit.ly/3vmhXhW")  -- https --> http security test case
         assert(result==nil and code == "Unallowed insecure redirect https to http")
         print("https -> http  redirect, while not allowed OK!:", code)
         copas.addthread(function()
           redirect = "all"
-          local _, code, headers = doreq("https://goo.gl/tBfqNu")  -- https --> http security test case
+          local _, code, headers = doreq("https://bit.ly/3vmhXhW")  -- https --> http security test case
           assert(tonumber(code)==200)
-          assert(headers.location == "http://www.thijsschreijer.nl/blog/")
+          assert(headers.location == "http://www.httpvshttps.com/")
           print("https -> http  redirect, while allowed OK!")
           done = true
         end)
