@@ -36,7 +36,6 @@ local function runtest()
     end, sparams))
 
   copas.addthread(function()
-      copas.sleep(0)
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
       skt:connect("localhost", 49500)
@@ -49,7 +48,6 @@ local function runtest()
     end)
 
   copas.addthread(function()
-      copas.sleep(0)
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
       skt:connect("localhost", 49501)
@@ -62,7 +60,6 @@ local function runtest()
     end)
 
   copas.addthread(function()
-      copas.sleep(0)
       local i = 1
       while done ~= 2 do
         copas.sleep(1)

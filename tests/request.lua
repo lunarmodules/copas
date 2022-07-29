@@ -36,7 +36,6 @@ copas.addthread(function()
 end)
 
 copas.addthread(function()
-  copas.sleep(0)  -- delay, so won't start the test until the copasloop started
   print("Starting request")
   local content, code, headers, status = http.request(url)
   print(("Finished request after %d thread switches"):format(switches))
