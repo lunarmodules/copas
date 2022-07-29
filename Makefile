@@ -39,6 +39,9 @@ tests/certs/clientA.pem:
 
 certs: tests/certs/clientA.pem
 
+testsX:
+	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
+
 test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/close.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/connecttwice.lua
