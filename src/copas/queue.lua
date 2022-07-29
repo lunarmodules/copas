@@ -146,7 +146,6 @@ function Queue:add_worker(worker)
   local worker_name = self.name .. ":worker_" .. self.worker_id
 
   coro = copas.addnamedthread(function()
-    copas.sleep(0) -- TODO: remove after adding into copas.addthread
     while true do
       local item = self:pop(10*365*24*60*60) -- wait forever (10yr)
       if not item then

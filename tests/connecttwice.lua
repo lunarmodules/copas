@@ -7,7 +7,6 @@ local skt = copas.wrap(socket.tcp())
 local done = false
 
 copas.addthread(function()
-  copas.sleep(0)
   print("First try... (should succeed)")
   local ok, err = skt:connect("google.com", 80)
   if ok then

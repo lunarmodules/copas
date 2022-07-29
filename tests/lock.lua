@@ -34,7 +34,7 @@ copas.loop(function()
   local timeout_count = 0
   local destroyed_count = 0
   -- now add another bunch of threads for the same lock
-  local size = 1500 -- must be multiple of 3 !!
+  local size = 750 -- must be multiple of 3 !!
   print("creating "..size.." threads hitting the lock...", gettime())
   local tracker = {}
   for i = 1, size do
