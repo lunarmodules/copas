@@ -2,9 +2,26 @@ local copas = require("copas")
 local http = require("copas.http")
 
 local url = assert(arg[1], "missing url argument")
-print("Testing copas.http.request with url " .. url)
+local debug_mode = not not arg[2]
+
+print("Testing copas.http.request with url " .. url .. (debug_mode and "(in debug mode)" or ""))
 local switches, max_switches = 0, 10000000
 local done = false
+
+
+if debug_mode then
+  copas.debug.start()
+  local socket = require "socket"
+  local old_tcp = socket.tcp
+  socket.tcp = function(...)
+    local sock, err = old_tcp(...)
+    if not sock then
+      return sock, err
+    end
+    return copas.debug.socket(sock)
+  end
+end
+
 
 copas.addthread(function()
   while switches < max_switches do
