@@ -267,6 +267,9 @@ end   -- _sleeping
 local _servers = newsocketset() -- servers being handled
 local _threads = setmetatable({}, {__mode = "k"})  -- registered threads added with addthread()
 local _canceled = setmetatable({}, {__mode = "k"}) -- threads that are canceled and pending removal
+local _autoclose = setmetatable({}, {__mode = "kv"}) -- sockets (value) to close when a thread (key) exits
+local _autoclose_r = setmetatable({}, {__mode = "kv"}) -- reverse: sockets (key) to close when a thread (value) exits
+
 
 -- for each socket we log the last read and last write times to enable the
 -- watchdog to follow up if it takes too long.
@@ -681,6 +684,14 @@ local function ssl_wrap(skt, wrap_params)
   copas.settimeouts(nskt, user_timeouts_connect[skt],
     user_timeouts_send[skt], user_timeouts_receive[skt]) -- copy copas user-timeout to newly wrapped one
 
+  local co = _autoclose_r[skt]
+  if co then
+    -- socket registered for autoclose, move registration to wrapped one
+    _autoclose[co] = nskt
+    _autoclose_r[skt] = nil
+    _autoclose_r[nskt] = co
+  end
+
   local sock_name = object_names[skt]
   if sock_name ~= tostring(skt) then
     -- socket had a custom name, so copy it over
@@ -1012,9 +1023,13 @@ local function _doTick (co, skt, ...)
     pcall(_errhandlers[co] or _deferror, res, co, skt)
   end
 
-  if skt and copas.autoclose and isTCP(skt) then
-    skt:close() -- do not auto-close UDP sockets, as the handler socket is also the server socket
+  local skt_to_close = _autoclose[co]
+  if skt_to_close then
+    skt_to_close:close()
+    _autoclose[co] = nil
+    _autoclose_r[skt_to_close] = nil
   end
+
   _errhandlers[co] = nil
 end
 
@@ -1036,6 +1051,12 @@ local _accept do
 
       local co = coroutine_create(handler)
       object_names[co] = object_names[server_skt] .. ":handler_" .. count
+
+      if copas.autoclose then
+        _autoclose[co] = client_skt
+        _autoclose_r[client_skt] = co
+      end
+
       _doTick(co, client_skt)
     end
   end
