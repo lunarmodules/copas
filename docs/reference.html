@@ -244,7 +244,7 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dd>Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
         but use Copas' methods like <code>copas.send()</code> and <code>copas.receive()</code>
         automatically. If the <code>sslparams</code> is provided, then a call to the wrapped
-        <code>skt:connect()</code> method will automatically include the handshake (and in that
+        <code>sock:connect()</code> method will automatically include the handshake (and in that
         case <code>connect()</code> might throw an error instead of returning nil+error, see
         <code>copas.dohandshake()</code>).
         <br/>See <code>sslparams</code> definition below.
@@ -322,8 +322,10 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>sock:settimeouts([connect], [send], [receive])</code></strong></dt>
-    <dd>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>).
-    The default is to not have a timeout and wait indefinitely.<br/>
+    <dd>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>). A positive
+    number sets the timeout, a negative number removes the timeout, and <code>nil</code> will not
+    change the currently set timeout. The default is to not have a timeout and wait
+    indefinitely.<br/>
     <strong>Important:</strong> this behaviour is different from
     <code>sock:settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
