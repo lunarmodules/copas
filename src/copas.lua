@@ -961,7 +961,10 @@ end
 local _errhandlers = setmetatable({}, { __mode = "k" })   -- error handler per coroutine
 
 local function _deferror(msg, co, skt)
-  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), object_names[co], object_names[skt])
+  local co_str = co == nil and "nil" or copas.getthreadname(co)
+  local skt_str = skt == nil and "nil" or copas.getsocketname(skt)
+  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), co_str, skt_str)
+
   if type(co) == "thread" then
     -- regular Copas coroutine
     msg = debug.traceback(co, msg)
@@ -974,7 +977,9 @@ local function _deferror(msg, co, skt)
 end
 
 function copas.setErrorHandler (err, default)
+  assert(err == nil or type(err) == "function", "Expected the handler to be a function, or nil")
   if default then
+    assert(err ~= nil, "Expected the handler to be a function when setting the default")
     _deferror = err
   else
     _errhandlers[coroutine_running()] = err
@@ -1022,7 +1027,10 @@ local function _doTick (co, skt, ...)
   end
 
   if not ok then
-    pcall(_errhandlers[co] or _deferror, res, co, skt)
+    local k, e = pcall(_errhandlers[co] or _deferror, res, co, skt)
+    if not k then
+      print("Failed executing error handler: " .. tostring(e))
+    end
   end
 
   local skt_to_close = _autoclose[co]

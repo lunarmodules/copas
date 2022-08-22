@@ -222,13 +222,19 @@ are used to register servers and to execute the main loop of Copas:</p>
         <code>copas.finished()</code>.
     </dd>
 
-    <dt><strong><code>copas.setErrorHandler(func, [default])</code></strong></dt>
-    <dd>Sets the error handling function for the current thread. If <code>default</code>
-        is truthy, then the handler will become the new default, used for all threads
-        that do not have their own set.
-        Any errors will be forwarded to this handler, which will receive the
-        error, coroutine, and socket as arguments. See the Copas source code
+    <dt><strong><code>copas.setErrorHandler([func], [default])</code></strong></dt>
+    <dd>Sets the error handling function for the current thread.
+        Any errors will be forwarded to this handler, it will receive the
+        error, coroutine, and socket as arguments;
+        <code>function(err, co, skt)</code>. See the Copas source code
         on how to deal with the arguments when implementing your own.
+
+        <br/>If <code>func</code>
+        is omitted, then the error handler is cleared (restores the default handler
+        for this coroutine).
+        <br/>If <code>default</code>
+        is truthy, then the handler will become the new default, used for all threads
+        that do not have their own set (in this case <code>func</code> must be provided).
     </dd>
 
     <dt><strong><code>copas.setsocketname(name, skt)</code></strong></dt>
