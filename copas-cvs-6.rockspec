@@ -31,7 +31,7 @@ dependencies = {
    "luasocket >= 2.1, <= 3.0rc1-2",
    "coxpcall >= 1.14",
    "binaryheap >= 0.4",
-   "timerwheel >= 0.2",
+   "timerwheel ~> 1",
 }
 build = {
    type = "builtin",
