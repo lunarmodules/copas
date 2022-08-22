@@ -182,6 +182,11 @@ are used to register servers and to execute the main loop of Copas:</p>
         currently running coroutine.
     </dd>
 
+    <dt><strong><code>copas.gettraceback([msg], [co], [skt])</code></strong></dt>
+        <dd>Creates a traceback (string). Can be used from custom errorhandlers to create
+        a proper trace. See <code>copas.setErrorHandler</code>.
+    </dd>
+
     <dt><strong><code>func = copas.handler(connhandler [, sslparams])</code></strong></dt>
         <dd>Wraps the <code>connhandler</code> function. Returns a new function that
         wraps the client socket, and (if <code>sslparams</code> is provided) performs
@@ -227,7 +232,8 @@ are used to register servers and to execute the main loop of Copas:</p>
         Any errors will be forwarded to this handler, it will receive the
         error, coroutine, and socket as arguments;
         <code>function(err, co, skt)</code>. See the Copas source code
-        on how to deal with the arguments when implementing your own.
+        on how to deal with the arguments when implementing your own, and check
+        <code>copas.gettraceback</code>.<br/>
 
         <br/>If <code>func</code>
         is omitted, then the error handler is cleared (restores the default handler
