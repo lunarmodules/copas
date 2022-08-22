@@ -960,20 +960,27 @@ end
 
 local _errhandlers = setmetatable({}, { __mode = "k" })   -- error handler per coroutine
 
-local function _deferror(msg, co, skt)
+function copas.gettraceback(msg, co, skt)
   local co_str = co == nil and "nil" or copas.getthreadname(co)
   local skt_str = skt == nil and "nil" or copas.getsocketname(skt)
-  msg = ("%s (coroutine: %s, socket: %s)"):format(tostring(msg), co_str, skt_str)
+  local msg_str = msg == nil and "" or tostring(msg)
+  if msg_str == "" then
+    msg_str = ("(coroutine: %s, socket: %s)"):format(msg_str, co_str, skt_str)
+  else
+    msg_str = ("%s (coroutine: %s, socket: %s)"):format(msg_str, co_str, skt_str)
+  end
 
   if type(co) == "thread" then
     -- regular Copas coroutine
-    msg = debug.traceback(co, msg)
-  else
-    -- not a coroutine, but the main thread, this happens if a timeout callback
-    -- (see `copas.timeout` causes an error (those callbacks run on the main thread).
-    msg = debug.traceback(msg, 2)
+    return debug.traceback(co, msg_str)
   end
-  print(msg)
+  -- not a coroutine, but the main thread, this happens if a timeout callback
+  -- (see `copas.timeout` causes an error (those callbacks run on the main thread).
+  return debug.traceback(msg_str, 2)
+end
+
+local function _deferror(msg, co, skt)
+  print(copas.gettraceback(msg, co, skt))
 end
 
 function copas.setErrorHandler (err, default)
