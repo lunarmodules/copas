@@ -351,8 +351,9 @@ end
     return 1, code, headers, status
 end
 
--- Return a function which performs the SSL/TLS connection.
-local function tcp(params)
+-- Return a function which creates a tcp socket that will
+-- include the optional SSL/TLS connection, and unsafe redirect checks
+function _M.getcreatefunc(params)
    params = params or {}
    local ssl_params = params.sslparams or {}
    ssl_params.wrap = ssl_params.wrap or {
@@ -451,7 +452,7 @@ _M.request = socket.protect(function(reqt, body)
             assert(allowed[k], "'"..tostring(k).."' is not a valid timeout option. Valid: 'connect', 'send', 'receive'")
           end
         end
-        reqt.create = reqt.create or tcp(reqt)
+        reqt.create = reqt.create or _M.getcreatefunc(reqt)
         return trequest(reqt)
     end
 end)
