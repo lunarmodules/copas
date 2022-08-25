@@ -75,5 +75,19 @@ copas.loop(function()
   test_complete = true
 end)
 
+-- copas loop exited when here
+
 assert(test_complete, "test did not complete!")
-print("test success!")
+print("test 1 success!")
+
+
+
+-- destroying a queue while workers are idle
+copas.loop(function()
+  local q = Queue:new()
+  q:add_worker(function() end)
+  copas.sleep(0.5) -- to activate the worker, which will now be blocked on the q semaphore
+  q:stop()  -- this should exit the idle workers and exit the copas loop
+end)
+
+print("test 2 success!")
