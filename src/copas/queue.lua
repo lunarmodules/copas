@@ -85,6 +85,11 @@ function Queue:stop()
     self.stopping = true
     self.lock = Lock.new()
     self.lock:get() -- close the lock
+    if self:get_size() == 0 then
+      -- queue is already empty, so "pop" function cannot call destroy on next
+      -- pop, so destroy now.
+      self:destroy()
+    end
   end
   return true
 end
@@ -125,6 +130,7 @@ do
     if self.lock then
       self.lock:destroy()
     end
+    self.sema:destroy()
     setmetatable(self, destroyed_queue_mt)
     return true
   end
