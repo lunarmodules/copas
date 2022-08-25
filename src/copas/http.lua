@@ -126,7 +126,15 @@ function _M.open(reqt)
     -- create finalized try
     h.try = socket.newtry(function() h:close() end)
     -- set timeout before connecting
-    h.try(c:settimeout(_M.TIMEOUT))
+    local to = reqt.timeout or _M.TIMEOUT
+    if type(to) == "table" then
+      h.try(c:settimeouts(
+        to.connect or _M.TIMEOUT,
+        to.send or _M.TIMEOUT,
+        to.receive or _M.TIMEOUT))
+    else
+      h.try(c:settimeout(to))
+    end
     h.try(c:connect(reqt.host, reqt.port or _M.PORT))
     -- here everything worked
     return h
@@ -295,7 +303,8 @@ local trequest, tredirect
         headers = reqt.headers,
         proxy = reqt.proxy,
         nredirects = (reqt.nredirects or 0) + 1,
-        create = reqt.create
+        create = reqt.create,
+        timeout = reqt.timeout,
     }
     -- pass location header back as a hint we redirected
     headers = headers or {}
@@ -435,6 +444,13 @@ _M.request = socket.protect(function(reqt, body)
             return nil, code
         end
     else
+        -- strict check on timeout table to prevent typo's from going unnoticed
+        if type(reqt.timeout) == "table" then
+          local allowed = { connect = true, send = true, receive = true }
+          for k in pairs(reqt.timeout) do
+            assert(allowed[k], "'"..tostring(k).."' is not a valid timeout option. Valid: 'connect', 'send', 'receive'")
+          end
+        end
         reqt.create = reqt.create or tcp(reqt)
         return trequest(reqt)
     end

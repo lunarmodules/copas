@@ -326,11 +326,17 @@ exchange data with other services.</p>
 
     <dt><strong><code>sock:settimeout([timeout])</code></strong></dt>
     <dd>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>).
-    The default is to not have a timeout and wait indefinitely. This method is compatible
-    with LuaSocket, but sets all three timeouts to the same value.<br/>
+    The default is to not have a timeout and wait indefinitely. If a timeout is hit,
+    the operation will return <code>nil + "timeout"</code>. This method is compatible
+    with LuaSocket, but sets all three timeouts to the same value. <br/>
+    Behaviour:
+    <ul>
+        <li><code>nil</code>: block indefinitely</li>
+        <li><code>number &lt; 0</code>: block indefinitely</li>
+        <li><code>number &gt;= 0</code>: timeout value in seconds</li>
+    </ul>
     <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
-    <code>sock:settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.<br/>
-    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+    <code>sock:settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.
     </dd>
 
     <dt><strong><code>sock:settimeouts([connect], [send], [receive])</code></strong></dt>
@@ -338,6 +344,12 @@ exchange data with other services.</p>
     number sets the timeout, a negative number removes the timeout, and <code>nil</code> will not
     change the currently set timeout. The default is to not have a timeout and wait
     indefinitely.<br/>
+    Behaviour:
+    <ul>
+        <li><code>nil</code>: do not change the current setting</li>
+        <li><code>number &lt; 0</code>: block indefinitely</li>
+        <li><code>number &gt;= 0</code>: timeout value in seconds</li>
+    </ul>
     <strong>Important:</strong> this behaviour is different from
     <code>sock:settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
@@ -497,13 +509,13 @@ exchange data with other services.</p>
     <dt><strong><code>timer.new(options)</code></strong></dt>
     <dd>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
     <ul>
-        <li><code>options.name</code>: (optional) the name for the timer, the default name will be
+        <li><code>options.name</code> (optional): the name for the timer, the default name will be
         <code>"copas_timer_XX"</code>. The name will be used to name the timer thread.</li>
-        <li><code>options.recurring</code> boolean</li>
-        <li><code>options.delay</code> expiry delay in seconds</li>
-        <li><code>options.initial_delay</code> (optional) see <code>timer:arm()</code></li>
-        <li><code>options.params</code> (optional) an opaque value that is passed to the callback upon expiry</li>
-        <li><code>options.callback</code> is the function to execute on timer expiry.
+        <li><code>options.recurring</code>: boolean</li>
+        <li><code>options.delay</code>: expiry delay in seconds</li>
+        <li><code>options.initial_delay</code> (optional): see <code>timer:arm()</code></li>
+        <li><code>options.params</code> (optional): an opaque value that is passed to the callback upon expiry</li>
+        <li><code>options.callback</code>: is the function to execute on timer expiry.
             The callback function has <code>function(timer_obj, params)</code> as signature, where
             <code>params</code> is the value initially passed in <code>options.params</code></li>
     </ul>
@@ -535,9 +547,36 @@ servers.
     implementations, but wrapped in an async operation. As opposed to the original
     implementations, this one also allows for redirects cross scheme (http to https and
     viceversa).<br />
-    <br />
-    <strong>Note:</strong> https to http redirects are not allowed by
-    default, but only when <code>requestparams.redirect == "all"</code>
+    <br />Options:
+
+
+    <ul>
+        <li><code>options.url</code>: the URL for the request.</li>
+        <li><code>options.sink</code> (optional): the LTN12 sink to pass the body chunks to.</li>
+        <li><code>options.method</code> (optional, default "GET"): the http request method.</li>
+        <li><code>options.headers</code> (optional): any additional HTTP headers to send with the request.
+            Hash-table, header-values by header-names.</li>
+        <li><code>options.source</code> (optional): simple LTN12 source to provide the request body.
+            If there is a body, you need to provide an appropriate "content-length" request header field,
+            or the function will attempt to send the body as "chunked" (something few servers support).
+            Defaults to the empty source</li>
+        <li><code>options.step</code> (optional): LTN12 pump step function used to move data. Defaults to
+            the LTN12 <code>pump.step</code> function.</li>
+        <li><code>proxy</code> (optional, default none): The URL of a proxy server to use.</li>
+        <li><code>options.redirect</code> (optional, default <code>true</code>): Set to <code>false</code> to prevent
+            the function from automatically following 301 or 302 server redirect messages.<br/>
+            <strong>Note:</strong> https to http redirects are not allowed by default, but only when this option is set
+            to a string value <code>"all"</code>.</li>
+        <li><code>options.create</code> (optional): a function to be used instead of <code>socket.tcp</code> when the
+            communications socket is created.</li>
+        <li><code>options.maxredirects</code> (optional, default 5): An optional number specifying the maximum number
+            of redirects to follow. A boolean <code>false</code> value means no maximum (unlimited).</li>
+        <li><code>options.timeout</code> (optional, default 30): A number specifying the timeout for
+            connect/send/receive operations. Or a table with keys <code>"connect"</code>, <code>"send"</code>, and
+            <code>"receive"</code>, to specify individual timeouts (keys omitted from the table will get a default of
+            30).</li>
+    </ul>
+
     </dd>
 
     <dt><strong><code>copas.ftp.put(url, content)</code></strong> or<br />

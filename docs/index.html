@@ -100,12 +100,18 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
-    <dt><strong>Copas 4.0.1</strong> unreleased</dt>
+    <dt><strong>Copas 4.1.0</strong> unreleased</dt>
 	<dd><ul>
         <li>Fix: handle errors thrown by the error handlers themselves.</li>
         <li>Deps: Bump timerwheel to 1.0 (no changes, just a small fix)</li>
         <li>Added: <code>copas.gettraceback</code>, previously internal to the default error handler,
         now exposed to make it easier to write proper error handlers</li>
+        <li>Added: http-request now takes a timeout setting, previously it would always use the default value
+        of 30 seconds.</li>
+        <li>Added: the previously internal function for generating a TCP socket in the http-request module,
+        is now exported as <code>http.getcreatefunc()</code>. This allows to capture the socket used by the
+        request. When using streaming responses, for example with server-side-events, this can be used to modify
+        the timeouts, or for closing the stream.</li>
 	</ul></dd>
 
     <dt><strong>Copas 4.0.0</strong> [29/Jul/2022]</dt>
