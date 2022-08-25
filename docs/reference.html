@@ -447,7 +447,8 @@ exchange data with other services.</p>
     until there are or a timeout happens (exception is when <code>timeout == 0</code>, then it will
     not yield but return immediately, be careful not to create a hanging loop!). Timeout defaults
     to the default time-out of a semaphore.
-    Returns an item, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>.
+    Returns an item, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>. Since an item
+    can be <code>nil</code>, make sure to check for the error message to detect error.
     </dd>
 
     <dt><strong><code>queue:push(item)</code></strong></dt>
@@ -456,7 +457,8 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>queue:stop()</code></strong></dt>
-    <dd>Instructs the queue to stop. It will no longer accept calls to <code>queue:push()</code>,
+    <dd>Instructs the queue to stop, and returns immediately. It will no longer
+    accept calls to <code>queue:push()</code>,
     and will call <code>queue:destroy()</code> once the queue is empty.
     Returns <code>true</code> or <code>nil + "destroyed"</code>.
     </dd>
