@@ -23,7 +23,7 @@ local gettime = socket.gettime
 local ssl -- only loaded upon demand
 
 local WATCH_DOG_TIMEOUT = 120
-local UDP_DATAGRAM_MAX = 8192  -- TODO: dynamically get this value from LuaSocket
+local UDP_DATAGRAM_MAX = socket._DATAGRAMSIZE or 8192
 local TIMEOUT_PRECISION = 0.1  -- 100ms
 local fnil = function() end
 
