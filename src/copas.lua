@@ -1557,7 +1557,7 @@ do
   end
 
 
-  debug_log = function() end
+  debug_log = fnil
 
 
   -- enables debug output for all coroutine operations.
@@ -1572,7 +1572,7 @@ do
 
   -- disables debug output for coroutine operations.
   function copas.debug.stop()
-    debug_log = function() end
+    debug_log = fnil
     coroutine_yield = coroutine.yield
     coroutine_resume = coroutine.resume
     coroutine_create = coroutine.create
