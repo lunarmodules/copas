@@ -524,7 +524,8 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>timer:arm([initial_delay])</code></strong></dt>
-    <dd>Arms a timer that was previously cancelled or exited. Returns the timer.
+    <dd>Arms a timer that was previously cancelled or exited (arming a non-recurring timer again
+    from its own handler is explicitly supported). Returns the timer.
     The optional parameter <code>initial_delay</code>, determines the first delay.
     For example a recurring timer with <code>delay = 5</code>, and <code>initial_delay = 0</code> will
     execute immediately and then recur every 5 seconds.

@@ -21,10 +21,21 @@ do
     copas.sleep(initial_delay)
     while true do
       if not self.cancelled then
-        self:callback(self.params)
+        if not self.recurring then
+          -- non-recurring timer
+          self.cancelled = true
+          self.co = nil
+
+          self:callback(self.params)
+          return
+
+        else
+          -- recurring timer
+          self:callback(self.params)
+        end
       end
 
-      if (not self.recurring) or self.cancelled then
+      if self.cancelled then
         -- clean up and exit the thread
         self.co = nil
         self.cancelled = true
