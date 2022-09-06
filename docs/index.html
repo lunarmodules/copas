@@ -102,8 +102,9 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <dl class="history">
     <dt><strong>Copas 4.1.x</strong> unreleased</dt>
 	<dd><ul>
-        <li>Change: pick up datagram size from newer LuaSocket versions</li>
-        <li>Fix: non-recurring timer can now be armed again from its own handler</li>
+        <li>Change: pick up datagram size from newer LuaSocket versions.</li>
+        <li>Fix: non-recurring timer can now be armed again from its own handler.</li>
+        <li>Added: calling on the module table now invokes the <code>copas.loop</code> method.</li>
 	</ul></dd>
 
     <dt><strong>Copas 4.1.0</strong> [25/Aug/2022]</dt>
@@ -116,7 +117,7 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         of 30 seconds.</li>
         <li>Added: the previously internal function for generating a TCP socket in the http-request module,
         is now exported as <code>http.getcreatefunc()</code>. This allows to capture the socket used by the
-        request. When using streaming responses, for example with server-side-events, this can be used to modify
+        request. When using streaming responses, for example with server-sent events, this can be used to modify
         the timeouts, or for closing the stream.</li>
         <li>Fix: empty queues were not destroyed properly and could prevent Copas from exiting</li>
 	</ul></dd>
