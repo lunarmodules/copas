@@ -75,7 +75,11 @@ local coroutine_resume = coroutine.resume
 local coroutine_status = coroutine.status
 
 
-local copas = {}
+local copas = setmetatable({},{
+  __call = function(self, ...)
+    return self.loop(...)
+  end,
+})
 
 -- Meta information is public even if beginning with an "_"
 copas._COPYRIGHT   = "Copyright (C) 2005-2022 Kepler Project"

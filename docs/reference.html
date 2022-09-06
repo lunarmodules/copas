@@ -84,7 +84,7 @@ end
 copas.addserver(server_socket, copas.handler(connection_handler,
     ssl_params), "my_TCP_server")
 
-copas.loop()
+copas()
 </pre>
 
 
@@ -113,7 +113,7 @@ copas.addthread(function()
 
 end)
 
-copas.loop()
+copas()
 </pre>
 
 
@@ -123,6 +123,10 @@ copas.loop()
 are used to register servers and to execute the main loop of Copas:</p>
 
 <dl class="reference">
+    <dt><strong><code>copas([init_func, ][timeout])</code></strong></dt>
+    <dd>This is a shortcut to <code>copas.loop</code>.
+    </dd>
+
     <dt><strong><code>copas.addserver(server, handler[, timeout[, name]])</code></strong></dt>
     <dd>Adds a new <code>server</code> and its <code>handler</code> to the dispatcher
         using an optional <code>timeout</code>.<br />
@@ -197,7 +201,8 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dt><strong><code>copas.loop([init_func, ][timeout])</code></strong></dt>
     <dd>Starts the Copas loop accepting client connections for the
         registered servers and handling those connections with the corresponding
-        handlers. Every time a server accepts a connection, Copas calls the
+        handlers. Calling on the module table itself is a shortcut to this function.
+        Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
         <code>socket.accept()</code>. The <code>init_func</code> function is an
         optional initialization function that runs as a Copas thread

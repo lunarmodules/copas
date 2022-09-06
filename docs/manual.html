@@ -120,7 +120,7 @@ copas.addserver(server, echoHandler)
 <p>Finally, to start Copas and all the registered servers we just call:</p>
 
 <pre class="example">
-copas.loop()
+copas()
 </pre>
 
 <p>As long as every handler uses Copas's <code>send</code> and <code>receive</code>,
@@ -270,7 +270,7 @@ for more information.</p>
 <p>Finally, to run the dispatcher loop you just call:</p>
 
 <pre class="example">
-copas.loop()
+copas()
 </pre>
 
 <p>During the loop Copas' dispatcher accepts connections from clients and
@@ -300,7 +300,7 @@ function handler(skt)
 end
 
 copas.addserver(server, handler, 1)
-copas.loop()
+copas()
 </pre>
 <p>For UDP sockets the <code>receivefrom()</code> and <code>sendto()</code>
 methods are available, both for copas and when the socket is wrapped. These
@@ -335,7 +335,7 @@ copas.addthread(function()
    end
 end)
 
-copas.loop()
+copas()
 </pre>
 <p>The example connects, echoes whatever it receives and exits upon receiving 'quit'. For an
 example passing arguments to a task, see the async http example below.</p>
@@ -347,7 +347,7 @@ Below an example of a timer;</p>
 local copas = require("copas")
 local timer = require("copas.timer")
 
-copas.loop(function()
+copas(function()
    timer.new({
      delay = 1,                        -- delay in seconds
      recurring = true,                 -- make the timer repeat
@@ -465,7 +465,7 @@ local handler = function(host)
 end
 
 for _, host in ipairs(list) do copas.addthread(handler, host) end
-copas.loop()
+copas()
 </pre>
 
 <h2><a name="control"></a>Controlling Copas</h2>
