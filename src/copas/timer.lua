@@ -57,7 +57,7 @@ do
     end
 
     self.cancelled = false
-    self.co = copas.addnamedthread(expire_func, self.name, self, initial_delay or self.delay)
+    self.co = copas.addnamedthread(self.name, expire_func, self, initial_delay or self.delay)
     return self
   end
 end

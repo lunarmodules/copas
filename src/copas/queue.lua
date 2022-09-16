@@ -151,7 +151,7 @@ function Queue:add_worker(worker)
   self.worker_id = self.worker_id + 1
   local worker_name = self.name .. ":worker_" .. self.worker_id
 
-  coro = copas.addnamedthread(function()
+  coro = copas.addnamedthread(worker_name, function()
     while true do
       local item = self:pop(10*365*24*60*60) -- wait forever (10yr)
       if not item then
@@ -160,7 +160,7 @@ function Queue:add_worker(worker)
       worker(item)
     end
     self.workers[coro] = nil
-  end, worker_name)
+  end)
 
   self.workers[coro] = true
   return coro

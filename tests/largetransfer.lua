@@ -43,7 +43,7 @@ local function runtest()
       done = done + 1
     end, sparams))
 
-  copas.addnamedthread(function()
+  copas.addnamedthread("Client 49500", function()
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
       copas.setsocketname("Client 49500", skt)
@@ -56,9 +56,9 @@ local function runtest()
       -- we're not closing the socket, so the Copas GC-when-idle can kick-in to clean up
       skt = nil -- luacheck: ignore
       done = done + 1
-    end, "Client 49500")
+    end)
 
-  copas.addnamedthread(function()
+  copas.addnamedthread("Client 49501", function()
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
       copas.setsocketname("Client 49501", skt)
@@ -71,9 +71,9 @@ local function runtest()
       -- we're not closing the socket, so the Copas GC-when-idle can kick-in to clean up
       skt = nil -- luacheck: ignore
       done = done + 1
-    end, "Client 49501")
+    end)
 
-  copas.addnamedthread(function()
+  copas.addnamedthread("test timeout thread", function()
       local i = 1
       while done ~= 4 do
         copas.sleep(1)
@@ -85,7 +85,7 @@ local function runtest()
         end
       end
       print "success!"
-    end, "timeout thread")
+    end)
 
   print("starting loop")
   copas.loop()
