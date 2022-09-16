@@ -478,6 +478,11 @@ function copas.receive(client, pattern, part)
   repeat
     s, err, part = client:receive(pattern, part)
 
+    -- guarantees that high throughput doesn't take other threads to starvation
+    if (math.random(100) > 90) then
+      copas.sleep(0)
+    end
+
     if s then
       current_log[client] = nil
       sto_timeout()
@@ -517,6 +522,11 @@ function copas.receivefrom(client, size)
   repeat
     s, err, port = client:receivefrom(size) -- upon success err holds ip address
 
+    -- garantees that high throughput doesn't take other threads to starvation
+    if (math.random(100) > 90) then
+      copas.sleep(0)
+    end
+
     if s then
       _reading_log[client] = nil
       sto_timeout()
@@ -547,6 +557,11 @@ function copas.receivePartial(client, pattern, part)
 
   repeat
     s, err, part = client:receive(pattern, part)
+
+    -- guarantees that high throughput doesn't take other threads to starvation
+    if (math.random(100) > 90) then
+      copas.sleep(0)
+    end
 
     if s or (type(pattern) == "number" and part ~= "" and part ~= nil) then
       current_log[client] = nil
@@ -590,15 +605,9 @@ function copas.send(client, data, from, to)
   repeat
     s, err, lastIndex = client:send(data, lastIndex + 1, to)
 
-    -- adds extra coroutine swap
-    -- garantees that high throughput doesn't take other threads to starvation
+    -- guarantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
-      current_log[client] = gettime()   -- TODO: how to handle this??
-      if current_log == _writing_log then
-        coroutine_yield(client, _writing)
-      else
-        coroutine_yield(client, _reading)
-      end
+      copas.sleep(0)
     end
 
     if s then
