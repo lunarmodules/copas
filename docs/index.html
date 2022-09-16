@@ -103,9 +103,10 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
     <dt><strong>Copas 4.2.x</strong> [unreleased]</dt>
 	<dd><ul>
         <li>Fix: when the loop is idle, do an occasional GC to clean out any lingering
-            non-closed sockets. This could prevent the loop from exiting.</li>
+        non-closed sockets. This could prevent the loop from exiting.</li>
         <li>Fix: in debug mode very large data is now truncated when displayed.</li>
-	</ul></dd>
+        <li>Fix: order of <code>copas.addnamedthread</code> args.</li>
+        </ul></dd>
 
     <dt><strong>Copas 4.2.0</strong> [06/Sep/2022]</dt>
 	<dd><ul>

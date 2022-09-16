@@ -1146,7 +1146,12 @@ end
 -------------------------------------------------------------------------------
 -- Adds an new coroutine thread to Copas dispatcher
 -------------------------------------------------------------------------------
-function copas.addnamedthread(handler, name, ...)
+function copas.addnamedthread(name, handler, ...)
+  if type(name) == "function" and type(handler) == "string" then
+    -- old call, flip args for compatibility
+    name, handler = handler, name
+  end
+
   -- create a coroutine that skips the first argument, which is always the socket
   -- passed by the scheduler, but `nil` in case of a task/thread
   local thread = coroutine_create(function(_, ...)
@@ -1164,7 +1169,7 @@ end
 
 
 function copas.addthread(handler, ...)
-  return copas.addnamedthread(handler, nil, ...)
+  return copas.addnamedthread(nil, handler, ...)
 end
 
 
@@ -1205,12 +1210,12 @@ do
       err_handler = function(...) return _deferror(...) end,
     })
 
-  copas.addnamedthread(function()
+  copas.addnamedthread("copas_core_timer", function()
     while true do
       copas.sleep(TIMEOUT_PRECISION)
       timerwheel:step()
     end
-  end, "copas_core_timer")
+  end)
 
   -- get the number of timeouts running
   function copas.gettimeouts()
@@ -1457,7 +1462,7 @@ end
 -------------------------------------------------------------------------------
 function copas.loop(initializer, timeout)
   if type(initializer) == "function" then
-    copas.addnamedthread(initializer, "copas_initializer")
+    copas.addnamedthread("copas_initializer", initializer)
   else
     timeout = initializer or timeout
   end
