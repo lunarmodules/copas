@@ -100,13 +100,18 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
-    <dt><strong>Copas 4.2.x</strong> [unreleased]</dt>
+    <dt><strong>Copas 4.3.x</strong> [unreleased]</dt>
 	<dd><ul>
         <li>Fix: when the loop is idle, do an occasional GC to clean out any lingering
         non-closed sockets. This could prevent the loop from exiting.</li>
         <li>Fix: in debug mode very large data is now truncated when displayed.</li>
-        <li>Fix: order of <code>copas.addnamedthread</code> args.</li>
         <li>Fix: the receive methods could starve other threads on high-throughput.</li>
+        <li>Change: order of <code>copas.addnamedthread</code> args.</li>
+        <li>Fix: <code>copas.recievepartial</code> could return early with no data received
+        if the `prefix` parameter was specified.</li>
+        <li>Change: renamed <code>copas.receivePartial</code> to <code>copas.receivepartial</code>.</li>
+        <li>Added: <code>sock:receivepartial</code> to better process streaming TCP data.</li>
+        <li>fix: <code>copas.receivepartial</code> is now documented.</li>
     </ul></dd>
 
     <dt><strong>Copas 4.2.0</strong> [06/Sep/2022]</dt>

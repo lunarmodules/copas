@@ -549,9 +549,10 @@ end
 
 -- same as above but with special treatment when reading chunks,
 -- unblocks on any data received.
-function copas.receivePartial(client, pattern, part)
+function copas.receivepartial(client, pattern, part)
   local s, err
   pattern = pattern or "*l"
+  local orig_size = #(part or "")
   local current_log = _reading_log
   sto_timeout(client, "read")
 
@@ -563,7 +564,7 @@ function copas.receivePartial(client, pattern, part)
       copas.sleep(0)
     end
 
-    if s or (type(pattern) == "number" and part ~= "" and part ~= nil) then
+    if s or (type(part) == "string" and #part > orig_size) then
       current_log[client] = nil
       sto_timeout()
       return s, err, part
@@ -591,6 +592,7 @@ function copas.receivePartial(client, pattern, part)
     end
   until false
 end
+copas.receivePartial = copas.receivepartial  -- compat: receivePartial is deprecated
 
 -- sends data to a client. The operation is buffered and
 -- yields to the writing set on timeouts
@@ -829,9 +831,13 @@ local _skt_mt_tcp = {
 
         receive = function (self, pattern, prefix)
           if user_timeouts_receive[self.socket] == 0 then
-            return copas.receivePartial(self.socket, pattern, prefix)
+            return copas.receivepartial(self.socket, pattern, prefix)
           end
           return copas.receive(self.socket, pattern, prefix)
+        end,
+
+        receivepartial = function (self, pattern, prefix)
+          return copas.receivepartial(self.socket, pattern, prefix)
         end,
 
         flush = function (self)
