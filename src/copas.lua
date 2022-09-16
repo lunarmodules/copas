@@ -1426,6 +1426,12 @@ function copas.step(timeout)
 
   if err then
     if err == "timeout" then
+      if timeout + 0.01 > TIMEOUT_PRECISION and math.random(100) > 90 then
+        -- we were idle, so occasionally do a GC sweep to ensure lingering
+        -- sockets are closed, and we don't accidentally block the loop from
+        -- exiting
+        collectgarbage()
+      end
       return false
     end
     return nil, err

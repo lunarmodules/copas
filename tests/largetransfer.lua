@@ -9,6 +9,8 @@
 local copas = require 'copas'
 local socket = require 'socket'
 
+-- copas.debug.start()
+
 local body = ("A"):rep(1024*1024*50) -- 50 mb string
 local start = socket.gettime()
 local done = 0
@@ -17,51 +19,63 @@ local sparams, cparams
 local function runtest()
   local s1 = socket.bind('*', 49500)
   copas.addserver(s1, copas.handler(function(skt)
+      copas.setsocketname("Server 49500", skt)
+      copas.setthreadname("Server 49500")
       --skt:settimeout(0)  -- don't set, uses `receive` method
       local res, err, part = skt:receive('*a')
       res = res or part
       if res ~= body then print("Received doesn't match send") end
-      print("Reading... 49500... Done!", socket.gettime()-start, err, #res)
-      if copas.removeserver then copas.removeserver(s1) end
+      print("Server reading port 49500... Done!", socket.gettime()-start, err, #res)
+      copas.removeserver(s1)
+      done = done + 1
     end, sparams))
 
   local s2 = socket.bind('*', 49501)
   copas.addserver(s2, copas.handler(function(skt)
-      skt:settimeout(0)  -- set, uses the `receivePartial` method
+      --skt:settimeout(0)  -- set, uses the `receivePartial` method
+      copas.setsocketname("Server 49501", skt)
+      copas.setthreadname("Server 49501")
       local res, err, part = skt:receive('*a')
       res = res or part
       if res ~= body then print("Received doesn't match send") end
-      print("Reading... 49501... Done!", socket.gettime()-start, err, #res)
-      if copas.removeserver then copas.removeserver(s2) end
+      print("Server reading port 49501... Done!", socket.gettime()-start, err, #res)
+      copas.removeserver(s2)
+      done = done + 1
     end, sparams))
 
-  copas.addthread(function()
+  copas.addnamedthread(function()
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
+      copas.setsocketname("Client 49500", skt)
       skt:connect("localhost", 49500)
-      local _, err = skt:send(body)
-      print("Writing... 49500... Done!", socket.gettime()-start, err, #body)
+      local last_byte_sent, err
+      repeat
+        last_byte_sent, err = skt:send(body, last_byte_sent or 1, -1)
+      until last_byte_sent == nil or last_byte_sent == #body
+      print("Client writing port 49500... Done!", socket.gettime()-start, err, #body)
+      -- we're not closing the socket, so the Copas GC-when-idle can kick-in to clean up
       skt = nil -- luacheck: ignore
-      collectgarbage()
-      collectgarbage()
       done = done + 1
-    end)
+    end, "Client 49500")
 
-  copas.addthread(function()
+  copas.addnamedthread(function()
       local skt = socket.tcp()
       skt = copas.wrap(skt, cparams)
+      copas.setsocketname("Client 49501", skt)
       skt:connect("localhost", 49501)
-      local _, err = skt:send(body)
-      print("Writing... 49501... Done!", socket.gettime()-start, err, #body)
+      local last_byte_sent, err
+      repeat
+        last_byte_sent, err = skt:send(body, last_byte_sent or 1, -1)
+      until last_byte_sent == nil or last_byte_sent == #body
+      print("Client writing port 49501... Done!", socket.gettime()-start, err, #body)
+      -- we're not closing the socket, so the Copas GC-when-idle can kick-in to clean up
       skt = nil -- luacheck: ignore
-      collectgarbage()
-      collectgarbage()
       done = done + 1
-    end)
+    end, "Client 49501")
 
-  copas.addthread(function()
+  copas.addnamedthread(function()
       local i = 1
-      while done ~= 2 do
+      while done ~= 4 do
         copas.sleep(1)
         print(i, "seconds:", socket.gettime()-start)
         i = i + 1
@@ -70,7 +84,8 @@ local function runtest()
           os.exit(1)
         end
       end
-    end)
+      print "success!"
+    end, "timeout thread")
 
   print("starting loop")
   copas.loop()
