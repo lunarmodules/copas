@@ -1,5 +1,5 @@
 -- tests large transmissions, sending and receiving
--- uses `receive` and `receivePartial`
+-- uses `receive` and `receivepartial`
 -- Does send the same string twice simultaneously
 --
 -- Test should;
@@ -32,7 +32,7 @@ local function runtest()
 
   local s2 = socket.bind('*', 49501)
   copas.addserver(s2, copas.handler(function(skt)
-      skt:settimeout(0)  -- set, uses the `receivePartial` method
+      skt:settimeout(0)  -- set, uses the `receivepartial` method
       copas.setsocketname("Server 49501", skt)
       copas.setthreadname("Server 49501")
       local res, err, part = skt:receive('*a')

@@ -323,6 +323,27 @@ exchange data with other services.</p>
 
     <dt><strong><code>sock:receive(...)</code></strong></dt>
     <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
+    Please see <code>copas.receivepartial</code> for differences with LuaSocket, especially
+    when using the <code>"*a"</code> pattern.
+    </dd>
+
+    <dt><strong><code>sock:receivepartial(...)</code></strong></dt>
+    <dd>This method is the same as the <code>receive</code> method, the difference being
+    that this method will return on any data received, even if the specified pattern was not
+    yet satisfied.<br/>
+    <br/>
+    When using delimited formats or known byte-size (pattern is <code>"*l"</code> or a number)
+    the regular <code>receive</code> method will usually be fine. But when reading a stream with
+    the <code>"*a"</code> pattern the <code>receivepartial</code> method should be used.<br/>
+    <br/>
+    The reason for this is the difference in timeouts between Copas and LuaSocket. The Copas
+    timeout will apply on each underlying socket read/write operation. So on every chunk received
+    Copas will reset the timeout. So if reading pattern <code>"*a"</code> with a 10 second timeout,
+    and the sender sends a stream of data (unlimited size), in 1kb chunks, with 5 seconds intervals,
+    then there will never be a timeout when using <code>receive</code>, and hence the call would
+    never return.<br/>
+    If using <code>receivepartial</code> with the <code>"*a"</code>
+    pattern, the (repeated) call would return the 1kb chunks, with a <code>"timeout"</code> error.
     </dd>
 
     <dt><strong><code>sock:send(...)</code></strong></dt>
@@ -636,7 +657,7 @@ servers.
     <dt><strong><code>copas.flush(skt)</code></strong><br /></dt>
     <dd>(deprecated)</dd>
 
-    <dt><strong><code>copas.receive(skt [, pattern])</code></strong> (TCP) or<br />
+    <dt><strong><code>copas.receive(skt [, pattern[, prefix]])</code></strong> (TCP) or<br />
     <strong><code>copas.receive(size)</code></strong> (UDP)
     </dt>
     <dd>Reads data from a client socket according to a pattern just like LuaSocket
@@ -647,6 +668,11 @@ servers.
     optional. For the wrapped function <code>socket:receive([size])</code> it is
     optional again.
     </dd>
+
+    <dt><strong><code>copas.receivepartial(skt [, pattern[, prefix]])</code></strong>
+    </dt>
+    <dd>The same as <code>receive</code>, except that this method will return on
+    any data received. See <code>sock:receivepartial</code> for details.</dd>
 
     <dt><strong><code>copas.receivefrom(skt [, size])</code></strong></dt>
     <dd>Reads data from a UDP socket just like LuaSocket
@@ -663,16 +689,13 @@ servers.
     Note: only for TCP, UDP send doesn't block, hence doesn't require this function to be used.
     </dd>
 
-    <dt><strong><code>copas.sendto(skt, datagram, ip, port)</code></strong></dt>
-    <dd>(deprecated, since UDP sending doesn't block)</dd>
-
     <dt><strong><code>copas.settimeout(skt, [timeout])</code></strong></dt>
     <dd>Sets the timeout (in seconds) for a socket. A negative timout or absent timeout (<code>nil</code>)
     will wait indefinitely.<br/>
     <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
     <code>copas.settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
-    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.<br />
+    Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.<br />
     See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
     </dd>
 
@@ -682,7 +705,7 @@ servers.
     <strong>Important:</strong> this behaviour is different from
     <code>copas.settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
-    Timeouts are applied on: <code>receive, receivefrom, receivePartial, send, connect, dohandshake</code>.<br />
+    Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.<br />
     See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
     </dd>
 
