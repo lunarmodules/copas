@@ -59,6 +59,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'https://www.google.nl' true
 	$(LUA) $(DELIM) $(PKGPATH) tests/semaphore.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/sleep.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/starve.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tcptimeout.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tls-sni.lua

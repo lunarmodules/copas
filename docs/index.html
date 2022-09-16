@@ -106,7 +106,8 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         non-closed sockets. This could prevent the loop from exiting.</li>
         <li>Fix: in debug mode very large data is now truncated when displayed.</li>
         <li>Fix: order of <code>copas.addnamedthread</code> args.</li>
-        </ul></dd>
+        <li>Fix: the receive methods could starve other threads on high-throughput.</li>
+    </ul></dd>
 
     <dt><strong>Copas 4.2.0</strong> [06/Sep/2022]</dt>
 	<dd><ul>
