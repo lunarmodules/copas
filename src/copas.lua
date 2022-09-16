@@ -1667,7 +1667,11 @@ do
       for i = 1, math.max(arg.n, #desc) do
         local value = arg[i]
         if type(value) == "string" then
-          print("\t"..(desc[i] or i)..": '"..tostring(value).."' ("..type(value).." #"..#value..")")
+          local xvalue = value:sub(1,30)
+          if xvalue ~= value then
+            xvalue = xvalue .."(...truncated)"
+          end
+          print("\t"..(desc[i] or i)..": '"..tostring(xvalue).."' ("..type(value).." #"..#value..")")
         else
           print("\t"..(desc[i] or i)..": '"..tostring(value).."' ("..type(value)..")")
         end
