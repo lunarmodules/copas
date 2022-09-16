@@ -32,7 +32,7 @@ local function runtest()
 
   local s2 = socket.bind('*', 49501)
   copas.addserver(s2, copas.handler(function(skt)
-      --skt:settimeout(0)  -- set, uses the `receivePartial` method
+      skt:settimeout(0)  -- set, uses the `receivePartial` method
       copas.setsocketname("Server 49501", skt)
       copas.setthreadname("Server 49501")
       local res, err, part = skt:receive('*a')
