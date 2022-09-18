@@ -16,6 +16,10 @@
 if package.loaded["socket.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: only for Lua 5.1 compatibility
   error("you must require copas before require'ing socket.http")
 end
+if package.loaded["copas.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: only for Lua 5.1 compatibility
+  error("you must require copas before require'ing copas.http")
+end
+
 
 local socket = require "socket"
 local binaryheap = require "binaryheap"
@@ -27,39 +31,12 @@ local UDP_DATAGRAM_MAX = socket._DATAGRAMSIZE or 8192
 local TIMEOUT_PRECISION = 0.1  -- 100ms
 local fnil = function() end
 
-local pcall = pcall
-if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
-  pcall = require("coxpcall").pcall
-end
 
--- Redefines LuaSocket functions with coroutine safe versions
--- (this allows the use of socket.http from within copas)
-local function statusHandler(status, ...)
-  if status then return ... end
-  local err = (...)
-  if type(err) == "table" then
-    return nil, err[1]
-  else
-    error(err)
-  end
-end
-
-function socket.protect(func)
-  return function (...)
-           return statusHandler(pcall(func, ...))
-         end
-end
-
-function socket.newtry(finalizer)
-  return function (...)
-           local status = (...)
-           if not status then
-             pcall(finalizer, select(2, ...))
-             error({ (select(2, ...)) }, 0)
-           end
-           return ...
-         end
-end
+local coroutine_create = coroutine.create
+local coroutine_running = coroutine.running
+local coroutine_yield = coroutine.yield
+local coroutine_resume = coroutine.resume
+local coroutine_status = coroutine.status
 
 
 -- nil-safe versions for pack/unpack
@@ -68,11 +45,51 @@ local unpack = function(t, i, j) return _unpack(t, i or 1, j or t.n or #t) end
 local pack = function(...) return { n = select("#", ...), ...} end
 
 
-local coroutine_create = coroutine.create
-local coroutine_running = coroutine.running
-local coroutine_yield = coroutine.yield
-local coroutine_resume = coroutine.resume
-local coroutine_status = coroutine.status
+local pcall = pcall
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
+  pcall = require("coxpcall").pcall
+  coroutine_running = require("coxpcall").running
+end
+
+
+do
+  -- Redefines LuaSocket functions with coroutine safe versions (pure Lua)
+  -- (this allows the use of socket.http from within copas)
+  local err_mt = {
+    __tostring = function (self)
+      return "Copas 'try' error intermediate table: '"..tostring(self[1].."'")
+    end,
+  }
+
+  local function statusHandler(status, ...)
+    if status then return ... end
+    local err = (...)
+    if type(err) == "table" and getmetatable(err) == err_mt then
+      return nil, err[1]
+    else
+      error(err)
+    end
+  end
+
+  function socket.protect(func)
+    return function (...)
+            return statusHandler(pcall(func, ...))
+          end
+  end
+
+  function socket.newtry(finalizer)
+    return function (...)
+            local status = (...)
+            if not status then
+              pcall(finalizer or fnil, select(2, ...))
+              error(setmetatable({ (select(2, ...)) }, err_mt), 0)
+            end
+            return ...
+          end
+  end
+
+  socket.try = socket.newtry()
+end
 
 
 local copas = setmetatable({},{
@@ -1541,7 +1558,7 @@ do
 
 
   local debug_yield = function(skt, queue)
-    local name = object_names[coroutine.running()]
+    local name = object_names[coroutine_running()]
 
     if log_core or name ~= "copas_core_timer" then
       if queue == _sleeping then
@@ -1579,7 +1596,7 @@ do
   local debug_create = function(f)
     local f_wrapped = function(...)
       local results = pack(f(...))
-      debug_log("exiting '", object_names[coroutine.running()], "'")
+      debug_log("exiting '", object_names[coroutine_running()], "'")
       return unpack(results)
     end
 

@@ -18,7 +18,6 @@ local string = require("string")
 local headers = require("socket.headers")
 local base = _G
 local table = require("table")
-local try = socket.try
 local copas = require("copas")
 copas.http = {}
 local _M = copas.http
@@ -408,7 +407,7 @@ function _M.getcreatefunc(params)
       else
         -- regular http, needs just a socket...
         if washttps and params.redirect ~= "all" then
-          try(nil, "Unallowed insecure redirect https to http")
+          socket.try(nil, "Unallowed insecure redirect https to http")
         end
         return copas.wrap(socket.tcp())
       end
