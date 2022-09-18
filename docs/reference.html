@@ -127,7 +127,7 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dd>This is a shortcut to <code>copas.loop</code>.
     </dd>
 
-    <dt><strong><code>copas.addserver(server, handler[, timeout[, name]])</code></strong></dt>
+    <dt><strong><code>copas.addserver(server, handler [, timeout [, name]])</code></strong></dt>
     <dd>Adds a new <code>server</code> and its <code>handler</code> to the dispatcher
         using an optional <code>timeout</code>.<br />
         <code>server</code> is a LuaSocket server socket created using
@@ -164,7 +164,7 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dd>Boolean that controls whether sockets are automatically closed (defaults to <code>true</code>).
         This only applies to incoming connections accepted on a TCP server socket.<br />
         When a TCP handler function completes and terminates, then the client
-        socket will be automatically closed when <code>copas.autoclose</code> is
+        socket will automatically be closed when <code>copas.autoclose</code> is
         truthy.
     </dd>
 
@@ -302,18 +302,18 @@ exchange data with other services.</p>
     <dd><code>co</code> is the coroutine to wakeup, see <code>copas.sleep()</code>.
     </dd>
 
-    <dt><strong><code>sock:close(...)</code></strong></dt>
+    <dt><strong><code>sock:close()</code></strong></dt>
     <dd>Equivalent to the LuaSocket method (after <code>copas.wrap</code>).
     </dd>
 
-    <dt><strong><code>sock:connect(...)</code></strong></dt>
+    <dt><strong><code>sock:connect(address, port)</code></strong></dt>
     <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
     <br/>If <code>sslparams</code> was provided when wrapping the socket, the <code>connect</code>
     method will also perform the full TLS handshake. So after <code>connect</code> returns
     the connection will be secured.
     </dd>
 
-    <dt><strong><code>sock:dohandshake(...)</code></strong></dt>
+    <dt><strong><code>sock:dohandshake(sslparams)</code></strong></dt>
     <dd>Non-blocking quivalent to the LuaSec method (after <code>copas.wrap</code>).  Instead of using
     this method, it is preferred to pass the <code>sslparams</code> to the functions
     <code>copas.handler</code> (for incoming connections) and <code>copas.wrap</code> (for
@@ -321,13 +321,18 @@ exchange data with other services.</p>
     secured when started.
     </dd>
 
-    <dt><strong><code>sock:receive(...)</code></strong></dt>
+    <dt><strong><code>sock:receive([pattern [, prefix]])</code></strong></dt>
     <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
-    Please see <code>copas.receivepartial</code> for differences with LuaSocket, especially
+    Please see <code>sock:receivepartial</code> for differences with LuaSocket, especially
     when using the <code>"*a"</code> pattern.
     </dd>
 
-    <dt><strong><code>sock:receivepartial(...)</code></strong></dt>
+    <dt><strong><code>sock:receivefrom([size])</code></strong></dt>
+    <dd>Reads data from a UDP socket just like LuaSocket, but non-blocking.
+    <code>socket:receivefrom()</code>.
+    </dd>
+
+    <dt><strong><code>sock:receivepartial([pattern [, prefix]])</code></strong></dt>
     <dd>This method is the same as the <code>receive</code> method, the difference being
     that this method will return on any data received, even if the specified pattern was not
     yet satisfied.<br/>
@@ -346,7 +351,7 @@ exchange data with other services.</p>
     pattern, the (repeated) call would return the 1kb chunks, with a <code>"timeout"</code> error.
     </dd>
 
-    <dt><strong><code>sock:send(...)</code></strong></dt>
+    <dt><strong><code>sock:send(data [, i [, j]])</code></strong></dt>
     <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
     </dd>
 
@@ -657,7 +662,7 @@ servers.
     <dt><strong><code>copas.flush(skt)</code></strong><br /></dt>
     <dd>(deprecated)</dd>
 
-    <dt><strong><code>copas.receive(skt [, pattern[, prefix]])</code></strong> (TCP) or<br />
+    <dt><strong><code>copas.receive(skt [, pattern [, prefix]])</code></strong> (TCP) or<br />
     <strong><code>copas.receive(size)</code></strong> (UDP)
     </dt>
     <dd>Reads data from a client socket according to a pattern just like LuaSocket
@@ -669,7 +674,7 @@ servers.
     optional again.
     </dd>
 
-    <dt><strong><code>copas.receivepartial(skt [, pattern[, prefix]])</code></strong>
+    <dt><strong><code>copas.receivepartial(skt [, pattern [, prefix]])</code></strong>
     </dt>
     <dd>The same as <code>receive</code>, except that this method will return on
     any data received. See <code>sock:receivepartial</code> for details.</dd>
@@ -723,7 +728,7 @@ servers.
     be (un)set. So when using your own main loop, consider manually setting the flag.
     </dd>
 
-    <dt><strong><code>copas.timeout(delay, callback)</code></strong></dt>
+    <dt><strong><code>copas.timeout(delay [, callback])</code></strong></dt>
     <dd>Creates a timeout timer for the current coroutine. The <code>delay</code>
     is the timeout in seconds, and the <code>callback</code> will
     be called upon an actual timeout occuring.<br />
