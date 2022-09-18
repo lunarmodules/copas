@@ -495,7 +495,7 @@ function copas.receive(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
-      return nil, sto_error(err)
+      return nil, sto_error(err), part
     end
 
     if err == "wantwrite" then -- wantwrite may be returned during SSL renegotiations
@@ -539,7 +539,7 @@ function copas.receivefrom(client, size)
 
     elseif sto_timed_out() then
       _reading_log[client] = nil
-      return nil, sto_error(err)
+      return nil, sto_error(err), port
     end
 
     _reading_log[client] = gettime()
@@ -576,7 +576,7 @@ function copas.receivepartial(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
-      return nil, sto_error(err)
+      return nil, sto_error(err), part
     end
 
     if err == "wantwrite" then
@@ -624,7 +624,7 @@ function copas.send(client, data, from, to)
 
     elseif sto_timed_out() then
       current_log[client] = nil
-      return nil, sto_error(err)
+      return nil, sto_error(err), lastIndex
     end
 
     if err == "wantread" then
