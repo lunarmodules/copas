@@ -100,6 +100,13 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>Copas 4.3.x</strong> [unreleased]</dt>
+	<dd><ul>
+        <li>Fix: error handler for timeouts. Underlying <a href="https://github.com/keplerproject/coxpcall/issues/18">
+        bug is in coxpcall</a>, and hence this only applies to PuC Lua 5.1.
+        </li>
+    </ul></dd>
+
     <dt><strong>Copas 4.3.1</strong> [21/Sep/2022]</dt>
 	<dd><ul>
         <li>Fix: with Lua 5.1 the timeouts would resume the wrapped (by coxpcall)
