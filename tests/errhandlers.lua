@@ -68,7 +68,7 @@ if _VERSION ~= "Lua 5.1" then
 
     print = old_print   --luacheck: ignore
 
-    assert(msg:find("errhandlers%.lua:%d-: hi there! %(coroutine: nil, socket: nil%)"), "got:\n"..msg)
+    assert(msg:find("errhandlers%.lua:%d-: hi there! %(coroutine: copas_core_timer, socket: nil%)"), "got:\n"..msg)
     assert(msg:find("stack traceback:.+errhandlers%.lua"), "got:\n"..msg)
   end
 end

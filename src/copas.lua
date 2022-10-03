@@ -1236,13 +1236,16 @@ end
 
 do
   local timeout_register = setmetatable({}, { __mode = "k" })
+  local time_out_thread
   local timerwheel = require("timerwheel").new({
       precision = TIMEOUT_PRECISION,                -- timeout precision 100ms
       ringsize = math.floor(60/TIMEOUT_PRECISION),  -- ring size 1 minute
-      err_handler = function(...) return _deferror(...) end,
+      err_handler = function(err)
+        return _deferror(err, time_out_thread)
+      end,
     })
 
-  copas.addnamedthread("copas_core_timer", function()
+  time_out_thread = copas.addnamedthread("copas_core_timer", function()
     while true do
       copas.sleep(TIMEOUT_PRECISION)
       timerwheel:step()

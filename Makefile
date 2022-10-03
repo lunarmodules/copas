@@ -60,6 +60,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/starve.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tcptimeout.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/timeout_errors.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tls-sni.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/udptimeout.lua
 	$(LUA) $(DELIM)
