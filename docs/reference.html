@@ -177,6 +177,12 @@ are used to register servers and to execute the main loop of Copas:</p>
         See also <code>copas.running</code>.
     </dd>
 
+    <dt><strong><code>func = copas.geterrorhandler([coro])</code></strong></dt>
+    <dd>Returns the currently active errorhandler function for the coroutine (either
+        the explicitly set errorhandler, or the default one).
+        <code>coro</code> will default to the currently running coroutine if omitted.
+    </dd>
+
     <dt><strong><code>copas.getsocketname(skt)</code></strong></dt>
         <dd>Returns the name for the socket.
     </dd>
@@ -188,7 +194,7 @@ are used to register servers and to execute the main loop of Copas:</p>
 
     <dt><strong><code>copas.gettraceback([msg], [co], [skt])</code></strong></dt>
         <dd>Creates a traceback (string). Can be used from custom errorhandlers to create
-        a proper trace. See <code>copas.setErrorHandler</code>.
+        a proper trace. See <code>copas.seterrorhandler</code>.
     </dd>
 
     <dt><strong><code>func = copas.handler(connhandler [, sslparams])</code></strong></dt>
@@ -232,7 +238,7 @@ are used to register servers and to execute the main loop of Copas:</p>
         <code>copas.finished()</code>.
     </dd>
 
-    <dt><strong><code>copas.setErrorHandler([func], [default])</code></strong></dt>
+    <dt><strong><code>copas.seterrorhandler([func], [default])</code></strong></dt>
     <dd>Sets the error handling function for the current thread.
         Any errors will be forwarded to this handler, it will receive the
         error, coroutine, and socket as arguments;
@@ -551,6 +557,8 @@ exchange data with other services.</p>
         <li><code>options.callback</code>: is the function to execute on timer expiry.
             The callback function has <code>function(timer_obj, params)</code> as signature, where
             <code>params</code> is the value initially passed in <code>options.params</code></li>
+        <li><code>options.errorhandler</code> (optional): a Copas errorhandler function (see
+        <code>copas.seterrorhandler</code> for the signature.</li>
     </ul>
     </dd>
 
@@ -701,7 +709,7 @@ servers.
     <code>copas.settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
     Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.<br />
-    See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
+    See <code>copas.usesockettimeouterrors()</code> below for alternative error messages.
     </dd>
 
     <dt><strong><code>copas.settimeouts(skt, [connect], [send], [receive])</code></strong></dt>
@@ -711,7 +719,7 @@ servers.
     <code>copas.settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
     If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
     Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.<br />
-    See <code>copas.useSocketTimeoutErrors()</code> below for alternative error messages.
+    See <code>copas.usesockettimeouterrors()</code> below for alternative error messages.
     </dd>
 
     <dt><strong><code>bool = copas.step([timeout])</code></strong></dt>
@@ -744,7 +752,7 @@ servers.
     implementations.
     </dd>
 
-    <dt><strong><code>copas.useSocketTimeoutErrors([bool])</code></strong></dt>
+    <dt><strong><code>copas.usesockettimeouterrors([bool])</code></strong></dt>
     <dd>Sets the timeout errors to return for the current co-routine.
     The default is <code>false</code>, meaning
     that a timeout error will always return an error string <code>"timeout"</code>.

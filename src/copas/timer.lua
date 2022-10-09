@@ -1,5 +1,12 @@
 local copas = require("copas")
 
+local xpcall = xpcall
+local coroutine_running = coroutine.running
+
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
+  xpcall = require("coxpcall").xpcall
+  coroutine_running = require("coxpcall").running
+end
 
 
 local timer = {}
@@ -18,6 +25,9 @@ end
 
 do
   local function expire_func(self, initial_delay)
+    if self.errorhandler then
+      copas.seterrorhandler(self.errorhandler)
+    end
     copas.sleep(initial_delay)
     while true do
       if not self.cancelled then
@@ -83,23 +93,36 @@ function timer:cancel()
 end
 
 
+do
+  -- xpcall error handler that forwards to the copas errorhandler
+  local ehandler = function(err_obj)
+    return copas.geterrorhandler()(err_obj, coroutine_running(), nil)
+  end
 
---- Creates a new timer object.
--- Note: the callback signature is: `function(timer_obj, params)`.
--- @param opts (table) `opts.delay` timer delay in seconds, `opts.callback` function to execute, `opts.recurring` boolean
--- `opts.params` (optional) this value will be passed to the timer callback, `opts.initial_delay` (optional) the first delay to use, defaults to `delay`.
--- @return timer object, or throws an error on bad input
-function timer.new(opts)
-  assert(opts.delay >= 0, "delay must be greater than or equal to 0")
-  assert(type(opts.callback) == "function", "expected callback to be a function")
-  return setmetatable({
-    name = opts.name or new_name(),
-    delay = opts.delay,
-    callback = opts.callback,
-    recurring = not not opts.recurring,
-    params = opts.params,
-    cancelled = false,
-  }, timer):arm(opts.initial_delay)
+
+  --- Creates a new timer object.
+  -- Note: the callback signature is: `function(timer_obj, params)`.
+  -- @param opts (table) `opts.delay` timer delay in seconds, `opts.callback` function to execute, `opts.recurring` boolean
+  -- `opts.params` (optional) this value will be passed to the timer callback, `opts.initial_delay` (optional) the first delay to use, defaults to `delay`.
+  -- @return timer object, or throws an error on bad input
+  function timer.new(opts)
+    assert(opts.delay >= 0, "delay must be greater than or equal to 0")
+    assert(type(opts.callback) == "function", "expected callback to be a function")
+
+    local callback = function(timer_obj, params)
+      xpcall(opts.callback, ehandler, timer_obj, params)
+    end
+
+    return setmetatable({
+      name = opts.name or new_name(),
+      delay = opts.delay,
+      callback = callback,
+      recurring = not not opts.recurring,
+      params = opts.params,
+      cancelled = false,
+      errorhandler = opts.errorhandler,
+    }, timer):arm(opts.initial_delay)
+  end
 end
 
 

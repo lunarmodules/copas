@@ -996,6 +996,7 @@ end
 
 local _errhandlers = setmetatable({}, { __mode = "k" })   -- error handler per coroutine
 
+
 function copas.gettraceback(msg, co, skt)
   local co_str = co == nil and "nil" or copas.getthreadname(co)
   local skt_str = skt == nil and "nil" or copas.getsocketname(skt)
@@ -1015,11 +1016,13 @@ function copas.gettraceback(msg, co, skt)
   return debug.traceback(msg_str, 2)
 end
 
+
 local function _deferror(msg, co, skt)
   print(copas.gettraceback(msg, co, skt))
 end
 
-function copas.setErrorHandler (err, default)
+
+function copas.seterrorhandler(err, default)
   assert(err == nil or type(err) == "function", "Expected the handler to be a function, or nil")
   if default then
     assert(err ~= nil, "Expected the handler to be a function when setting the default")
@@ -1028,6 +1031,14 @@ function copas.setErrorHandler (err, default)
     _errhandlers[coroutine_running()] = err
   end
 end
+copas.setErrorHandler = copas.seterrorhandler  -- deprecated; old casing
+
+
+function copas.geterrorhandler(co)
+  co = co or coroutine_running()
+  return _errhandlers[co] or _deferror
+end
+
 
 -- if `bool` is truthy, then the original socket errors will be returned in case of timeouts;
 -- `timeout, wantread, wantwrite, Operation already in progress`. If falsy, it will always

@@ -100,11 +100,19 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>Copas 4.4.0</strong> [unreleased]</dt>
+	<dd><ul>
+        <li>Fix: an error in the timer callback would kill the timer.</li>
+        <li>Added: <code>copas.geterrorhandler</code> to retrieve the active errorhandler.</li>
+        <li>Added: option <code>errorhandler</code> for timer objects.</li>
+        <li>Change: renamed <code>copas.setErrorHandler</code> to <code>copas.seterrorhandler</code>.</li>
+        <li>Change: renamed <code>copas.useSocketTimeoutErrors</code> to <code>copas.usesockettimeouterrors</code>.</li>
+    </ul></dd>
+
     <dt><strong>Copas 4.3.2</strong> [03/Oct/2022]</dt>
 	<dd><ul>
         <li>Fix: error handler for timeouts. Underlying <a href="https://github.com/keplerproject/coxpcall/issues/18">
-        bug is in coxpcall</a>, and hence this only applies to PuC Lua 5.1.
-        </li>
+        bug is in coxpcall</a>, and hence this only applies to PuC Lua 5.1.</li>
     </ul></dd>
 
     <dt><strong>Copas 4.3.1</strong> [21/Sep/2022]</dt>
@@ -122,7 +130,7 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         <li>Fix: in debug mode very large data is now truncated when displayed.</li>
         <li>Fix: the receive methods could starve other threads on high-throughput.</li>
         <li>Change: order of <code>copas.addnamedthread</code> args.</li>
-        <li>Fix: <code>copas.recievepartial</code> could return early with no data received
+        <li>Fix: <code>copas.receivepartial</code> could return early with no data received
         if the `prefix` parameter was specified.</li>
         <li>Change: renamed <code>copas.receivePartial</code> to <code>copas.receivepartial</code>.</li>
         <li>Added: <code>sock:receivepartial</code> to better process streaming TCP data.</li>
