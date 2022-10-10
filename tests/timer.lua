@@ -94,7 +94,34 @@ copas.loop(function()
   })
   -- succes count = 13
 
+  local count = 0
+  local params_in = {}
+  -- timer shouldn't be cancelled if its handler errors
+  timer.new({
+    name = "error-test",
+    delay = 0.1,
+    recurring = true,
+    params = params_in,
+    errorhandler = function(msg, co, skt)
+      local errmsg = copas.gettraceback(msg, co, skt)
+      assert(errmsg:find("error%-test"), "the threadname wasn't found")
+      assert(errmsg:find("error 1!") or errmsg:find("error 2!"), "the error message wasn't found")
+      --print(errmsg)
+      successes = successes + 1
+    end,
+    callback = function(timer_obj, params)
+      assert(params == params_in, "Params table wasn't passed along")
+      count = count + 1
+      if count == 2 then
+        -- 2nd call, so we're done
+        timer_obj:cancel()
+      end
+      error("error "..count.."!")
+    end,
+  })
+  -- succes count = 15
+
 end)
 
-assert(successes == 13, "number of successes didn't match! got: "..successes)
+assert(successes == 15, "number of successes didn't match! got: "..successes)
 print("test success!")
