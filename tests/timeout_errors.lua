@@ -23,7 +23,7 @@ function tests.error_on_timeout()
       error("oops...")
     end)
     print "going to sleep for 1 second"
-    copas.sleep(1)
+    copas.pause(1)
 
     if not (err_received or ""):find("oops...", 1, true) then
       print("expected to find the error string 'oops...', but got: " .. tostring(err_received))

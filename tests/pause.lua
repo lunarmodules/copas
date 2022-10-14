@@ -7,7 +7,7 @@ local copas = require("copas")
 
 local t1 = copas.addthread(
     function()
-        copas.sleep(-1)  -- sleep until woken up
+        copas.pauseforever()  -- sleep until woken up
     end
 )
 

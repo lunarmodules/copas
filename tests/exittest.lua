@@ -19,8 +19,8 @@ print("1) success")
 
 print("2) Testing exiting when a task finishes within the loop")
 copas.addthread(function()
-  copas.sleep(0.1) -- wait until loop is running
-  copas.sleep(0.1) -- wait again to make sure its not the initial step in the loop
+  copas.pause(0.1) -- wait until loop is running
+  copas.pause(0.1) -- wait again to make sure its not the initial step in the loop
   print("","2 running...")
   testran = 2
 end)
@@ -40,8 +40,8 @@ print("3) success")
 
 print("4) Testing exiting when a task fails in the loop")
 copas.addthread(function()
-  copas.sleep(0.1) -- wait until loop is running
-  copas.sleep(0.1) -- wait again to make sure its not the initial step in the loop
+  copas.pause(0.1) -- wait until loop is running
+  copas.pause(0.1) -- wait again to make sure its not the initial step in the loop
   print("","4 running...")
   testran = 4
   error("error on purpose")
@@ -54,7 +54,7 @@ print("5) Testing exiting when a task permanently sleeps before the loop")
 copas.addthread(function()
   print("","5 running...")
   testran = 5
-  copas.sleep(-1) -- sleep until explicitly woken up
+  copas.pauseforever() -- sleep until explicitly woken up
 end)
 copas.loop()
 assert(testran == 5, "Test 5 was not executed!")
@@ -62,11 +62,11 @@ print("5) success")
 
 print("6) Testing exiting when a task permanently sleeps in the loop")
 copas.addthread(function()
-  copas.sleep(0.1) -- wait until loop is running
-  copas.sleep(0.1) -- wait again to make sure its not the initial step in the loop
+  copas.pause(0.1) -- wait until loop is running
+  copas.pause(0.1) -- wait again to make sure its not the initial step in the loop
   print("","6 running...")
   testran = 6
-  copas.sleep(-1) -- sleep until explicitly woken up
+  copas.pauseforever() -- sleep until explicitly woken up
 end)
 copas.loop()
 assert(testran == 6, "Test 6 was not executed!")

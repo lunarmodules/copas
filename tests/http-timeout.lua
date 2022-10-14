@@ -64,7 +64,7 @@ local function runtest()
         os.exit(1)
       end
       -- we timeout on the request, so sleep here and exit
-      copas.sleep(timeout + 1) -- sleep 1 second more than the requester timeout, to force a timeout on the request
+      copas.pause(timeout + 1) -- sleep 1 second more than the requester timeout, to force a timeout on the request
       print("Server reading port 49500: request-timeout complete")
       return skt:close()
     end
@@ -105,7 +105,7 @@ local function runtest()
       os.exit(1)
     end
 
-    copas.sleep(timeout + 1) -- sleep 1 second more than the requester timeout, to force a timeout on the response
+    copas.pause(timeout + 1) -- sleep 1 second more than the requester timeout, to force a timeout on the response
     print("Server reading port 49500: response-timeout complete")
     return skt:close()
   end))
@@ -115,7 +115,7 @@ local function runtest()
   copas.addnamedthread("test request", function()
 
     print "Waiting a bit for server to start..."
-    copas.sleep(1) -- give server some time to start
+    copas.pause(1) -- give server some time to start
 
     do
       print("first test: succesfull round trip")
@@ -152,7 +152,7 @@ local function runtest()
 
       -- cleanup; sleep 2 secs to wait for closing server socket
       -- to ensure any error messages do not get intermixed with the next tests output
-      copas.sleep(2)
+      copas.pause(2)
       print(("="):rep(80))
     end
 
@@ -192,7 +192,7 @@ local function runtest()
 
       -- cleanup; sleep 2 secs to wait for closing server socket
       -- to ensure any error messages do not get intermixed with the next tests output
-      copas.sleep(2)
+      copas.pause(2)
       print(("="):rep(80))
     end
 
@@ -232,7 +232,7 @@ local function runtest()
 
       -- cleanup; sleep 2 secs to wait for closing server socket
       -- to ensure any error messages do not get intermixed with the next tests output
-      copas.sleep(2)
+      copas.pause(2)
       print(("="):rep(80))
     end
 
@@ -272,7 +272,7 @@ local function runtest()
 
       -- cleanup; sleep 2 secs to wait for closing server socket
       -- to ensure any error messages do not get intermixed with the next tests output
-      copas.sleep(2)
+      copas.pause(2)
       print(("="):rep(80))
     end
 
@@ -312,7 +312,7 @@ local function runtest()
 
       -- cleanup; sleep 2 secs to wait for closing server socket
       -- to ensure any error messages do not get intermixed with the next tests output
-      copas.sleep(2)
+      copas.pause(2)
       print(("="):rep(80))
     end
 

@@ -13,13 +13,13 @@ local t1 = copas.addthread(
         while true do
            n = n + 1
            print("endless thread:",n)
-           copas.sleep(0.5)
+           copas.pause(0.5)
         end
     end)
 
 local t2 = copas.addthread(function()
    for i = 1, 5 do
-      copas.sleep(0.6)
+      copas.pause(0.6)
    end
    print("stopping endless thread externally")
    copas.removethread(t1)

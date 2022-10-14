@@ -52,18 +52,18 @@ copas.loop(function()
     print("got the next 5!")
     state = state + 2
   end)
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(state == 0, "expected state to still be 0")
   assert(sema:get_count() == 2, "expected count to still have 2 resources")
 
   assert(sema:give(4))
   assert(sema:get_count() == 1, "expected count to now have 1 resource")
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(state == 1, "expected 1 from the first thread to be added to state")
 
   assert(sema:give(4))
   assert(sema:get_count() == 0, "gave 4 more, so 5 in total, releasing 5, leaves 0 as expected")
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(state == 3, "expected 2 from the 2nd thread to be added to state")
 
 
@@ -92,9 +92,9 @@ copas.loop(function()
       state = state + 1
     end
   end)
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(sema:destroy())
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(state == 2, "expected 2 threads to error with 'destroyed'")
 
   -- only returns errors from now on, on all methods
@@ -121,9 +121,9 @@ copas.loop(function()
       state = state + 1
     end
   end)
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(sema:destroy())
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(state == 1, "expected 1 thread to error with 'destroyed'")
   sema = nil
 
@@ -137,7 +137,7 @@ copas.loop(function()
   collectgarbage()  -- collect garbage to force eviction from the semaphore registry
   collectgarbage()
 
-  copas.sleep(0.5) -- wait for the timeout to expire if it is still set
+  copas.pause(0.5) -- wait for the timeout to expire if it is still set
   assert(errors == 0, "expected no errors")
 
   test_complete = true

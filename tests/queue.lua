@@ -19,7 +19,7 @@ copas.loop(function()
   -- yielding on pop when queue is empty
   local s = now()
   copas.addthread(function()
-    copas.sleep(0.5)
+    copas.pause(0.5)
     q:push("delayed")
   end)
   assert(q:pop() == "delayed", "expected a delayed result")
@@ -53,7 +53,7 @@ copas.loop(function()
   local coro = q:add_worker(function(item)
     count = count + 1
   end)
-  copas.sleep(0.1)
+  copas.pause(0.1)
   assert(count == 3, "expected all 3 items handled")
   assert(coroutine.status(coro) == "dead", "expected thread to be gone")
   -- coro should be GC'able
@@ -86,7 +86,7 @@ print("test 1 success!")
 copas.loop(function()
   local q = Queue:new()
   q:add_worker(function() end)
-  copas.sleep(0.5) -- to activate the worker, which will now be blocked on the q semaphore
+  copas.pause(0.5) -- to activate the worker, which will now be blocked on the q semaphore
   q:stop()  -- this should exit the idle workers and exit the copas loop
 end)
 

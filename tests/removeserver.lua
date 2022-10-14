@@ -33,7 +33,7 @@ copas.addthread(function()
    for i = 1, 3 do
       wait_for_trigger()
       trigger_it(i)
-      copas.sleep(0.1)
+      copas.pause(0.1)
    end
 end)
 

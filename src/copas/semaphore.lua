@@ -160,7 +160,7 @@ function semaphore:take(requested, timeout)
   }
   self.q_tail = self.q_tail + 1
 
-  copas.sleep(-1) -- block until woken
+  copas.pauseforever() -- block until woken
   if self.to_flags[co] then
     -- a timeout happened
     self.to_flags[co] = nil

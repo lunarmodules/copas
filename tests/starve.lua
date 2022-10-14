@@ -63,7 +63,7 @@ local function runtest()
       local i = 0
       local start = socket.gettime()
       while done ~= 2 do
-        copas.sleep(1) -- delta sleep, so it slowly diverges if starved
+        copas.pause(1) -- delta sleep, so it slowly diverges if starved
         i = i + 1
         local time_passed = socket.gettime()-start
         print("slept "..i.." seconds, time passed: ".. time_passed.." seconds")

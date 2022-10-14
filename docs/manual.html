@@ -381,7 +381,7 @@ local function some_func()
   end
 
   print("doing something on my own")
-  copas.sleep()  -- allow to yield, while inside the lock
+  copas.pause()  -- allow to yield, while inside the lock
   print("after " .. ok .. " seconds waiting")
 
   lock:release()

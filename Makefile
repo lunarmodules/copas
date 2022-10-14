@@ -50,13 +50,13 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/largetransfer.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/pause.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/queue.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removeserver.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removethread.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'http://www.google.com'
 	$(LUA) $(DELIM) $(PKGPATH) tests/request.lua 'https://www.google.nl' true
 	$(LUA) $(DELIM) $(PKGPATH) tests/semaphore.lua
-	$(LUA) $(DELIM) $(PKGPATH) tests/sleep.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/starve.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tcptimeout.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/timer.lua

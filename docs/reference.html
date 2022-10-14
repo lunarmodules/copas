@@ -298,14 +298,23 @@ the clients, and by threads registered with <code>addthread</code> to
 exchange data with other services.</p>
 
 <dl class="reference">
+    <dt><strong><code>copas.pause([delay])</code></strong></dt>
+    <dd>Pauses the current co-routine. Parameter <code>delay</code> (in seconds) is optional
+    and defaults to 0. If <code>delay &lt= 0</code> then it will pause for 0 seconds.
+    </dd>
+
+    <dt><strong><code>copas.pauseforever()</code></strong></dt>
+    <dd>Pauses the current co-routine until explicitly woken by a call to
+    <code>copas.wakeup()</code>.
+    </dd>
+
     <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>
-    <dd>Pauses the current co-routine. Parameter <code>sleeptime</code> (in seconds) is optional
-    and defaults to 0. If <code>sleeptime &lt 0</code>
-    then it will sleep until explicitly woken by a call to <code>copas.wakeup()</code>.
+    <dd><i>Deprecated:</i> use <code>copas.pause</code> and <code>copas.pauseforever</code>
+    instead.
     </dd>
 
     <dt><strong><code>copas.wakeup(co)</code></strong></dt>
-    <dd><code>co</code> is the coroutine to wakeup, see <code>copas.sleep()</code>.
+    <dd><code>co</code> is the coroutine to wakeup, see <code>copas.pauseforever()</code>.
     </dd>
 
     <dt><strong><code>sock:close()</code></strong></dt>

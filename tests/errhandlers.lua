@@ -63,7 +63,7 @@ if _VERSION ~= "Lua 5.1" then
           end
           f()
       end)
-      copas.sleep(1)
+      copas.pause(1)
     end)
 
     print = old_print   --luacheck: ignore
@@ -83,7 +83,7 @@ tests.yielding_from_user_code_fails = function()
   end
 
   copas.loop(function()
-    copas.sleep(1)
+    copas.pause(1)
     coroutine.yield() -- directly yield to Copas
   end)
 
@@ -137,7 +137,7 @@ tests.timerwheel_callbacks_call_the_default_error_handler = function()
   copas.setErrorHandler(function() call_count = call_count - 10 end, true)
   copas.loop(function()
     copas.timeout(0.01, function(co) error("hi there!") end)
-    copas.sleep(1)
+    copas.pause(1)
   end)
 
   assert(call_count == -10, "expected callcount -10, got: " .. tostring(call_count))
