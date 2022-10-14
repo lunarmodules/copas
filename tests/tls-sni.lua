@@ -71,7 +71,7 @@ server = assert(socket.bind("*", port))
 copas.addserver(server, copas.handler(echoHandler, server_params))
 
 copas.addthread(function()
-  copas.sleep(0.5) -- allow server socket to be ready
+  copas.pause(0.5) -- allow server socket to be ready
 
   ----------------------
   -- Tests start here --

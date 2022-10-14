@@ -34,13 +34,13 @@ copas.loop(function()
     copas.addserver(server, copas.handler(function(conn_skt)
       -- client connected, we're not doing anything, let the client
       -- wait in the read/write queues
-      copas.sleep(2)
+      copas.pause(2)
       -- now we're closing the connecting_socket
       close_time = socket.gettime()
       print("closing client socket now, client receive and send operation should immediately error out now")
       client_socket:close()
 
-      copas.sleep(10)
+      copas.pause(10)
       conn_skt:close()
       copas.removeserver(server)
       print "timeout, test failed"

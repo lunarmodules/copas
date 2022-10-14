@@ -105,6 +105,8 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         <li>Fix: an error in the timer callback would kill the timer.</li>
         <li>Added: <code>copas.geterrorhandler</code> to retrieve the active errorhandler.</li>
         <li>Added: option <code>errorhandler</code> for timer objects.</li>
+        <li>Added: <code>copas.pause</code> and <code>copas.pauseforever</code> to replace <code>copas.sleep</code>. The latter
+        method can accidentally sleep-forever if time arithmetic returns a negative result.</li>
         <li>Change: renamed <code>copas.setErrorHandler</code> to <code>copas.seterrorhandler</code>.</li>
         <li>Change: renamed <code>copas.useSocketTimeoutErrors</code> to <code>copas.usesockettimeouterrors</code>.</li>
     </ul></dd>

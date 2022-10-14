@@ -28,7 +28,7 @@ do
     if self.errorhandler then
       copas.seterrorhandler(self.errorhandler)
     end
-    copas.sleep(initial_delay)
+    copas.pause(initial_delay)
     while true do
       if not self.cancelled then
         if not self.recurring then
@@ -52,7 +52,7 @@ do
         return
       end
 
-      copas.sleep(self.delay)
+      copas.pause(self.delay)
     end
   end
 

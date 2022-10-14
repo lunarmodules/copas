@@ -497,7 +497,7 @@ function copas.receive(client, pattern, part)
 
     -- guarantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
-      copas.sleep(0)
+      copas.pause()
     end
 
     if s then
@@ -541,7 +541,7 @@ function copas.receivefrom(client, size)
 
     -- garantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
-      copas.sleep(0)
+      copas.pause()
     end
 
     if s then
@@ -578,7 +578,7 @@ function copas.receivepartial(client, pattern, part)
 
     -- guarantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
-      copas.sleep(0)
+      copas.pause()
     end
 
     if s or (type(part) == "string" and #part > orig_size) then
@@ -626,7 +626,7 @@ function copas.send(client, data, from, to)
 
     -- guarantees that high throughput doesn't take other threads to starvation
     if (math.random(100) > 90) then
-      copas.sleep(0)
+      copas.pause()
     end
 
     if s then
@@ -1198,7 +1198,7 @@ function copas.addnamedthread(name, handler, ...)
   -- create a coroutine that skips the first argument, which is always the socket
   -- passed by the scheduler, but `nil` in case of a task/thread
   local thread = coroutine_create(function(_, ...)
-    copas.sleep(0)
+    copas.pause()
     return handler(...)
   end)
   if name then
@@ -1230,9 +1230,28 @@ end
 
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
 -- If sleeptime < 0 then it sleeps until explicitly woken up using 'wakeup'
+-- TODO: deprecated, remove in next major
 function copas.sleep(sleeptime)
   coroutine_yield((sleeptime or 0), _sleeping)
 end
+
+
+-- yields the current coroutine and wakes it after 'sleeptime' seconds.
+-- if sleeptime < 0 then it sleeps 0 seconds.
+function copas.pause(sleeptime)
+  if sleeptime and sleeptime > 0 then
+    coroutine_yield(sleeptime, _sleeping)
+  else
+    coroutine_yield(0, _sleeping)
+  end
+end
+
+
+-- yields the current coroutine until explicitly woken up using 'wakeup'
+function copas.pauseforever()
+  coroutine_yield(-1, _sleeping)
+end
+
 
 -- Wakes up a sleeping coroutine 'co'.
 function copas.wakeup(co)
@@ -1258,7 +1277,7 @@ do
 
   time_out_thread = copas.addnamedthread("copas_core_timer", function()
     while true do
-      copas.sleep(TIMEOUT_PRECISION)
+      copas.pause(TIMEOUT_PRECISION)
       timerwheel:step()
     end
   end)
@@ -1358,7 +1377,7 @@ local _sleeping_task = {} do
     local co = _sleeping:pop(now)
     while co do
       -- we're pushing them to _resumable, since that list will be replaced before
-      -- executing. This prevents tasks running twice in a row with sleep(0) for example.
+      -- executing. This prevents tasks running twice in a row with pause(0) for example.
       -- So here we won't execute, but at _resumable step which is next
       _resumable:push(co)
       co = _sleeping:pop(now)

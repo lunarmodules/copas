@@ -54,7 +54,7 @@ copas.loop(function()
         --print(i, "got it!")
         success_count = success_count + 1
         if i == size/3 then
-          copas.sleep(3) -- keep it long enough for the next 500 to timeout
+          copas.pause(3) -- keep it long enough for the next 500 to timeout
           --print(i, "releasing ")
           assert(lock1:release()) -- by now the 2nd 500 timed out
           --print(i, "destroying ")
@@ -69,7 +69,7 @@ copas.loop(function()
         --print(i, "timed out!")
         timeout_count = timeout_count + 1
         --if i == (size*2)/3 then
-        --  copas.sleep(2) -- to ensure thread 500 finished its sleep above
+        --  copas.pause(2) -- to ensure thread 500 finished its sleep above
         --end
         tracker[i] = nil
 
@@ -88,7 +88,7 @@ copas.loop(function()
   print("releasing "..size.." threads...", gettime())
   assert(lock1:release())
   print("waiting to finish...")
-  while next(tracker) do copas.sleep(0.1) end
+  while next(tracker) do copas.pause(0.1) end
   -- check results
   print("success: ", success_count)
   print("timeout: ", timeout_count)

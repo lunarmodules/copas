@@ -76,7 +76,7 @@ local function runtest()
   copas.addnamedthread("test timeout thread", function()
       local i = 1
       while done ~= 4 do
-        copas.sleep(1)
+        copas.pause(1)
         print(i, "seconds:", socket.gettime()-start)
         i = i + 1
         if i > 60 then

@@ -124,7 +124,7 @@ function lock:get(timeout)
     copas.timeout(timeout, timeout_handler)
 
     start_time = gettime()
-    copas.sleep(-1)
+    copas.pauseforever()
 
     local err = self.errors[co]
     self.errors[co] = nil

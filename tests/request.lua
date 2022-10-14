@@ -25,7 +25,7 @@ end
 
 copas.addthread(function()
   while switches < max_switches do
-    copas.sleep(0)
+    copas.pause()
     switches = switches + 1
   end
 

@@ -7,7 +7,7 @@ local done = false
 
 copas.addthread(function()
   for i = 1, 5 do
-    copas.sleep(0)
+    copas.pause()
     print(i)
   end
 
@@ -43,7 +43,7 @@ copas.addserver(server, function(skt)
 end)
 
 copas.addthread(function()
-  copas.sleep(1)
+  copas.pause(1)
   local skt = socket.connect("localhost", 20000)
   print("Sending "..message.."\\n")
   local bytes = copas.send(skt, message.."\n")
