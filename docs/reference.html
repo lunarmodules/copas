@@ -731,6 +731,18 @@ servers.
     See <code>copas.usesockettimeouterrors()</code> below for alternative error messages.
     </dd>
 
+    <dt><strong><code>t = copas.status()</code></strong></dt>
+    <dd>Returns metadata about the current scheduler status.
+    <ul>
+        <li><code>t.running</code>: boolean, same as <code>copas.running</code>.</li>
+        <li><code>t.read</code>: the number of tasks waiting to read on a socket.</li>
+        <li><code>t.write</code>: the number of tasks waiting to write to a socket.</li>
+        <li><code>t.active</code>: the number of tasks ready to resume.</li>
+        <li><code>t.timer</code>: the number of timers for tasks (in the binary tree).</li>
+        <li><code>t.inactive</code>: the number of tasks waiting to be woken up.</li>
+        <li><code>t.timeout</code>: the number of timers for timeouts (in the timerwheel).</li>
+    </ul></dd>
+
     <dt><strong><code>bool = copas.step([timeout])</code></strong></dt>
     <dd>Executes one copas iteration accepting client connections for the
     registered servers and handling those connections with the corresponding
