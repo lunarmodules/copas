@@ -210,6 +210,10 @@ local _resumable = {} do
     return resumelist[1] == nil
   end
 
+  function _resumable:count()
+    return #resumelist + #_resumable
+  end
+
 end
 
 
@@ -275,6 +279,14 @@ local _sleeping = {} do
     -- but the combination of a timeout + a lethargy can be work
     return heap:size() == 1       -- 1 means only the timeout-timer task is running
            and not (tos > 0 and next(lethargy))
+  end
+
+  -- gets number of threads in binaryheap and lethargy
+  function _sleeping:status()
+    local c
+    for _ in pairs(lethargy) do c = c + 1 end
+
+    return heap:size(), c
   end
 
 end   -- _sleeping
@@ -1518,6 +1530,18 @@ end
 -------------------------------------------------------------------------------
 function copas.finished()
   return #_reading == 0 and #_writing == 0 and _resumable:done() and _sleeping:done(copas.gettimeouts())
+end
+
+
+function copas.status()
+  local res = {}
+  res.running = not not copas.running
+  res.timeout = copas.gettimeouts()
+  res.timer, res.inactive = _sleeping:status()
+  res.read = #_reading
+  res.write = #_writing
+  res.active = _resumable:count()
+  return res
 end
 
 
