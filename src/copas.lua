@@ -1422,12 +1422,12 @@ end
 -------------------------------------------------------------------------------
 -- Checks for reads and writes on sockets
 -------------------------------------------------------------------------------
-local _select do
+local _select_plain do
 
   local last_cleansing = 0
   local duration = function(t2, t1) return t2-t1 end
 
-  _select = function(timeout)
+  _select_plain = function(timeout)
     local err
     local now = gettime()
 
@@ -1492,6 +1492,39 @@ end
 -- Returns false if no socket-data was handled, or true if there was data
 -- handled (or nil + error message)
 -------------------------------------------------------------------------------
+
+local copas_stats
+local min_ever, max_ever
+
+local _select = _select_plain
+
+-- instrumented version of _select() to collect stats
+local _select_instrumented = function(timeout)
+  if copas_stats then
+    local step_duration = gettime() - copas_stats.step_start
+    copas_stats.duration_max = math.max(copas_stats.duration_max, step_duration)
+    copas_stats.duration_min = math.min(copas_stats.duration_min, step_duration)
+    copas_stats.duration_tot = copas_stats.duration_tot + step_duration
+    copas_stats.steps = copas_stats.steps + 1
+  else
+    copas_stats = {
+      duration_max = -1,
+      duration_min = 999999,
+      duration_tot = 0,
+      steps = 0,
+    }
+  end
+
+  local err = _select_plain(timeout)
+
+  local now = gettime()
+  copas_stats.time_start = copas_stats.time_start or now
+  copas_stats.step_start = now
+
+  return err
+end
+
+
 function copas.step(timeout)
   -- Need to wake up the select call in time for the next sleeping event
   if not _resumable:done() then
@@ -1532,9 +1565,75 @@ function copas.finished()
   return #_reading == 0 and #_writing == 0 and _resumable:done() and _sleeping:done(copas.gettimeouts())
 end
 
+local _getstats do
+  local _getstats_instrumented, _getstats_plain
 
-function copas.status()
-  local res = {}
+
+  function _getstats_plain(enable)
+    -- this function gets hit if turned off, so turn on if true
+    if enable == true then
+      _select = _select_instrumented
+      _getstats = _getstats_instrumented
+      -- reset stats
+      min_ever = nil
+      max_ever = nil
+      copas_stats = nil
+    end
+    return {}
+  end
+
+
+  -- convert from seconds to millisecs, with microsec precision
+  local function useconds(t)
+    return math.floor((t * 1000000) + 0.5) / 1000
+  end
+  -- convert from seconds to seconds, with millisec precision
+  local function mseconds(t)
+    return math.floor((t * 1000) + 0.5) / 1000
+  end
+
+
+  function _getstats_instrumented(enable)
+    if enable == false then
+      _select = _select_plain
+      _getstats = _getstats_plain
+      -- instrumentation disabled, so switch to the plain implementation
+      return _getstats(enable)
+    end
+    if (not copas_stats) or (copas_stats.step == 0) then
+      return {}
+    end
+    local stats = copas_stats
+    copas_stats = nil
+    min_ever = math.min(min_ever or 9999999, stats.duration_min)
+    max_ever = math.max(max_ever or 0, stats.duration_max)
+    stats.duration_min_ever = min_ever
+    stats.duration_max_ever = max_ever
+    stats.duration_avg = stats.duration_tot / stats.steps
+    stats.step_start = nil
+    stats.time_end = gettime()
+    stats.time_tot = stats.time_end - stats.time_start
+    stats.time_avg = stats.time_tot / stats.steps
+
+    stats.duration_avg = useconds(stats.duration_avg)
+    stats.duration_max = useconds(stats.duration_max)
+    stats.duration_max_ever = useconds(stats.duration_max_ever)
+    stats.duration_min = useconds(stats.duration_min)
+    stats.duration_min_ever = useconds(stats.duration_min_ever)
+    stats.duration_tot = useconds(stats.duration_tot)
+    stats.time_avg = useconds(stats.time_avg)
+    stats.time_start = mseconds(stats.time_start)
+    stats.time_end = mseconds(stats.time_end)
+    stats.time_tot = mseconds(stats.time_tot)
+    return stats
+  end
+
+  _getstats = _getstats_plain
+end
+
+
+function copas.status(enable_stats)
+  local res = _getstats(enable_stats)
   res.running = not not copas.running
   res.timeout = copas.gettimeouts()
   res.timer, res.inactive = _sleeping:status()
