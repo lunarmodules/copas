@@ -1075,7 +1075,13 @@ local function _doTick (co, skt, ...)
 
   -- res: the socket (being read/write on) or the time to sleep
   -- new_q: either _writing, _reading, or _sleeping
+  -- local time_before = gettime()
   local ok, res, new_q = coroutine_resume(co, skt, ...)
+  -- local duration = gettime() - time_before
+  -- if duration > 1 then
+  --   duration = math.floor(duration * 1000)
+  --   pcall(_errhandlers[co] or _deferror, "task ran for "..tostring(duration).." milliseconds.", co, skt)
+  -- end
 
   if new_q == _reading or new_q == _writing or new_q == _sleeping then
     -- we're yielding to a new queue
