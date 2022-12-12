@@ -57,6 +57,7 @@ function Queue:pop(timeout)
     return ok, err
   end
   local item = self.list[self.tail]
+  -- TODO: clear the item from the list.
   self.tail = self.tail + 1
   if self.tail == self.head then
     -- reset pointers
@@ -132,6 +133,7 @@ do
     end
     self.sema:destroy()
     setmetatable(self, destroyed_queue_mt)
+    -- TODO: clear any items in the list
     return true
   end
 end
@@ -154,6 +156,7 @@ function Queue:add_worker(worker)
   coro = copas.addnamedthread(worker_name, function()
     while true do
       local item = self:pop(10*365*24*60*60) -- wait forever (10yr)
+      -- TODO: item can be nil or false, check for error instead
       if not item then
         break -- queue destroyed, exit
       end
