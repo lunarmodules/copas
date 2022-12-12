@@ -52,6 +52,7 @@ do
     --print("destroying ",self)
     for i = self.q_tip, self.q_tail do
       local co = self.queue[i]
+      -- TODO: set queue entry to nil to clear it
       if co then
         self.errors[co] = "destroyed"
         --print("marked destroyed ", co)
@@ -75,6 +76,7 @@ end
 
 local function timeout_handler(co)
   local self = registry[co]
+  -- TODO: check self to be non-nil
 
   for i = self.q_tip, self.q_tail do
     if co == self.queue[i] then
@@ -128,13 +130,14 @@ function lock:get(timeout)
 
     local err = self.errors[co]
     self.errors[co] = nil
+    -- TODO: clear co from the registry table; registry[co] = nil
 
     --print("released ", co, err)
     if err ~= "timeout" then
       copas.timeout(0)
     end
     if err then
-      self.errors[co] = nil
+      self.errors[co] = nil -- TODO: remove; was already cleared above
       return nil, err, gettime() - start_time
     end
   end

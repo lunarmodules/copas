@@ -86,6 +86,7 @@ function semaphore:give(given)
         count = count - nxt.requested
         self.q_tip = i + 1
         copas.wakeup(nxt.co)
+        -- TODO: clear nxt.co
       else
         break -- we ran out of resources
       end
@@ -110,6 +111,7 @@ local function timeout_handler(co)
   local self = registry[co]
   --print("checking timeout ", co)
 
+  -- TODO: check self to be non-nil
   for i = self.q_tip, self.q_tail do
     local item = self.queue[i]
     if item and co == item.co then
@@ -161,6 +163,8 @@ function semaphore:take(requested, timeout)
   self.q_tail = self.q_tail + 1
 
   copas.pauseforever() -- block until woken
+  -- TODO: clear from regsitry
+
   if self.to_flags[co] then
     -- a timeout happened
     self.to_flags[co] = nil
