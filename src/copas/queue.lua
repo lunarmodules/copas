@@ -56,11 +56,14 @@ function Queue:pop(timeout)
   if not ok then
     return ok, err
   end
+
   local item = self.list[self.tail]
-  -- TODO: clear the item from the list.
+  self.list[self.tail] = nil
   self.tail = self.tail + 1
+
   if self.tail == self.head then
-    -- reset pointers
+    -- reset queue
+    self.list = {}
     self.tail = 1
     self.head = 1
     if self.stopping then
@@ -133,7 +136,12 @@ do
     end
     self.sema:destroy()
     setmetatable(self, destroyed_queue_mt)
-    -- TODO: clear any items in the list
+
+    -- clear anything left in the queue
+    for key in pairs(self.list) do
+      self.list[key] = nil
+    end
+
     return true
   end
 end
