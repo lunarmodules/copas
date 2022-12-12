@@ -44,6 +44,17 @@ copas.loop(function()
   assert(q:pop() == 2)
   assert(q:pop() == 3)
 
+  -- handles nil values
+  q:push(1)
+  q:push(nil)
+  q:push(3)
+
+  assert(q:pop() == 1)
+  local val, err = q:pop()
+  assert(val == nil)
+  assert(err == nil)
+  assert(q:pop() == 3)
+
   -- stopping
   q:push(1)
   q:push(2)
@@ -82,6 +93,24 @@ print("test 1 success!")
 
 
 
+-- a worker handling nil values
+local count = 0
+copas.loop(function()
+  local q = Queue:new()
+  q:push(1)
+  q:push(nil)
+  q:push(3)
+  q:add_worker(function() count = count + 1 end)
+  copas.pause(0.5) -- to activate the worker, which will now be blocked on the q semaphore
+  local s = now()
+  assert(q:finish(5))
+  print("finish took "..(now()-s))
+end)
+assert(count == 3, "expected count to be 3, got "..tostring(count))
+print("test 2 success!")
+
+
+
 -- destroying a queue while workers are idle
 copas.loop(function()
   local q = Queue:new()
@@ -90,4 +119,4 @@ copas.loop(function()
   q:stop()  -- this should exit the idle workers and exit the copas loop
 end)
 
-print("test 2 success!")
+print("test 3 success!")

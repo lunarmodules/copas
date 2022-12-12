@@ -163,12 +163,11 @@ function Queue:add_worker(worker)
 
   coro = copas.addnamedthread(worker_name, function()
     while true do
-      local item = self:pop(10*365*24*60*60) -- wait forever (10yr)
-      -- TODO: item can be nil or false, check for error instead
-      if not item then
+      local item, err = self:pop(10*365*24*60*60) -- wait forever (10yr)
+      if err then
         break -- queue destroyed, exit
       end
-      worker(item)
+      worker(item) -- TODO: wrap in errorhandling
     end
     self.workers[coro] = nil
   end)
