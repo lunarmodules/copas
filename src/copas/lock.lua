@@ -109,13 +109,9 @@ function lock:get(timeout)
   -- is the lock already taken?
   if self.owner then
     -- are we re-entering?
-    if co == self.owner then
-      if self.not_reentrant then
-        return nil, "lock is not re-entrant", 0
-      else
-        self.call_count = self.call_count + 1
-        return 0
-      end
+    if co == self.owner and not self.not_reentrant then
+      self.call_count = self.call_count + 1
+      return 0
     end
 
     self.queue[self.q_tail] = co
@@ -169,12 +165,6 @@ function lock:release()
     return true
   end
 
-  if self.q_tail == self.q_tip then
-    -- queue is empty
-    self.owner = nil
-    return true
-  end
-
   -- need a loop, since individual coroutines might have been removed
   -- so there might be holes
   while self.q_tip < self.q_tail do
@@ -189,6 +179,7 @@ function lock:release()
     self.q_tip = self.q_tip + 1
   end
   -- queue is empty, reset pointers
+  self.owner = nil
   self.q_tip = 0
   self.q_tail = 0
   return true
