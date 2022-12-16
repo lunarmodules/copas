@@ -4,21 +4,24 @@ package.path = string.format("../src/?.lua;%s", package.path)
 
 
 local copas = require "copas"
-local lock = require "copas.lock"
+local Lock = require "copas.lock"
 local gettime = require("socket").gettime
 
 local test_complete = false
 copas.loop(function()
 
-  local lock1 = lock.new(nil, true)  -- no re-entrant
+  local lock1 = Lock.new(nil, true)  -- not re-entrant
   assert(lock1:get())
-  local _, err = lock1:get()
-  assert(err == "lock is not re-entrant", "got errror: "..tostring(err))
+  local s = gettime()
+  local _, err = lock1:get(1)
+  local duration = gettime() - s
+  assert(err == "timeout", "got errror: "..tostring(err))
+  assert(duration > 1 and duration < 1.2, string.format("expected timeout of 1 second, but took: %f",duration))
 
   -- let go and reacquire
   assert(lock1:release())
   local _, err = lock1:release()
-  assert(err == "cannot release a lock not owned", "got errror: "..tostring(err))
+  assert(err == "cannot release a lock not owned", "got error: "..tostring(err))
 
   assert(lock1:get())
   lock1:destroy()
@@ -27,7 +30,7 @@ copas.loop(function()
 
 
   -- let's scale, go grab a lock
-  lock1 = assert(lock.new(10))
+  lock1 = assert(Lock.new(10))
   assert(lock1:get())
 
   local success_count = 0
