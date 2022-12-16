@@ -102,13 +102,29 @@ copas.loop(function()
   q:push(3)
   q:add_worker(function() count = count + 1 end)
   copas.pause(0.5) -- to activate the worker, which will now be blocked on the q semaphore
-  local s = now()
   assert(q:finish(5))
-  print("finish took "..(now()-s))
 end)
 assert(count == 3, "expected count to be 3, got "..tostring(count))
 print("test 2 success!")
 
+
+-- finish blocks for a timeout
+local passed = false
+copas.loop(function()
+  local q = Queue:new()
+  q:push(1) -- no workers, so this one will not be handled
+
+  local s = now()
+  local ok, err = q:finish(1)
+  local duration = now() - s
+
+  assert(not ok, "expected a falsy value, got: "..tostring(ok))
+  assert(err == "timeout", "expected error 'timeout', got: "..tostring(err))
+  assert(duration > 1 and duration < 1.2, string.format("expected timeout of 1 second, but took: %f",duration))
+  passed = true
+end)
+assert(passed, "test failed!")
+print("test 3 success!")
 
 
 -- destroying a queue while workers are idle
@@ -119,4 +135,4 @@ copas.loop(function()
   q:stop()  -- this should exit the idle workers and exit the copas loop
 end)
 
-print("test 3 success!")
+print("test 4 success!")

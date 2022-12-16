@@ -87,7 +87,7 @@ end
 function Queue:stop()
   if not self.stopping then
     self.stopping = true
-    self.lock = Lock.new()
+    self.lock = Lock.new(nil, true)
     self.lock:get() -- close the lock
     if self:get_size() == 0 then
       -- queue is already empty, so "pop" function cannot call destroy on next
