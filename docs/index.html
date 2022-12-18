@@ -103,6 +103,11 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
     <dt><strong>Copas 4.x.0</strong> [unreleased]</dt>
 	<dd><ul>
         <li>Added: <code>copas.status</code> got an extra parameter to track more detailed stats.</li>
+        <li>Fix: queue workers would not properly handle falsy items in the queue. The worker would
+        exit instead of handle the item.</li>
+        <li>Fix: a non-reentrant lock should block instead of returning an error when entered again.</li>
+        <li>Fix: finishing a queue would not honour the timeout.</li>
+        <li>Refactor: more manual cleanup instead of relying on weak-tables.</li>
     </ul></dd>
 
     <dt><strong>Copas 4.4.0</strong> [23/Oct/2022]</dt>
