@@ -105,6 +105,7 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         <li>Added: for timeouts in copas, lock, semaphore, and queue, allow <code>math.huge</code>
         to specify no timeout/wait forever. Using <code>math.huge</code> over long timeouts will
         reduce pressure on the timer-wheel.</li>
+        <li>Refactor: increase ringsize (timer-wheel) from 1 minute to 1 day to reduce timer-wheel pressure.</li>
     </ul></dd>
 
     <dt><strong>Copas 4.5.0</strong> [18/Dec/2022]</dt>

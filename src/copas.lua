@@ -1285,8 +1285,8 @@ do
   local timeout_register = setmetatable({}, { __mode = "k" })
   local time_out_thread
   local timerwheel = require("timerwheel").new({
-      precision = TIMEOUT_PRECISION,                -- timeout precision 100ms
-      ringsize = math.floor(60/TIMEOUT_PRECISION),  -- ring size 1 minute
+      precision = TIMEOUT_PRECISION,
+      ringsize = math.floor(60*60*24/TIMEOUT_PRECISION),  -- ring size 1 day
       err_handler = function(err)
         return _deferror(err, time_out_thread)
       end,
