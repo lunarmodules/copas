@@ -49,7 +49,7 @@ end
 
 -- Pops and item from the queue. If there are no items in the queue it will yield
 -- until there are or a timeout happens (exception is when `timeout == 0`, then it will
--- not yield but return immediately)
+-- not yield but return immediately). If the timeout is `math.huge` it will wait forever.
 -- Returns item, or nil+err ("timeout", or "destroyed")
 function Queue:pop(timeout)
   local ok, err = self.sema:take(1, timeout)
@@ -163,7 +163,7 @@ function Queue:add_worker(worker)
 
   coro = copas.addnamedthread(worker_name, function()
     while true do
-      local item, err = self:pop(10*365*24*60*60) -- wait forever (10yr)
+      local item, err = self:pop(math.huge) -- wait forever
       if err then
         break -- queue destroyed, exit
       end

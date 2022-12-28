@@ -330,9 +330,8 @@ do
   local timeout_mt = {
     __mode = "k",
     __index = function(self, skt)
-      -- if there is no timeout found, we insert one automatically,
-      -- a 10 year timeout as substitute for the default "blocking" should do
-      self[skt] = 10*365*24*60*60
+      -- if there is no timeout found, we insert one automatically, to block forever
+      self[skt] = math.huge
       return self[skt]
     end,
   }
@@ -413,7 +412,7 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
   end
 
 
-  -- Returns the poroper timeout error
+  -- Returns the proper timeout error
   function sto_error(err)
     return useSocketTimeoutErrors[coroutine_running()] and err or "timeout"
   end
@@ -1306,7 +1305,7 @@ do
   end
 
   --- Sets the timeout for the current coroutine.
-  -- @param delay delay (seconds), use 0 to cancel the timerout
+  -- @param delay delay (seconds), use 0 (or math.huge) to cancel the timerout
   -- @param callback function with signature: `function(coroutine)` where coroutine is the routine that timed-out
   -- @return true
   function copas.timeout(delay, callback)
@@ -1317,9 +1316,9 @@ do
       timerwheel:cancel(existing_timer)
     end
 
-    if delay > 0 then
+    if delay > 0 and delay ~= math.huge then
       timeout_register[co] = timerwheel:set(delay, callback, co)
-    elseif delay == 0 then
+    elseif delay == 0 or delay == math.huge then
       timeout_register[co] = nil
     else
       error("timout value must be greater than or equal to 0, got: "..tostring(delay))

@@ -418,9 +418,10 @@ exchange data with other services.</p>
     <dt><strong><code>lock:get([timeout])</code></strong></dt>
     <dd>Will try and acquire the lock. The optional <code>timeout</code> can be
     used to override the timeout value set when the lock was created.<br />
-    If the the lock is not available, the coroutine will yield until either the
+    If the lock is not available, the coroutine will yield until either the
     lock becomes available, or it times out. The one exception is when
-    <code>timeout</code> is 0, then it will immediately return without yielding.<br />
+    <code>timeout</code> is 0, then it will immediately return without yielding.
+    If the timeout is set to <code>math.huge</code>, then it will wait forever.<br />
     Upon success, it will return the <code>wait-time</code> in seconds. Upon failure it will
     return <code>nil + error + wait-time</code>. Upon a timeout the error value will
     be "timeout".
@@ -428,8 +429,8 @@ exchange data with other services.</p>
 
     <dt><strong><code>lock.new([timeout], [not_reentrant])</code></strong></dt>
     <dd>Creates and returns a new lock. The <code>timeout</code> specifies the
-    default timeout for the lock in
-    seconds, and defaults to 10. By default the lock is re-entrant,
+    default timeout for the lock in seconds, and defaults to 10 (set it to <code>math.huge</code>
+    to wait forever). By default the lock is re-entrant,
     except if <code>not_reentrant</code> is set to a truthy value.
     </dd>
 
@@ -455,7 +456,8 @@ exchange data with other services.</p>
 
     <dt><strong><code>queue:finish([timeout], [no_destroy_on_timeout])</code></strong></dt>
     <dd>Finishes a queue. Calls <code>queue:stop()</code> and then waits for the queue to run
-    empty (and be destroyed) before returning.
+    empty (and be destroyed) before returning. The <code>timeout</code> defaults to 10 seconds
+    (the default timeout value for a lock), <code>math.huge</code> can be used to wait forever.
     Parameter <code>no_destroy_on_timeout</code> indicates if the queue is not to be forcefully
     destroyed on a timeout (abandonning what ever is left in the queue).
     Returns <code>true</code>, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>.
@@ -492,7 +494,7 @@ exchange data with other services.</p>
     <dd>Will pop an item from the queue. If there are no items in the queue it will yield
     until there are or a timeout happens (exception is when <code>timeout == 0</code>, then it will
     not yield but return immediately, be careful not to create a hanging loop!). Timeout defaults
-    to the default time-out of a semaphore.
+    to the default time-out of a semaphore. If the timeout is <code>math.huge</code> then it will wait forever.
     Returns an item, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>. Since an item
     can be <code>nil</code>, make sure to check for the error message to detect error.
     </dd>
@@ -538,7 +540,7 @@ exchange data with other services.</p>
     <code>max</code> specifies the maximum number of resources the semaphore can hold.
     The optional <code>start</code> parameter (default 0) specifies the number of resources upon creation.
     The <code>timeout</code> specifies the default timeout for the semaphore in
-    seconds, and defaults to 10.
+    seconds, and defaults to 10 (<code>math.huge</code> can be used to wait forever).
     </dd>
 
     <dt><strong><code>semaphore:take([requested], [timeout])</code></strong></dt>
@@ -547,7 +549,7 @@ exchange data with other services.</p>
     If not enough resources are available it
     will yield and wait until enough resources are available, or a timeout occurs. The exception is when
     <code>timeout</code> is set to 0, in that case it will immediately return without yielding if there are
-    not enough resources available.<br />
+    not enough resources available. If the timeout is <code>math.huge</code> then it will wait forever.<br />
     The optional <code>timeout</code> parameter can be used to override the default timeout as set upon
     semaphore creation.
     Returns <code>true</code> upon success or <code>nil + "timeout"</code> on a timeout. In case more
@@ -778,7 +780,7 @@ servers.
     <dd>Creates a timeout timer for the current coroutine. The <code>delay</code>
     is the timeout in seconds, and the <code>callback</code> will
     be called upon an actual timeout occuring.<br />
-    Calling it with <code>delay = 0</code> will cancel the timeout.<br />
+    Calling it with <code>delay = 0</code> (or <code>math.huge</code>) will cancel the timeout.<br />
     Calling it repeatedly will simply replace the timeout on the current
     coroutine and any previous callback set will no longer be called.<br />
     <br />

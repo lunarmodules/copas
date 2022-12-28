@@ -100,6 +100,13 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>Copas 4.x.0</strong> [unreleased]</dt>
+	<dd><ul>
+        <li>Added: for timeouts in copas, lock, semaphore, and queue, allow <code>math.huge</code>
+        to specify no timeout/wait forever. Using <code>math.huge</code> over long timeouts will
+        reduce pressure on the timer-wheel.</li>
+    </ul></dd>
+
     <dt><strong>Copas 4.5.0</strong> [18/Dec/2022]</dt>
 	<dd><ul>
         <li>Added: <code>copas.status</code> got an extra parameter to track more detailed stats.</li>
