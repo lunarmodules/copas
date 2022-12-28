@@ -13,7 +13,7 @@ local registry = setmetatable({}, { __mode="kv" })
 -- create a new semaphore
 -- @param max maximum number of resources the semaphore can hold (this maximum does NOT include resources that have been given but not yet returned).
 -- @param start (optional, default 0) the initial resources available
--- @param seconds (optional, default 10) default semaphore timeout in seconds
+-- @param seconds (optional, default 10) default semaphore timeout in seconds, or `math.huge` to have no timeout.
 function semaphore.new(max, start, seconds)
   local timeout = tonumber(seconds or DEFAULT_TIMEOUT) or -1
   if timeout < 0 then
@@ -133,7 +133,8 @@ end
 -- Waits if there are not enough resources available before returning.
 -- @param requested (optional, default 1) the number of resources requested
 -- @param timeout (optional, defaults to semaphore timeout) timeout in
--- seconds. If 0 it will either succeed or return immediately with error "timeout"
+-- seconds. If 0 it will either succeed or return immediately with error "timeout".
+-- If `math.huge` it will wait forever.
 -- @return true, or nil+"destroyed"
 function semaphore:take(requested, timeout)
   requested = requested or 1

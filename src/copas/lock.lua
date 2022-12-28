@@ -13,7 +13,8 @@ local registry = setmetatable({}, { __mode="kv" })
 
 
 --- Creates a new lock.
--- @param seconds (optional) default timeout in seconds when acquiring the lock (defaults to 10)
+-- @param seconds (optional) default timeout in seconds when acquiring the lock (defaults to 10),
+-- set to `math.huge` to have no timeout.
 -- @param not_reentrant (optional) if truthy the lock will not allow a coroutine to grab the same lock multiple times
 -- @return the lock object
 function lock.new(seconds, not_reentrant)
@@ -100,7 +101,7 @@ end
 -- If the lock is owned by another thread, this will yield control, until the
 -- lock becomes available, or it times out.
 -- If `timeout == 0` then it will immediately return (without yielding).
--- @param timeout (optional) timeout in seconds, if given overrides the timeout passed to `new`.
+-- @param timeout (optional) timeout in seconds, defaults to the timeout passed to `new` (use `math.huge` to have no timeout).
 -- @return wait-time on success, or nil+error+wait_time on failure. Errors can be "timeout", "destroyed", or "lock is not re-entrant"
 function lock:get(timeout)
   local co = coroutine.running()
