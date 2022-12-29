@@ -1,4 +1,4 @@
-# Copas 4.5
+# Copas 4.6
 
 [![Unix build](https://img.shields.io/github/actions/workflow/status/lunarmodules/copas/unix_build.yml?branch=master&label=Unix%20build&logo=linux)](https://github.com/lunarmodules/copas/actions)
 [![Coveralls code coverage](https://img.shields.io/coveralls/github/lunarmodules/copas?logo=coveralls)](https://coveralls.io/github/lunarmodules/copas)
