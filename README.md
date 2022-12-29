@@ -1,6 +1,6 @@
 # Copas 4.5
 
-[![Unix build](https://img.shields.io/github/workflow/status/lunarmodules/copas/Unix%20build?label=Unix%20build&logo=linux)](https://github.com/lunarmodules/copas/actions)
+[![Unix build](https://img.shields.io/github/actions/workflow/status/lunarmodules/copas/unix_build.yml?branch=master&label=Unix%20build&logo=linux)](https://github.com/lunarmodules/copas/actions)
 [![Coveralls code coverage](https://img.shields.io/coveralls/github/lunarmodules/copas?logo=coveralls)](https://coveralls.io/github/lunarmodules/copas)
 [![Luacheck](https://github.com/lunarmodules/copas/workflows/Luacheck/badge.svg)](https://github.com/lunarmodules/copas/actions)
 [![SemVer](https://img.shields.io/github/v/tag/lunarmodules/copas?color=brightgreen&label=SemVer&logo=semver&sort=semver)](CHANGELOG.md)
