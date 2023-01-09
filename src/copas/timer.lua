@@ -106,7 +106,7 @@ do
   -- `opts.params` (optional) this value will be passed to the timer callback, `opts.initial_delay` (optional) the first delay to use, defaults to `delay`.
   -- @return timer object, or throws an error on bad input
   function timer.new(opts)
-    assert(opts.delay >= 0, "delay must be greater than or equal to 0")
+    assert(opts.delay or -1 >= 0, "delay must be greater than or equal to 0")
     assert(type(opts.callback) == "function", "expected callback to be a function")
 
     local callback = function(timer_obj, params)
