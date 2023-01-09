@@ -92,11 +92,28 @@ do
 end
 
 
-local copas = setmetatable({},{
-  __call = function(self, ...)
-    return self.loop(...)
-  end,
-})
+-- Setup the Copas meta table to auto-load submodules and define a default method
+local copas do
+  local submodules = { "ftp", "http", "lock", "queue", "semaphore", "smtp", "timer" }
+  for i, key in ipairs(submodules) do
+    submodules[key] = true
+    submodules[i] = nil
+  end
+
+  copas = setmetatable({},{
+    __index = function(self, key)
+      if submodules[key] then
+        self[key] = require("copas."..key)
+        submodules[key] = nil
+        return rawget(self, key)
+      end
+    end,
+    __call = function(self, ...)
+      return self.loop(...)
+    end,
+  })
+end
+
 
 -- Meta information is public even if beginning with an "_"
 copas._COPYRIGHT   = "Copyright (C) 2005-2013 Kepler Project, 2015-2023 Thijs Schreijer"

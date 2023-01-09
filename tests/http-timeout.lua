@@ -6,7 +6,7 @@
 local copas = require 'copas'
 local socket = require 'socket'
 local ltn12 = require 'ltn12'
-local request = require("copas.http").request
+local request = copas.http.request
 
 -- copas.debug.start()
 

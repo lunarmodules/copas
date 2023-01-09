@@ -345,10 +345,9 @@ example passing arguments to a task, see the async http example below.</p>
 Below an example of a timer;</p>
 <pre class="example">
 local copas = require("copas")
-local timer = require("copas.timer")
 
 copas(function()
-   timer.new({
+   copas.timer.new({
      delay = 1,                        -- delay in seconds
      recurring = true,                 -- make the timer repeat
      params = "hello world",
@@ -370,9 +369,8 @@ the protected resource becomes available, without blocking other threads.
 </p>
 <pre class="example">
 local copas = require("copas")
-local new_lock = require("copas.lock").new
 
-local lock = new_lock()
+local lock = copas.lock.new()
 
 local function some_func()
   local ok, err, wait = lock:get()

@@ -1,6 +1,6 @@
 local copas = require("copas")
 local synchttp = require("socket.http").request
-local asynchttp = require("copas.http").request
+local asynchttp = copas.http.request
 local gettime = require("socket").gettime
 
 local targets = {
