@@ -1,6 +1,6 @@
 local copas = require "copas"
-local Sema = require "copas.semaphore"
-local Lock = require "copas.lock"
+local Sema = copas.semaphore
+local Lock = copas.lock
 
 
 local Queue = {}

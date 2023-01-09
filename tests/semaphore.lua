@@ -4,7 +4,7 @@ local now = require("socket").gettime
 
 
 local copas = require "copas"
-local semaphore = require "copas.semaphore"
+local semaphore = copas.semaphore
 
 
 

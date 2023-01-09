@@ -427,7 +427,7 @@ exchange data with other services.</p>
     be "timeout".
     </dd>
 
-    <dt><strong><code>lock.new([timeout], [not_reentrant])</code></strong></dt>
+    <dt><strong><code>copas.lock.new([timeout], [not_reentrant])</code></strong></dt>
     <dd>Creates and returns a new lock. The <code>timeout</code> specifies the
     default timeout for the lock in seconds, and defaults to 10 (set it to <code>math.huge</code>
     to wait forever). By default the lock is re-entrant,
@@ -476,10 +476,10 @@ exchange data with other services.</p>
     </dd>
 
     <dt><strong><code>queue.name</code></strong></dt>
-    <dd>A field set to name of the queue. See <code>queue.new()</code>.
+    <dd>A field set to name of the queue. See <code>copas.queue.new()</code>.
     </dd>
 
-    <dt><strong><code>queue.new([options])</code></strong></dt>
+    <dt><strong><code>copas.queue.new([options])</code></strong></dt>
     <dd>Creates and returns a new queue. The <code>options</code> table has the following
     fields:
     <ul>
@@ -535,7 +535,7 @@ exchange data with other services.</p>
     maximum. In that case the result will be <code>nil + "too many"</code>.
     </dd>
 
-    <dt><strong><code>semaphore.new(max, [start], [timeout])</code></strong></dt>
+    <dt><strong><code>copas.semaphore.new(max, [start], [timeout])</code></strong></dt>
     <dd>Creates and returns a new semaphore (fifo).
     <code>max</code> specifies the maximum number of resources the semaphore can hold.
     The optional <code>start</code> parameter (default 0) specifies the number of resources upon creation.
@@ -556,7 +556,7 @@ exchange data with other services.</p>
     resources are requested than maximum available the error will be <code>"too many"</code>.
     </dd>
 
-    <dt><strong><code>timer.new(options)</code></strong></dt>
+    <dt><strong><code>copas.timer.new(options)</code></strong></dt>
     <dd>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
     <ul>
         <li><code>options.name</code> (optional): the name for the timer, the default name will be

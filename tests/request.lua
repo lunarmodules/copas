@@ -1,5 +1,5 @@
 local copas = require("copas")
-local http = require("copas.http")
+local http = copas.http
 
 local url = assert(arg[1], "missing url argument")
 local debug_mode = not not arg[2]
