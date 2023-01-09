@@ -8,7 +8,7 @@
 -- Contributors: Diego Nehab, Mike Pall, David Burgess, Leonardo Godinho,
 --               Thomas Harning Jr., and Gary NG
 --
--- Copyright 2005-2022 - Kepler Project (www.keplerproject.org)
+-- Copyright 2005-2013 - Kepler Project (www.keplerproject.org), 2015-2023 Thijs Schreijer
 --
 -- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ local copas = setmetatable({},{
 })
 
 -- Meta information is public even if beginning with an "_"
-copas._COPYRIGHT   = "Copyright (C) 2005-2022 Kepler Project"
+copas._COPYRIGHT   = "Copyright (C) 2005-2013 Kepler Project, 2015-2023 Thijs Schreijer"
 copas._DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
 copas._VERSION     = "Copas 4.6.0"
 
