@@ -55,6 +55,31 @@ luarocks install copas
 <p>Note: LuaSec is not automatically installed as a dependency. If you want to use ssl with Copas,
 you need to manually install LuaSec as well.</p>
 
+<h2><a name="cli"></a>Runtime</h2>
+
+Copas can either be used as a regular Lua library, or as a runtime. A command line script that
+acts as a runtime engine is included.
+
+When using the runtime, the library is available as a global (<code>copas</code>), and the
+scheduler will automatically be started. For example:
+
+<pre class="example">
+  #!/usr/bin/env copas
+
+  local count = 0
+  copas.timer.new {
+    delay = 1,
+    recurring = true,
+    callback = function(self)
+      count = count + 1
+      print('hello world ' .. count)
+      if count &gt;= 5 then
+        self:cancel()
+      end
+    end
+  }
+</pre>
+
 <h2><a name="introduction"></a>Introduction to Copas</h2>
 
 <p>

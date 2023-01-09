@@ -35,6 +35,11 @@ dependencies = {
 }
 build = {
    type = "builtin",
+   install = {
+      bin = {
+          copas = "bin/copas.lua",
+      }
+   },
    modules = {
       ["copas"] = "src/copas.lua",
       ["copas.http"] = "src/copas/http.lua",
