@@ -916,7 +916,14 @@ local _skt_mt_tcp = {
         bind = function(self, ...) return self.socket:bind(...) end,
 
         -- TODO: is this DNS related? hence blocking?
-        getsockname = function(self, ...) return self.socket:getsockname(...) end,
+        getsockname = function(self, ...)
+          local ok, ip, port, family = pcall(self.socket.getsockname, self.socket, ...)
+          if ok then
+            return ip, port, family
+          else
+            return nil, "not implemented by LuaSec"
+          end
+        end,
 
         getstats = function(self, ...) return self.socket:getstats(...) end,
 
@@ -926,10 +933,33 @@ local _skt_mt_tcp = {
 
         accept = function(self, ...) return self.socket:accept(...) end,
 
-        setoption = function(self, ...) return self.socket:setoption(...) end,
+        setoption = function(self, ...)
+          local ok, res, err = pcall(self.socket.setoption, self.socket, ...)
+          if ok then
+            return res, err
+          else
+            return nil, "not implemented by LuaSec"
+          end
+        end,
+
+        getoption = function(self, ...)
+          local ok, val, err = pcall(self.socket.getoption, self.socket, ...)
+          if ok then
+            return val, err
+          else
+            return nil, "not implemented by LuaSec"
+          end
+        end,
 
         -- TODO: is this DNS related? hence blocking?
-        getpeername = function(self, ...) return self.socket:getpeername(...) end,
+        getpeername = function(self, ...)
+          local ok, ip, port, family = pcall(self.socket.getpeername, self.socket, ...)
+          if ok then
+            return ip, port, family
+          else
+            return nil, "not implemented by LuaSec"
+          end
+        end,
 
         shutdown = function(self, ...) return self.socket:shutdown(...) end,
 
@@ -950,6 +980,23 @@ local _skt_mt_tcp = {
           return self
         end,
 
+        getalpn = function(self, ...)
+          local ok, proto, err = pcall(self.socket.getalpn, self.socket, ...)
+          if ok then
+            return proto, err
+          else
+            return nil, "not a tls socket"
+          end
+        end,
+
+        getsniname = function(self, ...)
+          local ok, name, err = pcall(self.socket.getsniname, self.socket, ...)
+          if ok then
+            return name, err
+          else
+            return nil, "not a tls socket"
+          end
+        end,
       }
 }
 
