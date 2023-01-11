@@ -106,6 +106,8 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
         <li>Fix: creating a new timer with a bad delay setting would throw a bad error message.</li>
         <li>Refactor: submodules are now part of copas (lazily loaded) and do not need to be required anymore</li>
         <li>Feat: runtime script added to directly run copas based code</li>
+        <li>Fix: improved socket wrapper for lacking LuaSec methods (<code>setoption, getoption, getpeername, getsockname</code>)</li>
+        <li>Feat: added LuaSec methods to wrapper (<code>getalpn, getsniname</code>)</li>
     </ul></dd>
 
     <dt><strong>Copas 4.6.0</strong> [30/Dec/2022]</dt>
