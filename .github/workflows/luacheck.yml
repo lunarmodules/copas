@@ -1,6 +1,19 @@
 name: Luacheck
 
-on: [push, pull_request]
+concurrency:
+  # for PR's cancel the running task, if another commit is pushed
+  group: ${{ github.workflow }} ${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  # build on PR and push-to-master. This works for short-lived branches, and saves
+  # CPU cycles on duplicated tests.
+  # For long-lived branches that diverge, you'll want to run on all pushes, not
+  # just on push-to-master.
+  pull_request: {}
+  push:
+    branches:
+    - master
 
 jobs:
 
