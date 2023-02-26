@@ -124,161 +124,203 @@ are used to register servers and to execute the main loop of Copas:</p>
 
 <dl class="reference">
     <dt><strong><code>copas([init_func, ][timeout])</code></strong></dt>
-    <dd>This is a shortcut to <code>copas.loop</code>.
+    <dd>
+        <p>This is a shortcut to <code>copas.loop</code>.</p>
     </dd>
 
     <dt><strong><code>copas.addserver(server, handler [, timeout [, name]])</code></strong></dt>
-    <dd>Adds a new <code>server</code> and its <code>handler</code> to the dispatcher
-        using an optional <code>timeout</code>.<br />
-        <code>server</code> is a LuaSocket server socket created using
-        <code>socket.bind()</code>.<br />
-        <code>handler</code> is a function that receives a LuaSocket client socket
+    <dd>
+        <p>Adds a new <code>server</code> and its <code>handler</code> to the dispatcher
+        using an optional <code>timeout</code>.</p>
+
+        <p><code>server</code> is a LuaSocket server socket created using <code>socket.bind()</code>.</p>
+
+        <p><code>handler</code> is a function that receives a LuaSocket client socket
         and handles the communication with that client.
         The handler will be executed in parallel with other threads and
-        registered handlers as long as it uses the Copas socket functions.<br />
-        <code>timeout</code> is the timeout in seconds. Upon accepting connections,
-        the timeout will be inherited by TCP client sockets (only applies to TCP).<br />
-        <code>name</code> is the internal name to use for this socket. The handler threads and
-        (in case of TCP) the incoming client connections will get a name derived from the server socket.<br />
-        <ul>
+        registered handlers as long as it uses the Copas socket functions.</p>
+
+        <p><code>timeout</code> is the timeout in seconds. Upon accepting connections,
+        the timeout will be inherited by TCP client sockets (only applies to TCP).</p>
+
+        <p><code>name</code> is the internal name to use for this socket. The handler threads and
+        (in case of TCP) the incoming client connections will get a name derived from the server socket.</p>
+
+        <p><ul>
             <li>TCP: client-socket name: <code>"[server_name]:client_XX"</code> and the handler thread
             <code>"[server_name]:handler_XX"</code> where <code>XX</code> is a sequential number matching
             between the client-socket and handler.</li>
             <li>UDP: the handler thread will be named <code>"[server_name]:handler"</code></li>
-        </ul>
+        </ul></p>
     </dd>
 
     <dt><strong><code>coro = copas.addnamedthread(name, func [, ...])</code></strong></dt>
-    <dd>Same as <code>copas.addthread</code>, but also names the new thread.
+    <dd>
+        <p>Same as <code>copas.addthread</code>, but also names the new thread.</p>
     </dd>
 
     <dt><strong><code>coro = copas.addthread(func [, ...])</code></strong></dt>
-    <dd>Adds a function as a new coroutine/thread to the dispatcher. The optional
-        parameters will be passed to the function <code>func</code>.<br />
-        The thread will be executed in parallel with other threads and the
-        registered handlers as long as it uses the Copas socket/sleep functions.
-        It returns the created coroutine.
+    <dd>
+        <p>Adds a function as a new coroutine/thread to the dispatcher. The optional
+        parameters will be passed to the function <code>func</code>.</p>
+
+        <p>The thread will be executed in parallel with other threads and the
+        registered handlers as long as it uses the Copas socket/sleep functions.</p>
+
+        <p>It returns the created coroutine.</p>
     </dd>
 
     <dt><strong><code>copas.autoclose</code></strong></dt>
-    <dd>Boolean that controls whether sockets are automatically closed (defaults to <code>true</code>).
-        This only applies to incoming connections accepted on a TCP server socket.<br />
-        When a TCP handler function completes and terminates, then the client
+    <dd>
+        <p>Boolean that controls whether sockets are automatically closed (defaults to <code>true</code>).
+        This only applies to incoming connections accepted on a TCP server socket.</p>
+
+        <p>When a TCP handler function completes and terminates, then the client
         socket will automatically be closed when <code>copas.autoclose</code> is
-        truthy.
+        truthy.</p>
     </dd>
 
-    <dt><strong><code>copas.finished()</code></strong></dt>
-    <dd>Checks whether anything remains to be done.<br />
-        Returns <code>false</code> when the socket lists for reading and writing
-        are empty and there is not another (sleeping) task to execute.<br />
-        <strong>NOTE:</strong> when tasks or sockets have been scheduled/setup this
+    <dt><strong><code>bool = copas.finished()</code></strong></dt>
+    <dd>
+        <p>Checks whether anything remains to be done.</p>
+
+        <p>Returns <code>false</code> when the socket lists for reading and writing
+        are empty and there is not another (sleeping) task to execute.</p>
+
+        <p><strong>NOTE:</strong> when tasks or sockets have been scheduled/setup this
         function will return <code>true</code> even if the loop has not yet started.
-        See also <code>copas.running</code>.
+        See also <code>copas.running</code>.</p>
     </dd>
 
     <dt><strong><code>func = copas.geterrorhandler([coro])</code></strong></dt>
-    <dd>Returns the currently active errorhandler function for the coroutine (either
+    <dd>
+        <p>Returns the currently active errorhandler function for the coroutine (either
         the explicitly set errorhandler, or the default one).
-        <code>coro</code> will default to the currently running coroutine if omitted.
+        <code>coro</code> will default to the currently running coroutine if omitted.</p>
     </dd>
 
-    <dt><strong><code>copas.getsocketname(skt)</code></strong></dt>
-        <dd>Returns the name for the socket.
+    <dt><strong><code>string = copas.getsocketname(skt)</code></strong></dt>
+    <dd>
+        <p>Returns the name for the socket.</p>
     </dd>
 
-    <dt><strong><code>copas.getthreadname([co])</code></strong></dt>
-        <dd>Returns the name for the coroutine/thread. If not given defaults to the
-        currently running coroutine.
+    <dt><strong><code>string = copas.getthreadname([co])</code></strong></dt>
+    <dd>
+        <p>Returns the name for the coroutine/thread. If not given defaults to the
+        currently running coroutine.</p>
     </dd>
 
-    <dt><strong><code>copas.gettraceback([msg], [co], [skt])</code></strong></dt>
-        <dd>Creates a traceback (string). Can be used from custom errorhandlers to create
-        a proper trace. See <code>copas.seterrorhandler</code>.
+    <dt><strong><code>string = copas.gettraceback([msg], [co], [skt])</code></strong></dt>
+    <dd>
+        <p>Creates a traceback (string). Can be used from custom errorhandlers to create
+        a proper trace. See <code>copas.seterrorhandler</code>.</p>
     </dd>
 
     <dt><strong><code>func = copas.handler(connhandler [, sslparams])</code></strong></dt>
-        <dd>Wraps the <code>connhandler</code> function. Returns a new function that
+    <dd>
+        <p>Wraps the <code>connhandler</code> function.</p>
+
+        <p>Returns a new function that
         wraps the client socket, and (if <code>sslparams</code> is provided) performs
-        the ssl handshake, before calling <code>connhandler</code>.
-        <br/>See <code>sslparams</code> definition below.
+        the ssl handshake, before calling <code>connhandler</code>.</p>
+
+        <p>See <code>sslparams</code> definition below.</p>
     </dd>
 
     <dt><strong><code>copas.loop([init_func, ][timeout])</code></strong></dt>
-    <dd>Starts the Copas loop accepting client connections for the
+    <dd>
+        <p>Starts the Copas loop accepting client connections for the
         registered servers and handling those connections with the corresponding
         handlers. Calling on the module table itself is a shortcut to this function.
         Every time a server accepts a connection, Copas calls the
         associated handler passing the client socket returned by
-        <code>socket.accept()</code>. The <code>init_func</code> function is an
+        <code>socket.accept()</code>.</p>
+
+        <p>The <code>init_func</code> function is an
         optional initialization function that runs as a Copas thread
         (with name <code>"copas_initializer"</code>).
         The <code>timeout</code> parameter is optional,
-        and is passed to the <code>copas.step()</code> function.
-        The loop returns when <code>copas.finished() == true</code>.
+        and is passed to the <code>copas.step()</code> function.</p>
+
+        <p>The loop returns when <code>copas.finished() == true</code>.</p>
     </dd>
 
-    <dt><strong><code>copas.removeserver(skt [, keep_open])</code></strong></dt>
-    <dd>Removes a server socket from the Copas scheduler.
+    <dt><strong><code>result = copas.removeserver(skt [, keep_open])</code></strong></dt>
+    <dd>
+        <p>Removes a server socket from the Copas scheduler.
         By default, the socket will be closed to allow the socket to be reused right away after
         removing the server. If <code>keep_open</code> is <code>true</code>, the socket
-        is removed from the scheduler but it is not closed.
+        is removed from the scheduler but it is not closed.</p>
+
+        <p>Returns the result of <code>skt:close()</code> or <code>true</code> if the socket
+        was kept open.</p>
     </dd>
 
     <dt><strong><code>copas.removethread(coroutine)</code></strong></dt>
-    <dd>Removes a coroutine added to the Copas scheduler.
+    <dd>
+        <p>Removes a coroutine added to the Copas scheduler.
         Takes a <code>coroutine</code> created by <code>copas.addthread()</code> and removes
         it from the dispatcher the next time it tries to resume. If <code>coroutine</code> isn't
-        registered, it does nothing.
+        registered, it does nothing.</p>
     </dd>
 
     <dt><strong><code>copas.running</code></strong></dt>
-    <dd>A flag set to <code>true</code> when <code>copas.loop()</code> starts, and
+    <dd>
+        <p>A flag set to <code>true</code> when <code>copas.loop()</code> starts, and
         reset to <code>false</code> when the loop exits. See also
-        <code>copas.finished()</code>.
+        <code>copas.finished()</code>.</p>
     </dd>
 
     <dt><strong><code>copas.seterrorhandler([func], [default])</code></strong></dt>
-    <dd>Sets the error handling function for the current thread.
+    <dd>
+        <p>Sets the error handling function for the current thread.
         Any errors will be forwarded to this handler, it will receive the
         error, coroutine, and socket as arguments;
         <code>function(err, co, skt)</code>. See the Copas source code
         on how to deal with the arguments when implementing your own, and check
-        <code>copas.gettraceback</code>.<br/>
+        <code>copas.gettraceback</code>.</p>
 
-        <br/>If <code>func</code>
-        is omitted, then the error handler is cleared (restores the default handler
-        for this coroutine).
-        <br/>If <code>default</code>
-        is truthy, then the handler will become the new default, used for all threads
-        that do not have their own set (in this case <code>func</code> must be provided).
+        <p>If <code>func</code> is omitted, then the error handler is cleared (restores the default handler
+        for this coroutine).</p>
+
+        <p>If <code>default</code> is truthy, then the handler will become the new default, used for all threads
+        that do not have their own set (in this case <code>func</code> must be provided).</p>
     </dd>
 
     <dt><strong><code>copas.setsocketname(name, skt)</code></strong></dt>
-        <dd>Sets the name for the socket.
+    <dd>
+        <p>Sets the name for the socket.</p>
     </dd>
 
     <dt><strong><code>copas.setthreadname(name [,co])</code></strong></dt>
-        <dd>Sets the name for the coroutine/thread. <code>co</code> defaults to the
-        currently running coroutine.
+    <dd>
+        <p>Sets the name for the coroutine/thread. <code>co</code> defaults to the
+        currently running coroutine.</p>
     </dd>
 
-    <dt><strong><code>copas.wrap(skt [, sslparams] )</code></strong></dt>
-    <dd>Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
+    <dt><strong><code>skt = copas.wrap(skt [, sslparams] )</code></strong></dt>
+    <dd>
+        <p>Wraps a LuaSocket socket and returns a Copas socket that implements LuaSocket's API
         but use Copas' methods like <code>copas.send()</code> and <code>copas.receive()</code>
-        automatically. If the <code>sslparams</code> is provided, then a call to the wrapped
+        automatically. If the socket was already wrapped, then it will not
+        wrap it again.</p>
+
+        <p>If the <code>sslparams</code> is provided, then a call to the wrapped
         <code>sock:connect()</code> method will automatically include the handshake (and in that
         case <code>connect()</code> might throw an error instead of returning nil+error, see
-        <code>copas.dohandshake()</code>).
-        <br/>See <code>sslparams</code> definition below.
+        <code>copas.dohandshake()</code>).</p>
+
+        <p>See <code>sslparams</code> definition below.</p>
     </dd>
 
     <dt><strong><code>sslparams</code></strong></dt>
-    <dd>This is the data-structure that is passed to the <code>copas.handler</code>, and
+    <dd>
+        <p>This is the data-structure that is passed to the <code>copas.handler</code>, and
         <code>copas.wrap</code> functions. Passing the structure will allow Copas to take
-        care of the entire TLS handshake process.
-        <br />The structure is set up to mimic the LuaSec functions for the handshake.
-        <pre class="example">
+        care of the entire TLS handshake process.</p>
+
+        <p>The structure is set up to mimic the LuaSec functions for the handshake.</p>
+<pre class="example">
 {
   wrap = table | context,    -- parameter to LuaSec 'wrap()'
   sni = {                    -- parameters to LuaSec 'sni()'
@@ -286,9 +328,8 @@ are used to register servers and to execute the main loop of Copas:</p>
     strict = bool            --   2nd parameter
   }
 }
-        </pre>
+</pre>
     </dd>
-
 </dl>
 
 <h3>Non-blocking data exchange and timer/sleep functions</h3>
@@ -299,290 +340,351 @@ exchange data with other services.</p>
 
 <dl class="reference">
     <dt><strong><code>copas.pause([delay])</code></strong></dt>
-    <dd>Pauses the current co-routine. Parameter <code>delay</code> (in seconds) is optional
-    and defaults to 0. If <code>delay &lt= 0</code> then it will pause for 0 seconds.
+    <dd>
+        <p>Pauses the current co-routine. Parameter <code>delay</code> (in seconds) is optional
+        and defaults to 0. If <code>delay &lt= 0</code> then it will pause for 0 seconds.</p>
     </dd>
 
     <dt><strong><code>copas.pauseforever()</code></strong></dt>
-    <dd>Pauses the current co-routine until explicitly woken by a call to
-    <code>copas.wakeup()</code>.
+    <dd>
+        <p>Pauses the current co-routine until explicitly woken by a call to <code>copas.wakeup()</code>.</p>
     </dd>
 
     <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>
-    <dd><i>Deprecated:</i> use <code>copas.pause</code> and <code>copas.pauseforever</code>
-    instead.
+    <dd>
+        <p><i>Deprecated:</i> use <code>copas.pause</code> and <code>copas.pauseforever</code> instead.</p>
     </dd>
 
     <dt><strong><code>copas.wakeup(co)</code></strong></dt>
-    <dd><code>co</code> is the coroutine to wakeup, see <code>copas.pauseforever()</code>.
+    <dd>
+        <p>Immediately wakes up a coroutine that was sleeping or sleeping-forever.
+        <code>co</code> is the coroutine to wakeup, see <code>copas.pause()</code>
+        and <code>copas.pauseforever()</code>. Does nothing if the coroutine wasn't sleeping.</p>
     </dd>
 
     <dt><strong><code>sock:close()</code></strong></dt>
-    <dd>Equivalent to the LuaSocket method (after <code>copas.wrap</code>).
+    <dd>
+        <p>Equivalent to the LuaSocket method (after <code>copas.wrap</code>).</p>
     </dd>
 
     <dt><strong><code>sock:connect(address, port)</code></strong></dt>
-    <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
-    <br/>If <code>sslparams</code> was provided when wrapping the socket, the <code>connect</code>
-    method will also perform the full TLS handshake. So after <code>connect</code> returns
-    the connection will be secured.
+    <dd>
+        <p>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).</p>
+
+        <p>If <code>sslparams</code> was provided when wrapping the socket, the <code>connect</code>
+        method will also perform the full TLS handshake. So after <code>connect</code> returns
+        the connection will be secured.</p>
     </dd>
 
     <dt><strong><code>sock:dohandshake(sslparams)</code></strong></dt>
-    <dd>Non-blocking quivalent to the LuaSec method (after <code>copas.wrap</code>).  Instead of using
-    this method, it is preferred to pass the <code>sslparams</code> to the functions
-    <code>copas.handler</code> (for incoming connections) and <code>copas.wrap</code> (for
-    outgoing connections), which then ensures that the connection will automatically be
-    secured when started.
+    <dd>
+        <p>Non-blocking quivalent to the LuaSec method (after <code>copas.wrap</code>).  Instead of using
+        this method, it is preferred to pass the <code>sslparams</code> to the functions
+        <code>copas.handler</code> (for incoming connections) and <code>copas.wrap</code> (for
+        outgoing connections), which then ensures that the connection will automatically be
+        secured when started.</p>
     </dd>
 
     <dt><strong><code>sock:receive([pattern [, prefix]])</code></strong></dt>
-    <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
-    Please see <code>sock:receivepartial</code> for differences with LuaSocket, especially
-    when using the <code>"*a"</code> pattern.
+    <dd>
+        <p>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
+        Please see <code>sock:receivepartial</code> for differences with LuaSocket, especially
+        when using the <code>"*a"</code> pattern.</p>
     </dd>
 
     <dt><strong><code>sock:receivefrom([size])</code></strong></dt>
-    <dd>Reads data from a UDP socket just like LuaSocket, but non-blocking.
-    <code>socket:receivefrom()</code>.
+    <dd>
+        <p>Reads data from a UDP socket just like LuaSocket, but non-blocking.
+        <code>socket:receivefrom()</code>.</p>
     </dd>
 
     <dt><strong><code>sock:receivepartial([pattern [, prefix]])</code></strong></dt>
-    <dd>This method is the same as the <code>receive</code> method, the difference being
-    that this method will return on any data received, even if the specified pattern was not
-    yet satisfied.<br/>
-    <br/>
-    When using delimited formats or known byte-size (pattern is <code>"*l"</code> or a number)
-    the regular <code>receive</code> method will usually be fine. But when reading a stream with
-    the <code>"*a"</code> pattern the <code>receivepartial</code> method should be used.<br/>
-    <br/>
-    The reason for this is the difference in timeouts between Copas and LuaSocket. The Copas
-    timeout will apply on each underlying socket read/write operation. So on every chunk received
-    Copas will reset the timeout. So if reading pattern <code>"*a"</code> with a 10 second timeout,
-    and the sender sends a stream of data (unlimited size), in 1kb chunks, with 5 seconds intervals,
-    then there will never be a timeout when using <code>receive</code>, and hence the call would
-    never return.<br/>
-    If using <code>receivepartial</code> with the <code>"*a"</code>
-    pattern, the (repeated) call would return the 1kb chunks, with a <code>"timeout"</code> error.
+    <dd>
+        <p>This method is the same as the <code>receive</code> method, the difference being
+        that this method will return on any data received, even if the specified pattern was not
+        yet satisfied.</p>
+
+        <p>When using delimited formats or known byte-size (pattern is <code>"*l"</code> or a number)
+        the regular <code>receive</code> method will usually be fine. But when reading a stream with
+        the <code>"*a"</code> pattern the <code>receivepartial</code> method should be used.</p>
+
+        <p>The reason for this is the difference in timeouts between Copas and LuaSocket. The Copas
+        timeout will apply on each underlying socket read/write operation. So on every chunk received
+        Copas will reset the timeout. So if reading pattern <code>"*a"</code> with a 10 second timeout,
+        and the sender sends a stream of data (unlimited size), in 1kb chunks, with 5 seconds intervals,
+        then there will never be a timeout when using <code>receive</code>, and hence the call would
+        never return.</p>
+
+        <p>If using <code>receivepartial</code> with the <code>"*a"</code>
+        pattern, the (repeated) call would return the 1kb chunks, with a <code>"timeout"</code> error.</p>
     </dd>
 
     <dt><strong><code>sock:send(data [, i [, j]])</code></strong></dt>
-    <dd>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
+    <dd>
+        <p>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).</p>
     </dd>
 
     <dt><strong><code>sock:settimeout([timeout])</code></strong></dt>
-    <dd>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>).
-    The default is to not have a timeout and wait indefinitely. If a timeout is hit,
-    the operation will return <code>nil + "timeout"</code>. This method is compatible
-    with LuaSocket, but sets all three timeouts to the same value. <br/>
-    Behaviour:
-    <ul>
-        <li><code>nil</code>: block indefinitely</li>
-        <li><code>number &lt; 0</code>: block indefinitely</li>
-        <li><code>number &gt;= 0</code>: timeout value in seconds</li>
-    </ul>
-    <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
-    <code>sock:settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.
+    <dd>
+        <p>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>).
+        The default is to not have a timeout and wait indefinitely. If a timeout is hit,
+        the operation will return <code>nil + "timeout"</code>. This method is compatible
+        with LuaSocket, but sets all three timeouts to the same value.</p>
+        <p>Behaviour:
+        <ul>
+            <li><code>nil</code>: block indefinitely</li>
+            <li><code>number &lt; 0</code>: block indefinitely</li>
+            <li><code>number &gt;= 0</code>: timeout value in seconds</li>
+        </ul>
+        <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
+        <code>sock:settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.</p>
     </dd>
 
     <dt><strong><code>sock:settimeouts([connect], [send], [receive])</code></strong></dt>
-    <dd>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>). A positive
-    number sets the timeout, a negative number removes the timeout, and <code>nil</code> will not
-    change the currently set timeout. The default is to not have a timeout and wait
-    indefinitely.<br/>
-    Behaviour:
-    <ul>
-        <li><code>nil</code>: do not change the current setting</li>
-        <li><code>number &lt; 0</code>: block indefinitely</li>
-        <li><code>number &gt;= 0</code>: timeout value in seconds</li>
-    </ul>
-    <strong>Important:</strong> this behaviour is different from
-    <code>sock:settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
-    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+    <dd>
+        <p>Sets the timeouts (in seconds) for a socket (after <code>copas.wrap</code>). A positive
+        number sets the timeout, a negative number removes the timeout, and <code>nil</code> will not
+        change the currently set timeout. The default is to not have a timeout and wait
+        indefinitely.</p>
+        <p>Behaviour:
+        <ul>
+            <li><code>nil</code>: do not change the current setting</li>
+            <li><code>number &lt; 0</code>: block indefinitely</li>
+            <li><code>number &gt;= 0</code>: timeout value in seconds</li>
+        </ul>
+        <strong>Important:</strong> this behaviour is different from
+        <code>sock:settimeout</code>, where <code>nil</code> means 'wait indefinitely'.</p>
+
+        <p>If a timeout is hit, the operation will return <code>nil + "timeout"</code>.</p>
     </dd>
 
     <dt><strong><code>sock:sni(...)</code></strong></dt>
-    <dd>Equivalent to the LuaSec method (after <code>copas.wrap</code>). Instead of using
-    this method, it is preferred to pass the <code>sslparams</code> to the functions
-    <code>copas.handler</code> (for incoming connections) and <code>copas.wrap</code> (for
-    outgoing connections), which then ensures that the connection will automatically be
-    secured when started.
+    <dd>
+        <p>Equivalent to the LuaSec method (after <code>copas.wrap</code>). Instead of using
+        this method, it is preferred to pass the <code>sslparams</code> to the functions
+        <code>copas.handler</code> (for incoming connections) and <code>copas.wrap</code> (for
+        outgoing connections), which then ensures that the connection will automatically be
+        secured when started.</p>
     </dd>
 
     <dt><strong><code>lock:destroy()</code></strong></dt>
-    <dd>Will destroy the lock and release all waiting threads. The result for those
-    threads will be <code>nil + "destroyed" + wait_time</code>, any new call on any
-    method will return <code>nil + "destroyed"</code> from here on.
+    <dd>
+        <p>Will destroy the lock and release all waiting threads. The result for those
+        threads will be <code>nil + "destroyed" + wait_time</code>, any new call on any
+        method will return <code>nil + "destroyed"</code> from here on.</p>
     </dd>
 
     <dt><strong><code>lock:get([timeout])</code></strong></dt>
-    <dd>Will try and acquire the lock. The optional <code>timeout</code> can be
-    used to override the timeout value set when the lock was created.<br />
-    If the lock is not available, the coroutine will yield until either the
-    lock becomes available, or it times out. The one exception is when
-    <code>timeout</code> is 0, then it will immediately return without yielding.
-    If the timeout is set to <code>math.huge</code>, then it will wait forever.<br />
-    Upon success, it will return the <code>wait-time</code> in seconds. Upon failure it will
-    return <code>nil + error + wait-time</code>. Upon a timeout the error value will
-    be "timeout".
+    <dd>
+        <p>Will try and acquire the lock. The optional <code>timeout</code> can be
+        used to override the timeout value set when the lock was created.</p>
+
+        <p>If the lock is not available, the coroutine will yield until either the
+        lock becomes available, or it times out. The one exception is when
+        <code>timeout</code> is 0, then it will immediately return without yielding.
+        If the timeout is set to <code>math.huge</code>, then it will wait forever.</p>
+
+        <p>Upon success, it will return the <code>wait-time</code> in seconds. Upon failure it will
+        return <code>nil + error + wait-time</code>. Upon a timeout the error value will
+        be "timeout".</p>
     </dd>
 
     <dt><strong><code>copas.lock.new([timeout], [not_reentrant])</code></strong></dt>
-    <dd>Creates and returns a new lock. The <code>timeout</code> specifies the
-    default timeout for the lock in seconds, and defaults to 10 (set it to <code>math.huge</code>
-    to wait forever). By default the lock is re-entrant,
-    except if <code>not_reentrant</code> is set to a truthy value.
+    <dd>
+        <p>Creates and returns a new lock. The <code>timeout</code> specifies the
+        default timeout for the lock in seconds, and defaults to 10 (set it to <code>math.huge</code>
+        to wait forever).</p>
+
+        <p>By default the lock is re-entrant,
+        except if <code>not_reentrant</code> is set to a truthy value.</p>
     </dd>
 
     <dt><strong><code>lock:release()</code></strong></dt>
-    <dd>Releases the currently held lock. Returns <code>true</code> or <code>nil + error</code>.
+    <dd>
+        <p>Releases the currently held lock.</p>
+        <p>Returns <code>true</code> or <code>nil + error</code>.</p>
     </dd>
 
     <dt><strong><code>queue:add_worker(func)</code></strong></dt>
-    <dd>Adds a worker that will handle whatever is passed into the queue. Can be called
-    multiple times to add more workers. The function <code>func</code> is wrapped and added
-    as a copas thread. The threads automatically exit when the queue is destroyed.
-    Worker function signature: <code>function(item)</code> (Note: worker functions run
-    unprotected, so wrap code in an (x)pcall if errors are expected, otherwise the
-    worker will exit on an error, and queue handling will stop).
-    Returns the coroutine added, or <code>nil+"destroyed"</code>
+    <dd>
+        <p>Adds a worker that will handle whatever is passed into the queue. Can be called
+        multiple times to add more workers. The function <code>func</code> is wrapped and added
+        as a copas thread. The threads automatically exit when the queue is destroyed.</p>
+
+        <p>Worker function signature: <code>function(item)</code> (Note: worker functions run
+        unprotected, so wrap code in an (x)pcall if errors are expected, otherwise the
+        worker will exit on an error, and queue handling will stop).</p>
+
+        <p>Returns the coroutine added, or <code>nil+"destroyed"</code>.</p>
     </dd>
 
     <dt><strong><code>queue:destroy()</code></strong></dt>
-    <dd>Destroys a queue immediately. Abandons what is left in the queue.
-    Releases all waiting calls to <code>queue:pop()</code> with <code>nil+"destroyed"</code>.
-    Returns <code>true</code>, or <code>nil+"destroyed"</code>
+    <dd>
+        <p>Destroys a queue immediately. Abandons what is left in the queue.
+        Releases all waiting calls to <code>queue:pop()</code> with <code>nil+"destroyed"</code>.
+        Returns <code>true</code>, or <code>nil+"destroyed"</code>.</p>
     </dd>
 
     <dt><strong><code>queue:finish([timeout], [no_destroy_on_timeout])</code></strong></dt>
-    <dd>Finishes a queue. Calls <code>queue:stop()</code> and then waits for the queue to run
-    empty (and be destroyed) before returning. The <code>timeout</code> defaults to 10 seconds
-    (the default timeout value for a lock), <code>math.huge</code> can be used to wait forever.
-    Parameter <code>no_destroy_on_timeout</code> indicates if the queue is not to be forcefully
-    destroyed on a timeout (abandonning what ever is left in the queue).
-    Returns <code>true</code>, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>.
+    <dd>
+        <p>Finishes a queue. Calls <code>queue:stop()</code> and then waits for the queue to run
+        empty (and be destroyed) before returning.</p>
+
+        <p>The <code>timeout</code> defaults to 10 seconds
+        (the default timeout value for a lock), <code>math.huge</code> can be used to wait forever.</p>
+
+        <p>Parameter <code>no_destroy_on_timeout</code> indicates if the queue is not to be forcefully
+        destroyed on a timeout (abandonning what ever is left in the queue).</p>
+
+        <p>Returns <code>true</code>, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>.</p>
     </dd>
 
     <dt><strong><code>queue:get_size()</code></strong></dt>
-    <dd>Gets the number of items in the queue currently.
-    Returns <code>number</code> or <code>nil + "destroyed"</code>.
+    <dd>
+        <p>Gets the number of items in the queue currently.
+        Returns <code>number</code> or <code>nil + "destroyed"</code>.</p>
     </dd>
 
     <dt><strong><code>queue:get_workers()</code></strong></dt>
-    <dd>Returns a list/array of current workers (coroutines) handling the queue.
-    (only the workers added by <code>queue:add_worker()</code>, and still active,
-    will be in the list).
-    Returns <code>list</code> or <code>nil + "destroyed"</code>.
+    <dd>
+        <p>Returns a list/array of current workers (coroutines) handling the queue
+        (only the workers added by <code>queue:add_worker()</code>, and still active,
+        will be in the list). Returns <code>list</code> or <code>nil + "destroyed"</code>.</p>
     </dd>
 
     <dt><strong><code>queue.name</code></strong></dt>
-    <dd>A field set to name of the queue. See <code>copas.queue.new()</code>.
+    <dd>
+        <p>A field set to name of the queue. See <code>copas.queue.new()</code>.</p>
     </dd>
 
     <dt><strong><code>copas.queue.new([options])</code></strong></dt>
-    <dd>Creates and returns a new queue. The <code>options</code> table has the following
-    fields:
-    <ul>
-        <li><code>options.name</code>: (optional) the name for the queue, the default name will be
-        <code>"copas_queue_XX"</code>. The name will be used to name any workers
-        added to the queue using <code>queue:add_worker()</code>, their name will be
-        <code>"[queue_name]:worker_XX"</code></li>
-    </ul>
+    <dd>
+        <p>Creates and returns a new queue. The <code>options</code> table has the following fields:
+        <ul>
+            <li><code>options.name</code>: (optional) the name for the queue, the default name will be
+            <code>"copas_queue_XX"</code>. The name will be used to name any workers
+            added to the queue using <code>queue:add_worker()</code>, their name will be
+            <code>"[queue_name]:worker_XX"</code></li>
+        </ul></p>
     </dd>
 
     <dt><strong><code>queue:pop([timeout])</code></strong></dt>
-    <dd>Will pop an item from the queue. If there are no items in the queue it will yield
-    until there are or a timeout happens (exception is when <code>timeout == 0</code>, then it will
-    not yield but return immediately, be careful not to create a hanging loop!). Timeout defaults
-    to the default time-out of a semaphore. If the timeout is <code>math.huge</code> then it will wait forever.
-    Returns an item, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>. Since an item
-    can be <code>nil</code>, make sure to check for the error message to detect error.
+    <dd>
+        <p>Will pop an item from the queue. If there are no items in the queue it will yield
+        until there are or a timeout happens (exception is when <code>timeout == 0</code>, then it will
+        not yield but return immediately, be careful not to create a hanging loop!).</p>
+
+        <p>Timeout defaults to the default time-out of a semaphore. If the timeout is <code>math.huge</code>
+        then it will wait forever.</p>
+
+        <p>Returns an item, or <code>nil+"timeout"</code>, or <code>nil+"destroyed"</code>. Since an item
+        can be <code>nil</code>, make sure to check for the error message to detect errors.</p>
     </dd>
 
     <dt><strong><code>queue:push(item)</code></strong></dt>
-    <dd>Will push a new item in the queue. Item can be any type, including 'nil'.
-    Returns <code>true</code> or <code>nil + "destroyed"</code>.
+    <dd>
+        <p>Will push a new item in the queue. Item can be any type, including 'nil'.</p>
+
+        <p>Returns <code>true</code> or <code>nil + "destroyed"</code>.</p>
     </dd>
 
     <dt><strong><code>queue:stop()</code></strong></dt>
-    <dd>Instructs the queue to stop, and returns immediately. It will no longer
-    accept calls to <code>queue:push()</code>,
-    and will call <code>queue:destroy()</code> once the queue is empty.
-    Returns <code>true</code> or <code>nil + "destroyed"</code>.
+    <dd>
+        <p>Instructs the queue to stop, and returns immediately. It will no longer
+        accept calls to <code>queue:push()</code>, and will call <code>queue:destroy()</code>
+        once the queue is empty.</p>
+
+        <p>Returns <code>true</code> or <code>nil + "destroyed"</code>.</p>
     </dd>
 
     <dt><strong><code>semaphore:destroy()</code></strong></dt>
-    <dd>Will destroy the sempahore and release all waiting threads. The result for those
-    threads will be <code>nil + "destroyed"</code>, any new call on any
-    method will return <code>nil + "destroyed"</code> from here on.
+    <dd>
+        <p>Will destroy the sempahore and release all waiting threads. The result for those
+        threads will be <code>nil + "destroyed"</code>, any new call on any
+        method will return <code>nil + "destroyed"</code> from here on.</p>
     </dd>
 
     <dt><strong><code>semaphore:get_count()</code></strong></dt>
-    <dd>Returns the number of resources currently available in the semaphore.
+    <dd>
+        <p>Returns the number of resources currently available in the semaphore.</p>
     </dd>
 
     <dt><strong><code>semaphore:get_wait()</code></strong></dt>
-    <dd>Returns the total number of resources requested by all currently waiting threads minus
-    the available resources. Such that <code>sempahore:give(semaphore:get_wait())</code> will
-    release all waiting threads and leave the semaphore with 0 resources. If there are no waiting threads
-    then the result will be 0, and the number of resources in the semaphore will be greater than or equal to 0.
+    <dd>
+        <p>Returns the total number of resources requested by all currently waiting threads minus
+        the available resources. Such that <code>sempahore:give(semaphore:get_wait())</code> will
+        release all waiting threads and leave the semaphore with 0 resources. If there are no waiting threads
+        then the result will be 0, and the number of resources in the semaphore will be greater than or equal to 0.</p>
     </dd>
 
     <dt><strong><code>semaphore:give([given])</code></strong></dt>
-    <dd>Gives resources to the semaphore. Parameter <code>given</code> is the number of resources
-    given to the semaphore, if omitted it defaults to 1.
-    If the total resources in the semaphore exceed the maximum, then it will be capped at the
-    maximum. In that case the result will be <code>nil + "too many"</code>.
+    <dd>
+        <p>Gives resources to the semaphore. Parameter <code>given</code> is the number of resources
+        given to the semaphore, if omitted it defaults to 1.</p>
+
+        <p>If the total resources in the semaphore exceed the maximum, then it will be capped at the
+        maximum. In that case the result will be <code>nil + "too many"</code>.</p>
     </dd>
 
     <dt><strong><code>copas.semaphore.new(max, [start], [timeout])</code></strong></dt>
-    <dd>Creates and returns a new semaphore (fifo).
-    <code>max</code> specifies the maximum number of resources the semaphore can hold.
-    The optional <code>start</code> parameter (default 0) specifies the number of resources upon creation.
-    The <code>timeout</code> specifies the default timeout for the semaphore in
-    seconds, and defaults to 10 (<code>math.huge</code> can be used to wait forever).
+    <dd>
+        <p>Creates and returns a new semaphore (fifo).</p>
+
+        <p><code>max</code> specifies the maximum number of resources the semaphore can hold.
+        The optional <code>start</code> parameter (default 0) specifies the number of resources upon creation.</p>
+
+        <p>The <code>timeout</code> specifies the default timeout for the semaphore in
+        seconds, and defaults to 10 (<code>math.huge</code> can be used to wait forever).</p>
     </dd>
 
     <dt><strong><code>semaphore:take([requested], [timeout])</code></strong></dt>
-    <dd>Takes resources from the semaphore. Parameter <code>requested</code> is the number of resources
-    requested from the semaphore, if omitted it defaults to 1.<br />
-    If not enough resources are available it
-    will yield and wait until enough resources are available, or a timeout occurs. The exception is when
-    <code>timeout</code> is set to 0, in that case it will immediately return without yielding if there are
-    not enough resources available. If the timeout is <code>math.huge</code> then it will wait forever.<br />
-    The optional <code>timeout</code> parameter can be used to override the default timeout as set upon
-    semaphore creation.
-    Returns <code>true</code> upon success or <code>nil + "timeout"</code> on a timeout. In case more
-    resources are requested than maximum available the error will be <code>"too many"</code>.
+    <dd>
+        <p>Takes resources from the semaphore. Parameter <code>requested</code> is the number of resources
+        requested from the semaphore, if omitted it defaults to 1.</p>
+
+        <p>If not enough resources are available it
+        will yield and wait until enough resources are available, or a timeout occurs. The exception is when
+        <code>timeout</code> is set to 0, in that case it will immediately return without yielding if there are
+        not enough resources available.</p>
+
+        <p>The optional <code>timeout</code> parameter can be used to override the default timeout as set upon
+        semaphore creation. If the timeout is <code>math.huge</code> then it will wait forever.</p>
+
+        <p>Returns <code>true</code> upon success or <code>nil + "timeout"</code> on a timeout. In case more
+        resources are requested than maximum available the error will be <code>"too many"</code>.</p>
     </dd>
 
     <dt><strong><code>copas.timer.new(options)</code></strong></dt>
-    <dd>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
-    <ul>
-        <li><code>options.name</code> (optional): the name for the timer, the default name will be
-        <code>"copas_timer_XX"</code>. The name will be used to name the timer thread.</li>
-        <li><code>options.recurring</code> (optional, default <code>false</code>): boolean</li>
-        <li><code>options.delay</code>: expiry delay in seconds</li>
-        <li><code>options.initial_delay</code> (optional): see <code>timer:arm()</code></li>
-        <li><code>options.params</code> (optional): an opaque value that is passed to the callback upon expiry</li>
-        <li><code>options.callback</code>: is the function to execute on timer expiry.
-            The callback function has <code>function(timer_obj, params)</code> as signature, where
-            <code>params</code> is the value initially passed in <code>options.params</code></li>
-        <li><code>options.errorhandler</code> (optional): a Copas errorhandler function (see
-        <code>copas.seterrorhandler</code> for the signature.</li>
-    </ul>
+    <dd>
+        <p>Creates and returns an (armed) timer object. The <code>options</code> table has the following fields;
+        <ul>
+            <li><code>options.name</code> (optional): the name for the timer, the default name will be
+            <code>"copas_timer_XX"</code>. The name will be used to name the timer thread.</li>
+            <li><code>options.recurring</code> (optional, default <code>false</code>): boolean</li>
+            <li><code>options.delay</code>: expiry delay in seconds</li>
+            <li><code>options.initial_delay</code> (optional): see <code>timer:arm()</code></li>
+            <li><code>options.params</code> (optional): an opaque value that is passed to the callback upon expiry</li>
+            <li><code>options.callback</code>: is the function to execute on timer expiry.
+                The callback function has <code>function(timer_obj, params)</code> as signature, where
+                <code>params</code> is the value initially passed in <code>options.params</code></li>
+            <li><code>options.errorhandler</code> (optional): a Copas errorhandler function (see
+            <code>copas.seterrorhandler</code> for the signature.</li>
+        </ul></p>
     </dd>
 
     <dt><strong><code>timer:arm([initial_delay])</code></strong></dt>
-    <dd>Arms a timer that was previously cancelled or exited (arming a non-recurring timer again
-    from its own handler is explicitly supported). Returns the timer.
-    The optional parameter <code>initial_delay</code>, determines the first delay.
-    For example a recurring timer with <code>delay = 5</code>, and <code>initial_delay = 0</code> will
-    execute immediately and then recur every 5 seconds.
+    <dd>
+        <p>Arms a timer that was previously cancelled or exited (arming a non-recurring timer again
+        from its own handler is explicitly supported). Returns the timer.</p>
+
+        <p>The optional parameter <code>initial_delay</code>, determines the first delay.
+        For example a recurring timer with <code>delay = 5</code>, and <code>initial_delay = 0</code> will
+        execute immediately and then recur every 5 seconds.</p>
     </dd>
 
     <dt><strong><code>timer:cancel()</code></strong></dt>
-    <dd>Will cancel the timer.
+    <dd>
+        <p>Will cancel the timer.</p>
     </dd>
 
 </dl>
@@ -590,68 +692,70 @@ exchange data with other services.</p>
 <h3>High level request functions</h3>
 
 <p>The last ones are the higher level client functions to perform requests to (remote)
-servers.
-</p>
+servers.</p>
 
 <dl class="reference">
-    <dt><strong><code>copas.http.request(url [, body])</code></strong> or<br />
+    <dt><strong><code>copas.http.request(url [, body])</code></strong> or<br/>
         <strong><code>copas.http.request(requestparams)</code></strong></dt>
-    <dd>Performs an http or https request, identical to the LuaSocket and LuaSec
-    implementations, but wrapped in an async operation. As opposed to the original
-    implementations, this one also allows for redirects cross scheme (http to https and
-    viceversa).<br />
-    <br />Options:
+    <dd>
+        <p>Performs an http or https request, identical to the LuaSocket and LuaSec
+        implementations, but wrapped in an async operation. As opposed to the original
+        implementations, this one also allows for redirects cross scheme (http to https and
+        viceversa).</p>
 
-
-    <ul>
-        <li><code>options.url</code>: the URL for the request.</li>
-        <li><code>options.sink</code> (optional): the LTN12 sink to pass the body chunks to.</li>
-        <li><code>options.method</code> (optional, default "GET"): the http request method.</li>
-        <li><code>options.headers</code> (optional): any additional HTTP headers to send with the request.
-            Hash-table, header-values by header-names.</li>
-        <li><code>options.source</code> (optional): simple LTN12 source to provide the request body.
-            If there is a body, you need to provide an appropriate "content-length" request header field,
-            or the function will attempt to send the body as "chunked" (something few servers support).
-            Defaults to the empty source</li>
-        <li><code>options.step</code> (optional): LTN12 pump step function used to move data. Defaults to
-            the LTN12 <code>pump.step</code> function.</li>
-        <li><code>proxy</code> (optional, default none): The URL of a proxy server to use.</li>
-        <li><code>options.redirect</code> (optional, default <code>true</code>): Set to <code>false</code> to prevent
-            the function from automatically following 301 or 302 server redirect messages.<br/>
-            <strong>Note:</strong> https to http redirects are not allowed by default, but only when this option is set
-            to a string value <code>"all"</code>.</li>
-        <li><code>options.create</code> (optional): a function to be used instead of <code>socket.tcp</code> when the
-            communications socket is created.</li>
-        <li><code>options.maxredirects</code> (optional, default 5): An optional number specifying the maximum number
-            of redirects to follow. A boolean <code>false</code> value means no maximum (unlimited).</li>
-        <li><code>options.timeout</code> (optional, default 60): A number specifying the timeout for
-            connect/send/receive operations. Or a table with keys <code>"connect"</code>, <code>"send"</code>, and
-            <code>"receive"</code>, to specify individual timeouts (keys omitted from the table will get a default of
-            30).</li>
-    </ul>
-
+        <p>Options:
+        <ul>
+            <li><code>options.url</code>: the URL for the request.</li>
+            <li><code>options.sink</code> (optional): the LTN12 sink to pass the body chunks to.</li>
+            <li><code>options.method</code> (optional, default "GET"): the http request method.</li>
+            <li><code>options.headers</code> (optional): any additional HTTP headers to send with the request.
+                Hash-table, header-values by header-names.</li>
+            <li><code>options.source</code> (optional): simple LTN12 source to provide the request body.
+                If there is a body, you need to provide an appropriate "content-length" request header field,
+                or the function will attempt to send the body as "chunked" (something few servers support).
+                Defaults to the empty source</li>
+            <li><code>options.step</code> (optional): LTN12 pump step function used to move data. Defaults to
+                the LTN12 <code>pump.step</code> function.</li>
+            <li><code>proxy</code> (optional, default none): The URL of a proxy server to use.</li>
+            <li><code>options.redirect</code> (optional, default <code>true</code>): Set to <code>false</code> to prevent
+                the function from automatically following 301 or 302 server redirect messages.<br/>
+                <strong>Note:</strong> https to http redirects are not allowed by default, but only when this option is set
+                to a string value <code>"all"</code>.</li>
+            <li><code>options.create</code> (optional): a function to be used instead of <code>socket.tcp</code> when the
+                communications socket is created.</li>
+            <li><code>options.maxredirects</code> (optional, default 5): An optional number specifying the maximum number
+                of redirects to follow. A boolean <code>false</code> value means no maximum (unlimited).</li>
+            <li><code>options.timeout</code> (optional, default 60): A number specifying the timeout for
+                connect/send/receive operations. Or a table with keys <code>"connect"</code>, <code>"send"</code>, and
+                <code>"receive"</code>, to specify individual timeouts (keys omitted from the table will get a default of
+                30).</li>
+        </ul></p>
     </dd>
 
-    <dt><strong><code>copas.ftp.put(url, content)</code></strong> or<br />
+    <dt><strong><code>copas.ftp.put(url, content)</code></strong> or<br/>
         <strong><code>copas.ftp.put(requestparams)</code></strong></dt>
-    <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
-    an async operation.
+    <dd>
+        <p>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
+        an async operation.</p>
     </dd>
 
-    <dt><strong><code>copas.ftp.get(url)</code></strong> or<br />
+    <dt><strong><code>copas.ftp.get(url)</code></strong> or<br/>
         <strong><code>copas.ftp.get(requestparams)</code></strong></dt>
-    <dd>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
-    an async operation.
+    <dd>
+        <p>Performs an ftp request, identical to the LuaSocket implementation, but wrapped in
+        an async operation.</p>
     </dd>
 
     <dt><strong><code>copas.smtp.send(msgparams)</code></strong></dt>
-    <dd>Sends an smtp request, identical to the LuaSocket implementation, but wrapped in
-    an async operation.
+    <dd>
+        <p>Sends an smtp request, identical to the LuaSocket implementation, but wrapped in
+        an async operation.</p>
     </dd>
 
     <dt><strong><code>copas.smtp.message(msgt)</code></strong></dt>
-    <dd>Just points to <code>socket.smtp.message</code>, provided so the <code>copas.smtp</code>
-    module is a drop-in replacement for the <code>socket.smtp</code> module
+    <dd>
+        <p>Just points to <code>socket.smtp.message</code>, provided so the <code>copas.smtp</code>
+        module is a drop-in replacement for the <code>socket.smtp</code> module.</p>
     </dd>
 
 </dl>
@@ -663,132 +767,149 @@ servers.
 
 <dl class="reference">
     <dt><strong><code>copas.close(skt)</code></strong></dt>
-    <dd>Closes the socket. Any read/write operations in progress will return
-    with an error.
+    <dd>
+        <p>Closes the socket. Any read/write operations in progress will return
+        with an error.</p>
     </dd>
 
     <dt><strong><code>copas.connect(skt, address, port)</code></strong></dt>
-    <dd>Connects and transforms a master socket to a client just like LuaSocket
-    <code>socket:connect()</code>. The Copas version does not block and allows
-    the multitasking of the other handlers and threads.
+    <dd>
+        <p>Connects and transforms a master socket to a client just like LuaSocket
+        <code>socket:connect()</code>. The Copas version does not block and allows
+        the multitasking of the other handlers and threads.</p>
     </dd>
 
     <dt><strong><code>copas.dohandshake(skt, sslparams)</code></strong></dt>
-    <dd>Performs an ssl handshake on an already connected TCP client socket. It
-    returns the new ssl-socket on success, or throws an error on failure.
+    <dd>
+        <p>Performs an ssl handshake on an already connected TCP client socket. It
+        returns the new ssl-socket on success, or throws an error on failure.</p>
     </dd>
 
-    <dt><strong><code>copas.flush(skt)</code></strong><br /></dt>
-    <dd>(deprecated)</dd>
-
-    <dt><strong><code>copas.receive(skt [, pattern [, prefix]])</code></strong> (TCP) or<br />
-    <strong><code>copas.receive(size)</code></strong> (UDP)
-    </dt>
-    <dd>Reads data from a client socket according to a pattern just like LuaSocket
-    <code>socket:receive()</code>. The Copas version does not block and allows
-    the multitasking of the other handlers and threads.<br />
-    <br />
-    <strong>Note:</strong> for UDP sockets the <code>size</code> parameter is NOT
-    optional. For the wrapped function <code>socket:receive([size])</code> it is
-    optional again.
+    <dt><strong><code>copas.flush(skt)</code></strong></dt>
+    <dd>
+        <p>(deprecated)</p>
     </dd>
 
-    <dt><strong><code>copas.receivepartial(skt [, pattern [, prefix]])</code></strong>
-    </dt>
-    <dd>The same as <code>receive</code>, except that this method will return on
-    any data received. See <code>sock:receivepartial</code> for details.</dd>
+    <dt><strong><code>copas.receive(skt [, pattern [, prefix]])</code></strong> (TCP) or<br/>
+    <strong><code>copas.receive(size)</code></strong> (UDP)</dt>
+    <dd>
+        <p>Reads data from a client socket according to a pattern just like LuaSocket
+        <code>socket:receive()</code>. The Copas version does not block and allows
+        the multitasking of the other handlers and threads.</p>
+
+        <p><strong>Note:</strong> for UDP sockets the <code>size</code> parameter is NOT
+        optional. For the wrapped function <code>socket:receive([size])</code> it is
+        optional again.</p>
+    </dd>
+
+    <dt><strong><code>copas.receivepartial(skt [, pattern [, prefix]])</code></strong></dt>
+    <dd>
+        <p>The same as <code>receive</code>, except that this method will return on
+        any data received. See <code>sock:receivepartial</code> for details.</p>
+    </dd>
 
     <dt><strong><code>copas.receivefrom(skt [, size])</code></strong></dt>
-    <dd>Reads data from a UDP socket just like LuaSocket
-    <code>socket:receivefrom()</code>. The Copas version does not block and allows
-    the multitasking of the other handlers and threads.
+    <dd>
+        <p>Reads data from a UDP socket just like LuaSocket
+        <code>socket:receivefrom()</code>. The Copas version does not block and allows
+        the multitasking of the other handlers and threads.</p>
     </dd>
 
-    <dt><strong><code>copas.send(skt, data [, i [, j]])</code></strong> (TCP) or<br />
-    <strong><code>copas.send(skt, datagram)</code></strong> (UDP)
-    </dt>
-    <dd>Sends data to a client socket just like <code>socket:send()</code>. The Copas version
-    is buffered and does not block, allowing the multitasking of the other handlers and threads.<br />
-    <br />
-    Note: only for TCP, UDP send doesn't block, hence doesn't require this function to be used.
+    <dt><strong><code>copas.send(skt, data [, i [, j]])</code></strong> (TCP) or<br/>
+        <strong><code>copas.send(skt, datagram)</code></strong> (UDP)</dt>
+    <dd>
+        <p>Sends data to a client socket just like <code>socket:send()</code>. The Copas version
+        is buffered and does not block, allowing the multitasking of the other handlers and threads.</p>
+
+        <p>Note: only for TCP, UDP send doesn't block, hence doesn't require this function to be used.</p>
     </dd>
 
     <dt><strong><code>copas.settimeout(skt, [timeout])</code></strong></dt>
-    <dd>Sets the timeout (in seconds) for a socket. A negative timout or absent timeout (<code>nil</code>)
-    will wait indefinitely.<br/>
-    <strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
-    <code>copas.settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.<br/>
-    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
-    Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.<br />
-    See <code>copas.usesockettimeouterrors()</code> below for alternative error messages.
+    <dd>
+        <p>Sets the timeout (in seconds) for a socket. A negative timout or absent timeout (<code>nil</code>)
+        will wait indefinitely.</p>
+
+        <p><strong>Important:</strong> this behaviour is the same as LuaSocket, but different from
+        <code>copas.settimeouts</code>, where <code>nil</code> means 'do not change' the timeout.</p>
+
+        <p>If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+        Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.</p>
+
+        <p>See <code>copas.usesockettimeouterrors()</code> below for alternative error messages.</p>
     </dd>
 
     <dt><strong><code>copas.settimeouts(skt, [connect], [send], [receive])</code></strong></dt>
-    <dd>Sets the timeouts (in seconds) for a socket. The default is to not have a timeout and wait
-    indefinitely.<br/>
-    <strong>Important:</strong> this behaviour is different from
-    <code>copas.settimeout</code>, where <code>nil</code> means 'wait indefinitely'.<br/>
-    If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
-    Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.<br />
-    See <code>copas.usesockettimeouterrors()</code> below for alternative error messages.
+    <dd>
+        <p>Sets the timeouts (in seconds) for a socket. The default is to not have a timeout and wait
+        indefinitely.</p>
+
+        <p><strong>Important:</strong> this behaviour is different from <code>copas.settimeout</code>,
+        where <code>nil</code> means 'wait indefinitely'.</p>
+
+        <p>If a timeout is hit, the operation will return <code>nil + "timeout"</code>.
+        Timeouts are applied on: <code>receive, receivefrom, receivepartial, send, connect, dohandshake</code>.</p>
+
+        <p>See <code>copas.usesockettimeouterrors()</code> below for alternative error messages.</p>
     </dd>
 
     <dt><strong><code>t = copas.status([enable_stats])</code></strong></dt>
-    <dd>Returns metadata about the current scheduler status. By default only number/type of tasks is being
-    reported. If <code>enable_stats == true</code> then detailed statistics will be enabled. Calling it again
-    later with <code>enable_stats == false</code> will disabled it again.
-
-    <ul>
-        <li><code>t.running</code>: boolean, same as <code>copas.running</code>.</li>
-        <li><code>t.read</code>: the number of tasks waiting to read on a socket.</li>
-        <li><code>t.write</code>: the number of tasks waiting to write to a socket.</li>
-        <li><code>t.active</code>: the number of tasks ready to resume.</li>
-        <li><code>t.timer</code>: the number of timers for tasks (in the binary tree).</li>
-        <li><code>t.inactive</code>: the number of tasks waiting to be woken up.</li>
-        <li><code>t.timeout</code>: the number of timers for timeouts (in the timerwheel).</li>
-        <li><code>t.time_start</code>*: measurement time started (seconds, previous call to status).</li>
-        <li><code>t.time_end</code>*: measurement time ended (seconds, now, current call to status).</li>
-        <li><code>t.time_avg</code>*: average time per step (millisec).</li>
-        <li><code>t.steps</code>*: the number of loop steps executed.</li>
-        <li><code>t.duration_tot</code>*: total time spent executing (millisec, processing tasks, excluding waiting for the network select call).</li>
-        <li><code>t.duration_min</code>*: smallest execution time per step (millisec).</li>
-        <li><code>t.duration_min_ever</code>*: smallest execution time per step ever (millisec).</li>
-        <li><code>t.duration_max</code>*: highest execution time per step (millisec).</li>
-        <li><code>t.duration_max_ever</code>*: highest execution time per step ever (millisec).</li>
-        <li><code>t.duration_avg</code>*: average execution time per step (millisec).</li>
-    </ul>
-    The properties marked with * will only be reported if detailed statistics are enabled.
-    Every call to this function will reset the time and duration statistics (except for the "ever" ones).
+    <dd>
+        <p>Returns metadata about the current scheduler status. By default only number/type of tasks is being
+        reported. If <code>enable_stats == true</code> then detailed statistics will be enabled. Calling it again
+        later with <code>enable_stats == false</code> will disabled it again.
+        <ul>
+            <li><code>t.running</code>: boolean, same as <code>copas.running</code>.</li>
+            <li><code>t.read</code>: the number of tasks waiting to read on a socket.</li>
+            <li><code>t.write</code>: the number of tasks waiting to write to a socket.</li>
+            <li><code>t.active</code>: the number of tasks ready to resume.</li>
+            <li><code>t.timer</code>: the number of timers for tasks (in the binary tree).</li>
+            <li><code>t.inactive</code>: the number of tasks waiting to be woken up.</li>
+            <li><code>t.timeout</code>: the number of timers for timeouts (in the timerwheel).</li>
+            <li><code>t.time_start</code>*: measurement time started (seconds, previous call to status).</li>
+            <li><code>t.time_end</code>*: measurement time ended (seconds, now, current call to status).</li>
+            <li><code>t.time_avg</code>*: average time per step (millisec).</li>
+            <li><code>t.steps</code>*: the number of loop steps executed.</li>
+            <li><code>t.duration_tot</code>*: total time spent executing (millisec, processing tasks, excluding waiting for the network select call).</li>
+            <li><code>t.duration_min</code>*: smallest execution time per step (millisec).</li>
+            <li><code>t.duration_min_ever</code>*: smallest execution time per step ever (millisec).</li>
+            <li><code>t.duration_max</code>*: highest execution time per step (millisec).</li>
+            <li><code>t.duration_max_ever</code>*: highest execution time per step ever (millisec).</li>
+            <li><code>t.duration_avg</code>*: average execution time per step (millisec).</li>
+        </ul>
+        The properties marked with * will only be reported if detailed statistics are enabled.
+        Every call to this function will reset the time and duration statistics (except for the "ever" ones).</p>
     </dd>
 
 
     <dt><strong><code>bool = copas.step([timeout])</code></strong></dt>
-    <dd>Executes one copas iteration accepting client connections for the
-    registered servers and handling those connections with the corresponding
-    handlers. When a server accepts a connection, Copas calls the
-    associated handler passing the client socket returned by
-    <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
-    It returns <code>false</code> when no data was handled (timeout) or
-    <code>true</code> if there was data handled (or alternatively nil + error
-    message in case of errors).<br />
-    <br />
-    <strong>NOTE:</strong> the <code>copas.running</code> flag will not automatically
-    be (un)set. So when using your own main loop, consider manually setting the flag.
+    <dd>
+        <p>Executes one copas iteration accepting client connections for the
+        registered servers and handling those connections with the corresponding
+        handlers. When a server accepts a connection, Copas calls the
+        associated handler passing the client socket returned by
+        <code>socket.accept()</code>. The <code>timeout</code> parameter is optional.
+        It returns <code>false</code> when no data was handled (timeout) or
+        <code>true</code> if there was data handled (or alternatively nil + error
+        message in case of errors).</p>
+
+        <p><strong>NOTE:</strong> the <code>copas.running</code> flag will not automatically
+        be (un)set. So when using your own main loop, consider manually setting the flag.</p>
     </dd>
 
     <dt><strong><code>copas.timeout(delay [, callback])</code></strong></dt>
-    <dd>Creates a timeout timer for the current coroutine. The <code>delay</code>
-    is the timeout in seconds, and the <code>callback</code> will
-    be called upon an actual timeout occuring.<br />
-    Calling it with <code>delay = 0</code> (or <code>math.huge</code>) will cancel the timeout.<br />
-    Calling it repeatedly will simply replace the timeout on the current
-    coroutine and any previous callback set will no longer be called.<br />
-    <br />
-    <strong>NOTE:</strong> The timeouts are a low-level Copas feature, and
-    should only be used to wrap an explicit yield to the Copas scheduler. They
-    should not be used to wrap user code.<br />
-    <br />
-    Example usage:
+    <dd>
+        <p>Creates a timeout timer for the current coroutine. The <code>delay</code>
+        is the timeout in seconds, and the <code>callback</code> will
+        be called upon an actual timeout occuring.</p><p>
+        Calling it with <code>delay = 0</code> (or <code>math.huge</code>) will cancel the timeout.</p><p>
+        Calling it repeatedly will simply replace the timeout on the current
+        coroutine and any previous callback set will no longer be called.</p>
+
+        <p><strong>NOTE:</strong> The timeouts are a low-level Copas feature, and
+        should only be used to wrap an explicit yield to the Copas scheduler. They
+        should not be used to wrap user code.</p>
+
+        <p>Example usage:</p>
 <pre class="example">
 local copas = require "copas"
 local result = "nothing"
@@ -812,23 +933,24 @@ end)
 
 print("result: ", result)
 </pre>
-
-    For other usage examples see the <code>lock</code> and <code>semaphore</code>
-    implementations.
+        <p>For usage examples see the <code>lock</code> and <code>semaphore</code>
+        implementations.</p>
     </dd>
 
     <dt><strong><code>copas.usesockettimeouterrors([bool])</code></strong></dt>
-    <dd>Sets the timeout errors to return for the current co-routine.
-    The default is <code>false</code>, meaning
-    that a timeout error will always return an error string <code>"timeout"</code>.
-    If you are porting an existing application to Copas and want LuaSocket or LuaSec
-    compatible error messages then set it to <code>true</code>.<br />
-    <br />
-    In case of using socket timeout errors, they can also be <code>"wantread"</code>
-    or <code>"wantwrite"</code> when using ssl/tls connections. These can be returned at any point
-    if during a read or write operation an ssl-renegotiation happens.<br />
-    Due to platform difference the <code>connect</code> method may also return
-    <code>"Operation already in progress"</code> as a timeout error message.
+    <dd>
+        <p>Sets the timeout errors to return for the current co-routine.
+        The default is <code>false</code>, meaning
+        that a timeout error will always return an error string <code>"timeout"</code>.
+        If you are porting an existing application to Copas and want LuaSocket or LuaSec
+        compatible error messages then set it to <code>true</code>.</p>
+
+        <p>In case of using socket timeout errors, they can also be <code>"wantread"</code>
+        or <code>"wantwrite"</code> when using ssl/tls connections. These can be returned at any point
+        if during a read or write operation an ssl-renegotiation happens.</p>
+
+        <p>Due to platform difference the <code>connect</code> method may also return
+        <code>"Operation already in progress"</code> as a timeout error message.</p>
     </dd>
 
 </dl>
@@ -840,24 +962,28 @@ print("result: ", result)
 <dl class="reference">
 
     <dt><strong><code>copas.debug.start([logger] [, core])</code></strong></dt>
-    <dd>This will internally replace coroutine handler functions to provide log output to
-    the provided <code>logger</code> function. The logger signature is <code>function(...)</code>
-    and the default value is the global <code>print()</code> function.<br />
-    If the <code>core</code> parameter is truthy, then also the Copas core timer will be
-    logged (very noisy).
+    <dd>
+        <p>This will internally replace coroutine handler functions to provide log output to
+        the provided <code>logger</code> function. The logger signature is <code>function(...)</code>
+        and the default value is the global <code>print()</code> function.</p>
+
+        <p>If the <code>core</code> parameter is truthy, then also the Copas core timer will be
+        logged (very noisy).</p>
     </dd>
 
     <dt><strong><code>copas.debug.stop()</code></strong></dt>
-    <dd>Stops the debug output being generated.
+    <dd>
+        <p>Stops the debug output being generated.</p>
     </dd>
 
     <dt><strong><code>debug_socket = copas.debug.socket(socket)</code></strong></dt>
-    <dd>This wraps the socket in a debug-wrapper. This will for each method call on the
-    socket object print the method, the parameters and the return values. Check the source
-    code on how to add additional introspection using extra callbacks etc.<br />
-    <p>Extremely noisy and experimental!</p>
-    <p>NOTE 1: for TLS you'll probably need to first do the TLS handshake.</p>
-    <p>NOTE 2: this is separate from the other debugging functions.</p>
+    <dd>
+        <p>This wraps the socket in a debug-wrapper. This will for each method call on the
+        socket object print the method, the parameters and the return values. Check the source
+        code on how to add additional introspection using extra callbacks etc.</p>
+        <p>Extremely noisy and experimental!</p>
+        <p>NOTE 1: for TLS you'll probably need to first do the TLS handshake.</p>
+        <p>NOTE 2: this is separate from the other debugging functions.</p>
     </dd>
 
 </dl>
