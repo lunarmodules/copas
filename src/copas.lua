@@ -288,6 +288,11 @@ local _sleeping = {} do
     end
   end
 
+  function _sleeping:cancel(co)
+    lethargy[co] = nil
+    heap:remove(co)
+  end
+
   -- @param tos number of timeouts running
   function _sleeping:done(tos)
     -- return true if we have nothing more to do
@@ -1301,6 +1306,7 @@ function copas.removethread(thread)
   -- if the specified coroutine is registered, add it to the canceled table so
   -- that next time it tries to resume it exits.
   _canceled[thread] = _threads[thread or 0]
+  _sleeping:cancel(thread)
 end
 
 

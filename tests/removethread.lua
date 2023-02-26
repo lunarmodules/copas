@@ -4,7 +4,10 @@
 package.path = string.format("../src/?.lua;%s", package.path)
 
 local copas = require("copas")
---local socket = require("socket")
+local now = require("socket").gettime
+
+
+-- Test 1: basic test
 
 local t1 = copas.addthread(
     function()
@@ -42,4 +45,22 @@ collectgarbage()
 
 --check GC
 assert(next(validate_gc) == nil, "the 'validate_gc' table should have been empty!")
-print "test success!"
+print "test 1: success!"
+
+
+
+-- Test 2: ensure a waiting thread leaves in a timely manner
+
+local coro = copas.addthread(function()
+  copas.pause(2)
+end)
+
+local start_time = now()
+copas(function()
+  copas.pause(0.5)
+  copas.removethread(coro)
+end)
+local duration = now() - start_time
+
+assert(duration < 0.6, ("Expected immediate exit, after removal of thread, took: %.2f"):format(duration))
+print "test 2: success!"
