@@ -100,6 +100,12 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>Copas 4.7.x</strong> [unreleased]</dt>
+	<dd><ul>
+        <li>Fix: <code>copas.removethread</code> would not remove a sleeping thread immediately (it would not execute, but
+        would prevent the Copas loop from exiting until the timer expired).</li>
+    </ul></dd>
+
     <dt><strong>Copas 4.7.0</strong> [15/Jan/2023]</dt>
 	<dd><ul>
         <li>Fix: windows makefile didn't include all submodules.</li>

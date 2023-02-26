@@ -788,7 +788,32 @@ servers.
     should only be used to wrap an explicit yield to the Copas scheduler. They
     should not be used to wrap user code.<br />
     <br />
-    For usage examples see the <code>lock</code> and <code>semaphore</code>
+    Example usage:
+<pre class="example">
+local copas = require "copas"
+local result = "nothing"
+
+copas(function()
+
+  local function timeout_handler(co)  -- co will be the coroutine from which 'timeout()' was called
+    print("executing timeout handler")
+    result = "timeout"
+    copas.removethread(co)            -- drop the thread, because we timed out
+  end
+
+  copas.addthread(function()
+    copas.timeout(5, timeout_handler) -- timeout on the current coroutine after 5 seconds
+    copas.pause(10)                   -- sleep for 10 seconds
+    print("just woke up")
+    result = "slept like a baby"
+    copas.timeout(0)                  -- cancel the timeout on the current coroutine
+  end)
+end)
+
+print("result: ", result)
+</pre>
+
+    For other usage examples see the <code>lock</code> and <code>semaphore</code>
     implementations.
     </dd>
 
