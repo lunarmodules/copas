@@ -718,7 +718,7 @@ servers.</p>
                 the LTN12 <code>pump.step</code> function.</li>
             <li><code>proxy</code> (optional, default none): The URL of a proxy server to use.</li>
             <li><code>options.redirect</code> (optional, default <code>true</code>): Set to <code>false</code> to prevent
-                the function from automatically following 301 or 302 server redirect messages.<br/>
+                GET or HEAD requests from automatically following 301, 302, 303, and 307 server redirect messages.<br/>
                 <strong>Note:</strong> https to http redirects are not allowed by default, but only when this option is set
                 to a string value <code>"all"</code>.</li>
             <li><code>options.create</code> (optional): a function to be used instead of <code>socket.tcp</code> when the
