@@ -478,6 +478,9 @@ end
 
 -- negative is indefinitly, nil means do not change
 function copas.settimeouts(skt, connect, send, read)
+  if type(skt) == "table" and type(skt.socket) == "userdata" then
+    skt = skt.socket
+  end
 
   if connect ~= nil and type(connect) ~= "number" then
     return nil, "connect timeout must be 'nil' or a number"
