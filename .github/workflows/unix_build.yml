@@ -17,7 +17,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
@@ -25,9 +25,9 @@ jobs:
         luaVersion: ["5.1", "5.2", "5.3", "5.4", "luajit-2.1.0-beta3"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - uses: leafo/gh-actions-lua@v8
+    - uses: leafo/gh-actions-lua@v10
       with:
         luaVersion: ${{ matrix.luaVersion }}
 
