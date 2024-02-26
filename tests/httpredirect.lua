@@ -35,13 +35,13 @@ local done = false
 
 copas.addthread(function()
   local _, code, headers = doreq("https://goo.gl/UBCUc5")  -- https --> https redirect
-  assert(tonumber(code)==200)
-  assert(headers.location == "https://github.com/brunoos/luasec")
+  assert(tonumber(code)==200, "unexpected status code: "..tostring(code))
+  assert(headers.location == "https://github.com/lunarmodules/luasec", "unexpected location header: "..tostring(headers.location))
   print("https -> https redirect OK!")
   copas.addthread(function()
     local _, code, headers = doreq("http://goo.gl/UBCUc5")  -- http --> https redirect
-    assert(tonumber(code)==200)
-    assert(headers.location == "https://github.com/brunoos/luasec")
+    assert(tonumber(code)==200, "unexpected status code: "..tostring(code))
+    assert(headers.location == "https://github.com/lunarmodules/luasec", "unexpected location header: "..tostring(headers.location))
     print("http  -> https redirect OK!")
     copas.addthread(function()
       --local result, code, headers, status = doreq("http://goo.gl/tBfqNu")  -- http --> http redirect
@@ -63,7 +63,7 @@ copas.addthread(function()
       -- execute test request
       local _, code, headers = doreq("http://localhost:9876/")  -- http --> http redirect
       copas.removeserver(server)  -- immediately close server again
-      assert(tonumber(code)==200)
+      assert(tonumber(code)==200, "unexpected status code: "..tostring(code))
       assert(headers.location == "http://www.httpvshttps.com")
       print("http  -> http  redirect OK!")
       copas.addthread(function()
@@ -73,7 +73,7 @@ copas.addthread(function()
         copas.addthread(function()
           redirect = "all"
           local _, code, headers = doreq("https://bit.ly/3vmhXhW")  -- https --> http security test case
-          assert(tonumber(code)==200)
+          assert(tonumber(code)==200, "unexpected status code: "..tostring(code))
           assert(headers.location == "http://www.httpvshttps.com/")
           print("https -> http  redirect, while allowed OK!")
           done = true
