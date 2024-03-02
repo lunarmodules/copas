@@ -97,22 +97,22 @@ runtest()   -- run test using regular connection (s/cparams == nil)
 -- set ssl parameters and do it again
 sparams = {
    mode = "server",
-   protocol = "tlsv1",
+   protocol = "any",
    key = "tests/certs/serverAkey.pem",
    certificate = "tests/certs/serverA.pem",
    cafile = "tests/certs/rootA.pem",
    verify = {"peer", "fail_if_no_peer_cert"},
-   options = {"all", "no_sslv2"},
-}
+   options = {"all", "no_sslv2", "no_sslv3", "no_tlsv1"},
+  }
 cparams = {
    mode = "client",
-   protocol = "tlsv1",
+   protocol = "any",
    key = "tests/certs/clientAkey.pem",
    certificate = "tests/certs/clientA.pem",
    cafile = "tests/certs/rootA.pem",
    verify = {"peer", "fail_if_no_peer_cert"},
-   options = {"all", "no_sslv2"},
-}
+   options = {"all", "no_sslv2", "no_sslv3", "no_tlsv1"},
+  }
 done = 0
 start = socket.gettime()
 runtest()

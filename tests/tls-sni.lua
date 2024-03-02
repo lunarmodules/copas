@@ -16,12 +16,12 @@ end
 local server_params = {
   wrap = {
     mode = "server",
-    protocol = "tlsv1",
+    protocol = "any",
     key = "tests/certs/serverAkey.pem",
     certificate = "tests/certs/serverA.pem",
     cafile = "tests/certs/rootA.pem",
     verify = {"peer", "fail_if_no_peer_cert"},
-    options = {"all", "no_sslv2"},
+    options = {"all", "no_sslv2", "no_sslv3", "no_tlsv1"},
   },
   sni = {
     strict = true, -- only allow connection 'myhost.com'
@@ -33,12 +33,12 @@ server_params.sni.names["myhost.com"] = ssl.newcontext(server_params.wrap)
 local client_params = {
   wrap = {
     mode = "client",
-    protocol = "tlsv1",
+    protocol = "any",
     key = "tests/certs/clientAkey.pem",
     certificate = "tests/certs/clientA.pem",
     cafile = "tests/certs/rootA.pem",
     verify = {"peer", "fail_if_no_peer_cert"},
-    options = {"all", "no_sslv2"},
+    options = {"all", "no_sslv2", "no_sslv3", "no_tlsv1"},
   },
   sni = {
     names = "" -- will be added in test below
@@ -63,7 +63,7 @@ local function echoHandler(skt)
       return -- close this client connection, after stopping the server
 
     end
-    skt:send(data)
+    skt:send(data.."\n")
   end
 end
 
@@ -92,12 +92,16 @@ copas.addthread(function()
   local skt = copas.wrap(socket.tcp(), client_params)
   local success, ok = pcall(skt.connect, skt, "localhost", port)
   if not (success and ok) then
-    print "expected connection to be completed"
+    print("expected connection to be completed", success, ok)
     os.exit(1)
   end
 
+  assert(skt:send("hello world\n"))
+  assert(skt:receive() == "hello world")
   print "succesfully completed test"
-  os.exit(0)
+
+  -- send exit signal to server
+  skt:send("exit\n")
 end)
 
 -- no ugly errors please, comment out when debugging
