@@ -1,4 +1,5 @@
 local copas = require "copas"
+local gettime = require("socket").gettime
 local Sema = copas.semaphore
 local Lock = copas.lock
 
@@ -30,6 +31,7 @@ function Queue.new(opts)
   self.workers = setmetatable({}, { __mode = "k" })
   self.stopping = false
   self.worker_id = 0
+  self.exit_semaphore = Sema.new(10^9)
   return self
 end
 
@@ -105,6 +107,8 @@ end
 -- destroyed on a timeout.
 function Queue:finish(timeout, no_destroy_on_timeout)
   self:stop()
+  timeout = timeout or self.lock.timeout
+  local endtime = gettime() + timeout
   local _, err = self.lock:get(timeout)
   -- the lock never gets released, only destroyed, so we have to check the error string
   if err == "timeout" then
@@ -113,7 +117,31 @@ function Queue:finish(timeout, no_destroy_on_timeout)
     end
     return nil, err
   end
-  return true
+
+  -- if we get here, the lock was destroyed, so the queue is empty, now wait for all workers to exit
+  if not next(self.workers) then
+    -- all workers already exited, we're done
+    return true
+  end
+
+  -- multiple threads can call this "finish" method, so we must check exiting workers
+  -- one by one.
+  while true do
+    local _, err = self.exit_semaphore:take(1, math.max(0, endtime - gettime()))
+    if err == "destroyed" then
+      return true  -- someone else destroyed/finished it, so we're done
+    end
+    if err == "timeout" then
+      if not no_destroy_on_timeout then
+        self:destroy()
+      end
+      return nil, "timeout"
+    end
+    if not next(self.workers) then
+      self.exit_semaphore:destroy()
+      return true  -- all workers exited, we're done
+    end
+  end
 end
 
 
@@ -170,6 +198,9 @@ function Queue:add_worker(worker)
       worker(item) -- TODO: wrap in errorhandling
     end
     self.workers[coro] = nil
+    if self.exit_semaphore then
+      self.exit_semaphore:give(1)
+    end
   end)
 
   self.workers[coro] = true
