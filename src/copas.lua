@@ -8,7 +8,7 @@
 -- Contributors: Diego Nehab, Mike Pall, David Burgess, Leonardo Godinho,
 --               Thomas Harning Jr., and Gary NG
 --
--- Copyright 2005-2013 - Kepler Project (www.keplerproject.org), 2015-2023 Thijs Schreijer
+-- Copyright 2005-2013 - Kepler Project (www.keplerproject.org), 2015-2024 Thijs Schreijer
 --
 -- $Id: copas.lua,v 1.37 2009/04/07 22:09:52 carregal Exp $
 -------------------------------------------------------------------------------
@@ -116,9 +116,9 @@ end
 
 
 -- Meta information is public even if beginning with an "_"
-copas._COPYRIGHT   = "Copyright (C) 2005-2013 Kepler Project, 2015-2023 Thijs Schreijer"
+copas._COPYRIGHT   = "Copyright (C) 2005-2013 Kepler Project, 2015-2024 Thijs Schreijer"
 copas._DESCRIPTION = "Coroutine Oriented Portable Asynchronous Services"
-copas._VERSION     = "Copas 4.7.0"
+copas._VERSION     = "Copas 4.7.1"
 
 -- Close the socket associated with the current connection after the handler finishes
 copas.autoclose = true
