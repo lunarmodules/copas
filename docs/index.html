@@ -104,6 +104,8 @@ LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only
 	<dd><ul>
         <li>Fix: <code>copas.removethread</code> would not remove a sleeping thread immediately (it would not execute, but
         would prevent the Copas loop from exiting until the timer expired).</li>
+        <li>Fix: <code>queue:finish</code> will return after the last item has been handled, not just popped
+        (if using workers).</li>
     </ul></dd>
 
     <dt><strong>Copas 4.7.0</strong> [15/Jan/2023]</dt>

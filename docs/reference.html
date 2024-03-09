@@ -530,6 +530,11 @@ exchange data with other services.</p>
         <p>Finishes a queue. Calls <code>queue:stop()</code> and then waits for the queue to run
         empty (and be destroyed) before returning.</p>
 
+        <p>When using "workers" via <code>queue:add_worker()</code>
+        then this method will return after the worker has finished processing the popped item.
+        When using your own threads and calling <code>queue:pop()</code>, then this method will
+        return after the last item has been popped, but not necessarily also processed. </p>
+
         <p>The <code>timeout</code> defaults to 10 seconds
         (the default timeout value for a lock), <code>math.huge</code> can be used to wait forever.</p>
 

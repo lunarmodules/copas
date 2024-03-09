@@ -134,5 +134,61 @@ copas.loop(function()
   copas.pause(0.5) -- to activate the worker, which will now be blocked on the q semaphore
   q:stop()  -- this should exit the idle workers and exit the copas loop
 end)
-
 print("test 4 success!")
+
+
+-- finish a queue while workers are idle
+copas.loop(function()
+  local q = Queue:new()
+  q:add_worker(function() end)
+  copas.pause(0.5) -- to activate the worker, which will now be blocked on the q semaphore
+  q:finish()  -- this should exit the idle workers and exit the copas loop
+end)
+print("test 5 success!")
+
+
+-- finish doesn't return until all workers are done (finished handling the last queue item)
+local result = {}
+local passed = true
+copas.loop(function()
+  local q = Queue:new()
+  q:push(1)
+  q:push(2)
+  q:push(3)
+  for i = 1,2 do -- add 2 workers
+    q:add_worker(function(n)
+      table.insert(result, "start item " .. n)
+      copas.pause(0.5)
+      table.insert(result, "end item " .. n)
+    end)
+  end
+  -- local s = now()
+  table.insert(result, "start queue")
+  copas.pause(0.75)
+  table.insert(result, "start finish")
+  local ok, err = q:finish()
+  table.insert(result, "finished "..tostring(ok).." "..tostring(err))
+  copas.pause(1)
+  local expected = {
+    "start queue",
+    "start item 1",
+    "start item 2",
+    "end item 1",
+    "start item 3",
+    "end item 2",
+    "start finish",
+    "end item 3",
+    "finished true nil",
+  }
+  for i = 1, math.max(#result, #expected) do
+    if result[i] ~= expected[i] then
+      for n = 1, math.max(#result, #expected) do
+        print(n, result[n], expected[n], result[n] == expected[n] and "" or "  <--- failed")
+      end
+      passed = false
+      break
+    end
+  end
+end)
+assert(passed, "test 6 failed!")
+print("test 6 success!")
