@@ -28,7 +28,7 @@ description = {
 }
 dependencies = {
    "lua >= 5.1, < 5.5",
-   "luasocket >= 2.1, <= 3.0rc1-2",
+   "luasocket ~> 3",
    "coxpcall >= 1.14",
    "binaryheap >= 0.4",
    "timerwheel ~> 1",
