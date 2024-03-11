@@ -92,6 +92,53 @@ do
 end
 
 
+-- enables __gc behaviour for Lua < 5.2 using a proxy.
+-- Note: Any existing meta table on the table will be replaced, and in case of non-native
+-- support for __gc a key `__gc_proxy` will be added to the table
+-- @tparam table t the table to provide with an __gc method
+-- @tparam function __gc the __gc method to call
+local setGCForTable
+
+-- disables any __gc method previously set on a table
+-- @tparam table t the table to remove the __gc method from
+local clearGCForTable
+do
+  -- test __gc support for the current Lua engine
+  local supportsGCForTables = false
+  setmetatable({}, {
+    __gc = function() supportsGCForTables = true end
+  })
+  collectgarbage()
+  collectgarbage() -- Called twice to ensure collection occurs
+
+  if supportsGCForTables then
+    -- we have native __gc support
+    function setGCForTable(t, __gc)
+      return setmetatable(t, {__gc = __gc})
+    end
+    function clearGCForTable(t)
+      (getmetatable(t) or {}).__gc = nil
+    end
+  else
+    -- we have no native __gc support, implement using `newproxy` userdata
+    function setGCForTable(t, __gc)
+      -- Use proxy userdata for Lua versions without direct table __gc support
+      local proxy = newproxy(true)
+      getmetatable(proxy).__gc = function()
+        __gc(t)
+      end
+      -- Anchor proxy within the table to ensure it's not collected prematurely
+      t.__gc_proxy = proxy
+      return t
+    end
+    function clearGCForTable(t)
+      local proxy = t.__gc_proxy or {}
+      (getmetatable(proxy) or {}).__gc = nil
+    end
+  end
+end
+
+
 -- Setup the Copas meta table to auto-load submodules and define a default method
 local copas do
   local submodules = { "ftp", "http", "lock", "queue", "semaphore", "smtp", "timer" }
@@ -1120,6 +1167,56 @@ function copas.geterrorhandler(co)
 end
 
 
+do
+  local finalizers = setmetatable({}, { __mode = "k" })   -- finalizer per coroutine
+
+  -- generic finalizer to execute a chain of finalizers
+  local function generic_finalizer(fin_data)
+    copas.setthreadname("[finalizer]"..fin_data.taskname)
+    fin_data.finalizer(fin_data.ctx)
+    if fin_data.next then
+      return generic_finalizer(fin_data.next)
+    end
+  end
+
+  -- sets a finalizer for a coroutine. The finalizer is a function that is called
+  -- when the coroutine is GC'ed.
+  -- @tparam[opt] thread co the coroutine to set the finalizer for
+  -- @tparam function finalizer the finalizer function; func(ctx)
+  -- @tparam[opt] any ctx a handle of any type to be passed to the finalizer
+  function copas.setfinalizer(co, finalizer, ctx)
+    if type(co) == "function" then
+      -- only 2 args, no co provided, shift args
+      co, finalizer, ctx = nil, co, finalizer
+    end
+    if co == nil then
+      co = coroutine_running()
+    end
+    assert(type(co) == "thread", "Expected the coroutine to be a thread type")
+    assert(type(finalizer) == "function", "Expected the finalizer to be a function")
+
+    local previous_fin_data = finalizers[co]
+    if previous_fin_data then
+      clearGCForTable(previous_fin_data) -- remove __gc handler from the old one
+    end
+
+    local fin_data = {
+      finalizer = finalizer,
+      ctx = ctx,
+      taskname = copas.getthreadname(co),
+      next = previous_fin_data,
+    }
+    setGCForTable(fin_data, function(self)
+      clearGCForTable(fin_data)
+      -- we schedule a task, since the GC might be called from anywhere (in a pre-emptive manner)
+      copas.addthread(generic_finalizer, self)
+    end)
+    finalizers[co] = fin_data
+    return true
+  end
+end
+
+
 -- if `bool` is truthy, then the original socket errors will be returned in case of timeouts;
 -- `timeout, wantread, wantwrite, Operation already in progress`. If falsy, it will always
 -- return `timeout`.
@@ -1636,9 +1733,23 @@ end
 -- returns false if there are no sockets for read/write nor tasks scheduled
 -- (which means Copas is in an empty spin)
 -------------------------------------------------------------------------------
-function copas.finished()
-  return #_reading == 0 and #_writing == 0 and _resumable:done() and _sleeping:done(copas.gettimeouts())
+do
+  local function finished()
+    return #_reading == 0 and #_writing == 0 and _resumable:done() and _sleeping:done(copas.gettimeouts())
+  end
+
+  function copas.finished()
+    if not finished() then
+      return false
+    end
+
+    -- we seem done, but ensure to run finalizers and check again if we're done
+    collectgarbage()
+    collectgarbage()
+    return finished()
+  end
 end
+
 
 local _getstats do
   local _getstats_instrumented, _getstats_plain

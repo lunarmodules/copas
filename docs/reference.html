@@ -287,6 +287,22 @@ are used to register servers and to execute the main loop of Copas:</p>
         that do not have their own set (in this case <code>func</code> must be provided).</p>
     </dd>
 
+    <dt><strong><code>copas.setfinalizer([coroutine,] handler[, ctx])</code></strong></dt>
+    <dd>
+        <p>Sets a finalizer function for the coroutine. The finalizer is tied to the garbage collector, so when
+        the coroutine goes out of scope and is collected, the finalizer will run. If <code>setfinalizer</code> is called
+        repeatedly, then all finalizers will be called in reverse order.</p>
+        <p>Execution will happen in a new coroutine, the name of the new coroutine will be set to the name of the
+        original coroutine (at the time of setting the finalizer!) with a <code>"[finalizer]"</code> prefix.</p>
+
+        <p>If <code>coroutine</code> is omitted then it defaults to the currently running coroutine.</p>
+
+        <p>The <code>ctx</code> parameter is an arbitrary value that will be passed to the finalizer function
+        to optionally pass some context if desired.
+        The handler will receive the <code>ctx</code> parameter as argument;
+        <code>function(ctx)</code>.</p>
+    </dd>
+
     <dt><strong><code>copas.setsocketname(name, skt)</code></strong></dt>
     <dd>
         <p>Sets the name for the socket.</p>
