@@ -20,8 +20,8 @@ local function runtest()
       copas.setsocketname("Server 49500", skt)
       copas.setthreadname("Server 49500")
       print "Server 49500 accepted incoming connection"
-      local end_time = socket.gettime() + 30 -- we run for 30 seconds
-      while end_time > socket.gettime() do
+      local end_time = copas.gettime() + 30 -- we run for 30 seconds
+      while end_time > copas.gettime() do
         local res, err, _ = skt:receive(1) -- single byte from 50mb chunks
         if res == nil and err ~= "timeout" then
           print("Server 49500 returned: " .. err)
@@ -61,11 +61,11 @@ local function runtest()
 
   copas.addnamedthread("test timeout thread", function()
       local i = 0
-      local start = socket.gettime()
+      local start = copas.gettime()
       while done ~= 2 do
         copas.pause(1) -- delta sleep, so it slowly diverges if starved
         i = i + 1
-        local time_passed = socket.gettime()-start
+        local time_passed = copas.gettime()-start
         print("slept "..i.." seconds, time passed: ".. time_passed.." seconds")
         if math.abs(i - time_passed) > 2 then
           print("timer diverged by more than 2 seconds: failed!")

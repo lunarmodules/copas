@@ -12,7 +12,7 @@ local socket = require 'socket'
 -- copas.debug.start()
 
 local body = ("A"):rep(1024*1024*50) -- 50 mb string
-local start = socket.gettime()
+local start = copas.gettime()
 local done = 0
 local sparams, cparams
 
@@ -25,7 +25,7 @@ local function runtest()
       local res, err, part = skt:receive('*a')
       res = res or part
       if res ~= body then print("Received doesn't match send") end
-      print("Server reading port 49500... Done!", socket.gettime()-start, err, #res)
+      print("Server reading port 49500... Done!", copas.gettime()-start, err, #res)
       copas.removeserver(s1)
       done = done + 1
     end, sparams))
@@ -38,7 +38,7 @@ local function runtest()
       local res, err, part = skt:receive('*a')
       res = res or part
       if res ~= body then print("Received doesn't match send") end
-      print("Server reading port 49501... Done!", socket.gettime()-start, err, #res)
+      print("Server reading port 49501... Done!", copas.gettime()-start, err, #res)
       copas.removeserver(s2)
       done = done + 1
     end, sparams))
@@ -52,7 +52,7 @@ local function runtest()
       repeat
         last_byte_sent, err = skt:send(body, last_byte_sent or 1, -1)
       until last_byte_sent == nil or last_byte_sent == #body
-      print("Client writing port 49500... Done!", socket.gettime()-start, err, #body)
+      print("Client writing port 49500... Done!", copas.gettime()-start, err, #body)
       -- we're not closing the socket, so the Copas GC-when-idle can kick-in to clean up
       skt = nil -- luacheck: ignore
       done = done + 1
@@ -67,7 +67,7 @@ local function runtest()
       repeat
         last_byte_sent, err = skt:send(body, last_byte_sent or 1, -1)
       until last_byte_sent == nil or last_byte_sent == #body
-      print("Client writing port 49501... Done!", socket.gettime()-start, err, #body)
+      print("Client writing port 49501... Done!", copas.gettime()-start, err, #body)
       -- we're not closing the socket, so the Copas GC-when-idle can kick-in to clean up
       skt = nil -- luacheck: ignore
       done = done + 1
@@ -77,7 +77,7 @@ local function runtest()
       local i = 1
       while done ~= 4 do
         copas.pause(1)
-        print(i, "seconds:", socket.gettime()-start)
+        print(i, "seconds:", copas.gettime()-start)
         i = i + 1
         if i > 60 then
           print"timeout"
@@ -114,5 +114,5 @@ cparams = {
    options = {"all", "no_sslv2", "no_sslv3", "no_tlsv1"},
   }
 done = 0
-start = socket.gettime()
+start = copas.gettime()
 runtest()

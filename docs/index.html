@@ -93,13 +93,19 @@ luarocks install copas
 
 <h2><a name="dependencies"></a>Dependencies</h2>
 
-<p>Copas depends on
-LuaSocket, <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a> (only when using Lua 5.1), and (optionally) LuaSec.
-</p>
+<p>Copas depends on LuaSocket (or LuaSystem), <a href="http://keplerproject.github.io/coxpcall/">Coxpcall</a>
+(only when using Lua 5.1), and (optionally) LuaSec.</p>
 
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+    <dt><strong>Copas 4.8.0</strong> unreleased</dt>
+	<dd><ul>
+        <li>Change: Copas no longer requires LuaSocket, if no sockets are needed, LuaSystem will be enough as a fallback.</li>
+        <li>Feat: added <code>copas.gettime()</code>, which transparently maps to either LuaSockets or
+        LuaSystems implementation, ensuring independence of the availability of either one of those.</li>
+    </ul></dd>
+
     <dt><strong>Copas 4.7.1</strong> [9/Mar/2024]</dt>
 	<dd><ul>
         <li>Fix: <code>copas.removethread</code> would not remove a sleeping thread immediately (it would not execute, but

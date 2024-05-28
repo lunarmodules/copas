@@ -5,7 +5,7 @@ package.path = string.format("../src/?.lua;%s", package.path)
 
 local copas = require "copas"
 local Lock = copas.lock
-local gettime = require("socket").gettime
+local gettime = copas.gettime
 
 local test_complete = false
 copas.loop(function()

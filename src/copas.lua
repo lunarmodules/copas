@@ -20,14 +20,27 @@ if package.loaded["copas.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: 
   error("you must require copas before require'ing copas.http")
 end
 
+-- load either LuaSocket, or LuaSystem
+local socket, system do
+  if pcall(require, "socket") then
+    -- found LuaSocket
+    socket = require "socket"
+  else
+    -- fallback to LuaSystem
+    if pcall(require, "system") then
+      system = require "system"
+    else
+      error("Neither LuaSocket nor LuaSystem found, Copas requires at least one of them")
+    end
+  end
+end
 
-local socket = require "socket"
 local binaryheap = require "binaryheap"
-local gettime = socket.gettime
+local gettime = (socket or system).gettime
 local ssl -- only loaded upon demand
 
 local WATCH_DOG_TIMEOUT = 120
-local UDP_DATAGRAM_MAX = socket._DATAGRAMSIZE or 8192
+local UDP_DATAGRAM_MAX = (socket or {})._DATAGRAMSIZE or 8192
 local TIMEOUT_PRECISION = 0.1  -- 100ms
 local fnil = function() end
 
@@ -52,7 +65,7 @@ if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compat
 end
 
 
-do
+if socket then
   -- Redefines LuaSocket functions with coroutine safe versions (pure Lua)
   -- (this allows the use of socket.http from within copas)
   local err_mt = {
@@ -126,6 +139,8 @@ copas.autoclose = true
 -- indicator for the loop running
 copas.running = false
 
+-- gettime method from either LuaSocket or LuaSystem: time in (fractional) seconds, since epoch.
+copas.gettime = gettime
 
 -------------------------------------------------------------------------------
 -- Object names, to track names of thread/coroutines and sockets
@@ -1355,6 +1370,7 @@ do
   local timeout_register = setmetatable({}, { __mode = "k" })
   local time_out_thread
   local timerwheel = require("timerwheel").new({
+      now = gettime,
       precision = TIMEOUT_PRECISION,
       ringsize = math.floor(60*60*24/TIMEOUT_PRECISION),  -- ring size 1 day
       err_handler = function(err)
@@ -1416,6 +1432,8 @@ end
 -- a task to check ready to read events
 local _readable_task = {} do
 
+  _readable_task._events = {}
+
   local function tick(skt)
     local handler = _servers[skt]
     if handler then
@@ -1438,6 +1456,8 @@ end
 
 -- a task to check ready to write events
 local _writable_task = {} do
+
+  _writable_task._events = {}
 
   local function tick(skt)
     _writing:remove(skt)
@@ -1502,59 +1522,65 @@ local _select_plain do
   local last_cleansing = 0
   local duration = function(t2, t1) return t2-t1 end
 
-  _select_plain = function(timeout)
-    local err
-    local now = gettime()
+  if not socket then
+    -- socket module unavailable, switch to luasystem sleep
+    _select_plain = system.sleep
+  else
+    -- use socket.select to handle socket-io
+    _select_plain = function(timeout)
+      local err
+      local now = gettime()
 
-    -- remove any closed sockets to prevent select from hanging on them
-    if _closed[1] then
-      for i, skt in ipairs(_closed) do
-        _closed[i] = { _reading:remove(skt), _writing:remove(skt) }
-      end
-    end
-
-    _readable_task._events, _writable_task._events, err = socket.select(_reading, _writing, timeout)
-    local r_events, w_events = _readable_task._events, _writable_task._events
-
-    -- inject closed sockets in readable/writeable task so they can error out properly
-    if _closed[1] then
-      for i, skts in ipairs(_closed) do
-        _closed[i] = nil
-        r_events[#r_events+1] = skts[1]
-        w_events[#w_events+1] = skts[2]
-      end
-    end
-
-    if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
-      last_cleansing = now
-
-      -- Check all sockets selected for reading, and check how long they have been waiting
-      -- for data already, without select returning them as readable
-      for skt,time in pairs(_reading_log) do
-        if not r_events[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
-          -- This one timedout while waiting to become readable, so move
-          -- it in the readable list and try and read anyway, despite not
-          -- having been returned by select
-          _reading_log[skt] = nil
-          r_events[#r_events + 1] = skt
-          r_events[skt] = #r_events
+      -- remove any closed sockets to prevent select from hanging on them
+      if _closed[1] then
+        for i, skt in ipairs(_closed) do
+          _closed[i] = { _reading:remove(skt), _writing:remove(skt) }
         end
       end
 
-      -- Do the same for writing
-      for skt,time in pairs(_writing_log) do
-        if not w_events[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
-          _writing_log[skt] = nil
-          w_events[#w_events + 1] = skt
-          w_events[skt] = #w_events
+      _readable_task._events, _writable_task._events, err = socket.select(_reading, _writing, timeout)
+      local r_events, w_events = _readable_task._events, _writable_task._events
+
+      -- inject closed sockets in readable/writeable task so they can error out properly
+      if _closed[1] then
+        for i, skts in ipairs(_closed) do
+          _closed[i] = nil
+          r_events[#r_events+1] = skts[1]
+          w_events[#w_events+1] = skts[2]
         end
       end
-    end
 
-    if err == "timeout" and #r_events + #w_events > 0 then
-      return nil
-    else
-      return err
+      if duration(now, last_cleansing) > WATCH_DOG_TIMEOUT then
+        last_cleansing = now
+
+        -- Check all sockets selected for reading, and check how long they have been waiting
+        -- for data already, without select returning them as readable
+        for skt,time in pairs(_reading_log) do
+          if not r_events[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+            -- This one timedout while waiting to become readable, so move
+            -- it in the readable list and try and read anyway, despite not
+            -- having been returned by select
+            _reading_log[skt] = nil
+            r_events[#r_events + 1] = skt
+            r_events[skt] = #r_events
+          end
+        end
+
+        -- Do the same for writing
+        for skt,time in pairs(_writing_log) do
+          if not w_events[skt] and duration(now, time) > WATCH_DOG_TIMEOUT then
+            _writing_log[skt] = nil
+            w_events[#w_events + 1] = skt
+            w_events[skt] = #w_events
+          end
+        end
+      end
+
+      if err == "timeout" and #r_events + #w_events > 0 then
+        return nil
+      else
+        return err
+      end
     end
   end
 end
