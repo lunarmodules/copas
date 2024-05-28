@@ -104,6 +104,8 @@ luarocks install copas
         <li>Change: Copas no longer requires LuaSocket, if no sockets are needed, LuaSystem will be enough as a fallback.</li>
         <li>Feat: added <code>copas.gettime()</code>, which transparently maps to either LuaSockets or
         LuaSystems implementation, ensuring independence of the availability of either one of those.</li>
+        <li>Feat: Controlled exit of the Copas loop. Adding <code>copas.exit()</code>, <code>copas.exiting()</code>, and
+        <code>copas.waitforexit()</code>.</li>
     </ul></dd>
 
     <dt><strong>Copas 4.7.1</strong> [9/Mar/2024]</dt>

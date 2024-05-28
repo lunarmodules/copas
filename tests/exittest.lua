@@ -72,3 +72,46 @@ copas.loop()
 assert(testran == 6, "Test 6 was not executed!")
 print("6) success")
 
+print("7) Testing exiting releasing the exitsemaphore (implicit, no call to copas.exit)")
+copas.addthread(function()
+  print("","7 running...")
+  copas.addthread(function()
+    copas.waitforexit()
+    testran = 7
+  end)
+end)
+copas.loop()
+assert(testran == 7, "Test 7 was not executed!")
+print("7) success")
+
+print("8) Testing schduling new tasks while exiting (explicit exit by calling copas.exit)")
+testran = 0
+copas.addthread(function()
+  print("","8 running...")
+  copas.addthread(function()
+    while true do
+      copas.pause(0.1)
+      testran = testran + 1
+      print("count...")
+      if testran == 3 then  -- testran == 3
+        print("initiating exit...")
+        copas.exit()
+        break
+      end
+    end
+  end)
+  copas.addthread(function()
+    copas.waitforexit()
+    print("exit signal received...")
+    testran = testran + 1   -- testran == 4
+    copas.addthread(function()
+      print("running new task from exit handler...")
+      copas.pause(1)
+      testran = testran + 1 -- testran == 5
+      print("new task from exit handler done!")
+    end)
+  end)
+end)
+copas.loop()
+assert(testran == 5, "Test 8 was not executed!")
+print("8) success")
