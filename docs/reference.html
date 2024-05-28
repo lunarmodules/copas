@@ -81,8 +81,12 @@ local function connection_handler(skt)
 
 end
 
-copas.addserver(server_socket, copas.handler(connection_handler,
-    ssl_params), "my_TCP_server")
+copas.addthread(function()
+    copas.addserver(server_socket, copas.handler(connection_handler,
+        ssl_params), "my_TCP_server")
+    copas.waitforexit()
+    copas.removeserver(server_socket)
+end)
 
 copas()
 </pre>
