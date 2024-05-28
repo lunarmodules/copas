@@ -1666,6 +1666,38 @@ function copas.finished()
   return #_reading == 0 and #_writing == 0 and _resumable:done() and _sleeping:done(copas.gettimeouts())
 end
 
+
+local resetexit do
+  local exit_semaphore, exiting
+
+  function resetexit()
+    exit_semaphore = copas.semaphore.new(1, 0, math.huge)
+    exiting = false
+  end
+
+  -- Signals tasks to exit. But only if they check for it. By calling `copas.exiting`
+  -- they can check if they should exit. Or by calling `copas.waitforexit` they can
+  -- wait until the exit signal is given.
+  function copas.exit()
+    if exiting then return end
+    exiting = true
+    exit_semaphore:destroy()
+  end
+
+  -- returns whether Copas is in the process of exiting. Exit can be started by
+  -- calling `copas.exit()`.
+  function copas.exiting()
+    return exiting
+  end
+
+  -- Pauses the current coroutine until Copas is exiting. To be used as an exit
+  -- signal for tasks that need to clean up before exiting.
+  function copas.waitforexit()
+    exit_semaphore:take(1)
+  end
+end
+
+
 local _getstats do
   local _getstats_instrumented, _getstats_plain
 
@@ -1756,8 +1788,17 @@ function copas.loop(initializer, timeout)
     timeout = initializer or timeout
   end
 
+  resetexit()
   copas.running = true
-  while not copas.finished() do copas.step(timeout) end
+  while true do
+    copas.step(timeout)
+    if copas.finished() then
+      if copas.exiting() then
+        break
+      end
+      copas.exit()
+    end
+  end
   copas.running = false
 end
 
