@@ -1,5 +1,5 @@
 local copas = require "copas"
-local gettime = require("socket").gettime
+local gettime = copas.gettime
 local Sema = copas.semaphore
 local Lock = copas.lock
 

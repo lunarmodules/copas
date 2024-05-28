@@ -210,6 +210,12 @@ are used to register servers and to execute the main loop of Copas:</p>
         currently running coroutine.</p>
     </dd>
 
+    <dt><strong><code>number = copas.gettime()</code></strong></dt>
+    <dd>
+        <p>Returns the (fractional) number of seconds since the epoch. This directly
+        maps to either the LuaSocket or LuaSystem implementation of <code>gettime()</code>.</p>
+    </dd>
+
     <dt><strong><code>string = copas.gettraceback([msg], [co], [skt])</code></strong></dt>
     <dd>
         <p>Creates a traceback (string). Can be used from custom errorhandlers to create

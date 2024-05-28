@@ -37,6 +37,7 @@ jobs:
       run: |
         luarocks install luacov-coveralls
         luarocks install luasec
+        luarocks install luasystem
 
     - name: generate test certificates
       run: |

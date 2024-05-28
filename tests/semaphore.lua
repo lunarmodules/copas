@@ -1,9 +1,9 @@
 -- make sure we are pointing to the local copas first
 package.path = string.format("../src/?.lua;%s", package.path)
-local now = require("socket").gettime
 
 
 local copas = require "copas"
+local now = copas.gettime
 local semaphore = copas.semaphore
 
 

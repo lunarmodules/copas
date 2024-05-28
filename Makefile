@@ -50,6 +50,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/largetransfer.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/no_luasocket.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/pause.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/queue.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/removeserver.lua
