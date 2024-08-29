@@ -81,8 +81,12 @@ local function connection_handler(skt)
 
 end
 
-copas.addserver(server_socket, copas.handler(connection_handler,
-    ssl_params), "my_TCP_server")
+copas.addthread(function()
+    copas.addserver(server_socket, copas.handler(connection_handler,
+        ssl_params), "my_TCP_server")
+    copas.waitforexit()
+    copas.removeserver(server_socket)
+end)
 
 copas()
 </pre>
@@ -178,6 +182,29 @@ are used to register servers and to execute the main loop of Copas:</p>
         <p>When a TCP handler function completes and terminates, then the client
         socket will automatically be closed when <code>copas.autoclose</code> is
         truthy.</p>
+    </dd>
+
+    <dt><strong><code>copas.exit()</code></strong></dt>
+    <dd>
+        <p>Sets a flag that the application is intending to exit. After calling
+        this function <code>copas.exiting()</code> will be returning <code>true</code>, and
+        all threads blocked on <code>copas.waitforexit()</code> will be released.</p>
+
+        <p>Copas itself will call this function when <code>copas.finished()</code> returns
+        <code>true</code>.</p>
+    </dd>
+
+    <dt><strong><code>bool = copas.exiting()</code></strong></dt>
+    <dd>
+        <p>Returns a flag indicating whether the application is supposed to exit.
+        Returns <code>false</code> until after <code>copas.exit()</code> has been called,
+        after which it will start returning <code>true</code>.</p>
+
+        <p>Clients should check whether they are to cease their operation and exit. They
+        can do this by checking this flag, or by registering a task waiting on
+        <code>copas.waitforexit()</code>. Clients should cancel pending work and close sockets
+        when an exit is announced, otherwise Copas will not exit.
+        </p>
     </dd>
 
     <dt><strong><code>bool = copas.finished()</code></strong></dt>
@@ -302,6 +329,15 @@ are used to register servers and to execute the main loop of Copas:</p>
     <dd>
         <p>Sets the name for the coroutine/thread. <code>co</code> defaults to the
         currently running coroutine.</p>
+    </dd>
+
+    <dt><strong><code>copas.waitforexit()</code></strong></dt>
+    <dd>
+        <p>This will block the calling coroutine until the <code>copas.exit()</code> function
+        is called. Clients should check whether they are to cease their operation and exit. They
+        can do this by waiting on this call, or by checking the <code>copas.exiting()</code> flag.
+        Clients should cancel pending work and close sockets when an exit is announced, otherwise
+        Copas will not exit.</p>
     </dd>
 
     <dt><strong><code>skt = copas.wrap(skt [, sslparams] )</code></strong></dt>
