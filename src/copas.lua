@@ -21,17 +21,21 @@ if package.loaded["copas.http"] and (_VERSION=="Lua 5.1") then     -- obsolete: 
 end
 
 -- load either LuaSocket, or LuaSystem
-local socket, system do
+-- note: with luasocket we don't use 'sleep' but 'select' with no sockets
+local socket, system, system_sleep do
   if pcall(require, "socket") then
     -- found LuaSocket
     socket = require "socket"
-  else
-    -- fallback to LuaSystem
-    if pcall(require, "system") then
-      system = require "system"
-    else
-      error("Neither LuaSocket nor LuaSystem found, Copas requires at least one of them")
-    end
+  end
+
+  -- try LuaSystem as fallback
+  if pcall(require, "system") then
+    system = require "system"
+    system_sleep = system.sleep -- system.sleep will be patched later on
+  end
+
+  if not (socket or system) then
+    error("Neither LuaSocket nor LuaSystem found, Copas requires at least one of them")
   end
 end
 
@@ -1348,6 +1352,10 @@ function copas.pause(sleeptime)
   end
 end
 
+-- patch luasystem to use copas.pause instead of system_sleep
+if package.loaded["system"] then
+  package.loaded["system"].sleep = copas.pause
+end
 
 -- yields the current coroutine until explicitly woken up using 'wakeup'
 function copas.pauseforever()
@@ -1524,7 +1532,7 @@ local _select_plain do
 
   if not socket then
     -- socket module unavailable, switch to luasystem sleep
-    _select_plain = system.sleep
+    _select_plain = system_sleep
   else
     -- use socket.select to handle socket-io
     _select_plain = function(timeout)
