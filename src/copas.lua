@@ -22,7 +22,7 @@ end
 
 -- load either LuaSocket, or LuaSystem
 -- note: with luasocket we don't use 'sleep' but 'select' with no sockets
-local socket, system, system_sleep do
+local socket, system do
   if pcall(require, "socket") then
     -- found LuaSocket
     socket = require "socket"
@@ -31,7 +31,6 @@ local socket, system, system_sleep do
   -- try LuaSystem as fallback
   if pcall(require, "system") then
     system = require "system"
-    system_sleep = system.sleep -- system.sleep will be patched later on
   end
 
   if not (socket or system) then
@@ -41,6 +40,7 @@ end
 
 local binaryheap = require "binaryheap"
 local gettime = (socket or system).gettime
+local block_sleep = (socket or system).sleep
 local ssl -- only loaded upon demand
 
 local WATCH_DOG_TIMEOUT = 120
@@ -1352,10 +1352,6 @@ function copas.pause(sleeptime)
   end
 end
 
--- patch luasystem to use copas.pause instead of system_sleep
-if package.loaded["system"] then
-  package.loaded["system"].sleep = copas.pause
-end
 
 -- yields the current coroutine until explicitly woken up using 'wakeup'
 function copas.pauseforever()
@@ -1532,7 +1528,7 @@ local _select_plain do
 
   if not socket then
     -- socket module unavailable, switch to luasystem sleep
-    _select_plain = system_sleep
+    _select_plain = block_sleep
   else
     -- use socket.select to handle socket-io
     _select_plain = function(timeout)
