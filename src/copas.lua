@@ -1345,17 +1345,21 @@ end
 -- yields the current coroutine and wakes it after 'sleeptime' seconds.
 -- if sleeptime < 0 then it sleeps 0 seconds.
 function copas.pause(sleeptime)
+  local s = gettime()
   if sleeptime and sleeptime > 0 then
     coroutine_yield(sleeptime, _sleeping)
   else
     coroutine_yield(0, _sleeping)
   end
+  return gettime() - s
 end
 
 
 -- yields the current coroutine until explicitly woken up using 'wakeup'
 function copas.pauseforever()
+  local s = gettime()
   coroutine_yield(-1, _sleeping)
+  return gettime() - s
 end
 
 
