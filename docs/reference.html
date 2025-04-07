@@ -381,15 +381,17 @@ the clients, and by threads registered with <code>addthread</code> to
 exchange data with other services.</p>
 
 <dl class="reference">
-    <dt><strong><code>copas.pause([delay])</code></strong></dt>
+    <dt><strong><code>number = copas.pause([delay])</code></strong></dt>
     <dd>
         <p>Pauses the current co-routine. Parameter <code>delay</code> (in seconds) is optional
         and defaults to 0. If <code>delay &lt= 0</code> then it will pause for 0 seconds.</p>
+        <p>Returns the time slept (in seconds).</p>
     </dd>
 
-    <dt><strong><code>copas.pauseforever()</code></strong></dt>
+    <dt><strong><code>number = copas.pauseforever()</code></strong></dt>
     <dd>
         <p>Pauses the current co-routine until explicitly woken by a call to <code>copas.wakeup()</code>.</p>
+        <p>Returns the time slept (in seconds).</p>
     </dd>
 
     <dt><strong><code>copas.sleep([sleeptime])</code></strong></dt>

@@ -99,6 +99,13 @@ luarocks install copas
 <h2><a name="history"></a>History</h2>
 
 <dl class="history">
+
+    <dt><strong>unreleased</strong> [//]</dt>
+	<dd><ul>
+        <li>Feat: <code>copas.pause()</code> and <code>copas.pauseforever()</code> now return the
+        actual time slept, in case they got woken up early, and to return a truthy success value.</li>
+    </ul></dd>
+
     <dt><strong>Copas 4.8.0</strong> [13/Mar/2025]</dt>
 	<dd><ul>
         <li>Change: Copas no longer requires LuaSocket, if no sockets are needed, LuaSystem will be enough as a fallback.</li>
