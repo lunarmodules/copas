@@ -1,4 +1,4 @@
-# Copas 4.7
+# Copas 4.9
 
 [![Unix build](https://img.shields.io/github/actions/workflow/status/lunarmodules/copas/unix_build.yml?branch=master&label=Unix%20build&logo=linux)](https://github.com/lunarmodules/copas/actions)
 [![Coveralls code coverage](https://img.shields.io/coveralls/github/lunarmodules/copas?logo=coveralls)](https://coveralls.io/github/lunarmodules/copas)
@@ -27,7 +27,7 @@ For more details see [the documentation](http://lunarmodules.github.io/copas/).
  - update changelog in docs (`index.html`, update `history` and `status` sections)
  - update version in `copas.lua`
  - update version at the top of this README,
- - update copyright years if needed
+ - update copyright years if needed (in `license.html` and `copas.lua`)
  - update rockspec
  - commit as `release X.Y.Z`
  - tag as `vX_Y_Z` and as `X.Y.Z`
