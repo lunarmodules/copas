@@ -1,6 +1,11 @@
 local copas = require("copas")
 local gettime = copas.gettime
 
+local coroutine_running = coroutine.running
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
+  coroutine_running = require("coxpcall").running
+end
+
 local DEFAULT_TIMEOUT = 10
 
 local lock = {}
@@ -104,7 +109,7 @@ end
 -- @param timeout (optional) timeout in seconds, defaults to the timeout passed to `new` (use `math.huge` to have no timeout).
 -- @return wait-time on success, or nil+error+wait_time on failure. Errors can be "timeout", "destroyed", or "lock is not re-entrant"
 function lock:get(timeout)
-  local co = coroutine.running()
+  local co = coroutine_running()
   local start_time
 
   -- is the lock already taken?
@@ -154,7 +159,7 @@ end
 -- an error.
 -- returns true, or nil+err on an error
 function lock:release()
-  local co = coroutine.running()
+  local co = coroutine_running()
 
   if co ~= self.owner then
     return nil, "cannot release a lock not owned"
