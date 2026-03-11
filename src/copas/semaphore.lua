@@ -1,5 +1,10 @@
 local copas = require("copas")
 
+local coroutine_running = coroutine.running
+if _VERSION=="Lua 5.1" and not jit then     -- obsolete: only for Lua 5.1 compatibility
+  coroutine_running = require("coxpcall").running
+end
+
 local DEFAULT_TIMEOUT = 10
 
 local semaphore = {}
@@ -154,7 +159,7 @@ function semaphore:take(requested, timeout)
   end
 
   -- get in line
-  local co = coroutine.running()
+  local co = coroutine_running()
   self.to_flags[co] = nil
   registry[co] = self
   copas.timeout(to, timeout_handler)

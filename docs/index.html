@@ -104,6 +104,8 @@ luarocks install copas
 	<dd><ul>
         <li>Feat: <code>copas.pause()</code> and <code>copas.pauseforever()</code> now return the
         actual time slept, in case they got woken up early, and to return a truthy success value.</li>
+        <li>Fix: the <code>lock</code> and <code>semaphore</code> classes now use the proper coxpcall
+        version of <code>coroutine.running</code> in case of Lua 5.1, which could cause rare race-conditions.</li>
     </ul></dd>
 
     <dt><strong>Copas 4.8.0</strong> [13/Mar/2025]</dt>
