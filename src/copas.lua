@@ -111,7 +111,7 @@ end
 
 -- Setup the Copas meta table to auto-load submodules and define a default method
 local copas do
-  local submodules = { "ftp", "http", "lock", "queue", "semaphore", "smtp", "timer" }
+  local submodules = { "ftp", "future", "http", "lock", "queue", "semaphore", "smtp", "timer" }
   for i, key in ipairs(submodules) do
     submodules[key] = true
     submodules[i] = nil
