@@ -9,6 +9,22 @@ local pack = function(...) return { n = select("#", ...), ...} end
 
 
 
+-- Module table
+
+local M = {}
+
+M.SUCCESS = true
+M.PENDING = false
+M.ERROR   = "error"
+
+setmetatable(M, {
+  __index = function(_, k)
+    error("unknown field 'future." .. tostring(k) .. "'", 2)
+  end,
+})
+
+
+
 -- Future class
 
 local future = {}
@@ -20,7 +36,7 @@ future.__call = function(self, ...) return self:get(...) end
 
 local function new_future()
   local self = setmetatable({
-    results = nil, -- results will be stored here in a 'packed' table
+    results = nil, -- results will be stored here in a 'packed' table (pcall-style: true/false prefix)
     sema = semaphore.new(9999, 0, math.huge),
     coro = nil -- the coroutine that will execute the task
   }, future)
@@ -29,8 +45,8 @@ local function new_future()
 end
 
 
--- Waits for the task to complete and returns the results.
--- Can be called multiple times.
+-- Waits for the task to complete.
+-- Returns like pcall: true + results on success, false + errmsg on error.
 function future:get()
   if not self.results then
     self.sema:take(1, math.huge) -- wait until the result is ready
@@ -39,35 +55,45 @@ function future:get()
 end
 
 
--- Checks if the results are ready.
--- Returns true/false, and if true, also returns the results.
+-- Non-blocking check on the future status.
+-- Returns:
+--   M.PENDING (false)             -- task not yet complete
+--   M.SUCCESS (true), results...  -- task completed successfully
+--   M.ERROR ("error"), errmsg     -- task failed with an error
 function future:try()
   if not self.results then
-    return false
+    return M.PENDING
   end
-
-  return true, unpack(self.results)
+  if self.results[1] then
+    return M.SUCCESS, unpack(self.results, 2)
+  else
+    return M.ERROR, self.results[2]
+  end
 end
 
 
 
--- Module table
+-- Module implementation
 
-local M = {}
-
-
+-- Mimics copas.addnamedthread but returns a future instead of the coroutine.
 function M.addnamedthread(name, func, ...)
   local f = new_future()
 
   f.coro = copas.addnamedthread(name, function(...)
-    f.results = pack(func(...))     -- execute task, store all results
-    f.sema:give(f.sema:get_wait())  -- release all waiting threads
+    local results
+    local ok, err = pcall(function(...) results = pack(true, func(...)) end, ...)
+    if not ok then
+      results = pack(false, err)
+    end
+    f.results = results
+    f.sema:give(f.sema:get_wait())
   end, ...)
 
-  return future
+  return f
 end
 
 
+-- Mimica copas.addthread but returns a future instead of the coroutine.
 function M.addthread(func, ...)
   return M.addnamedthread(nil, func, ...)
 end
