@@ -43,6 +43,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/close.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/connecttwice.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/errhandlers.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/future.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/exit.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/exittest.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/http-timeout.lua
