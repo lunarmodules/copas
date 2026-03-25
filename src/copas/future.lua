@@ -72,6 +72,19 @@ function future:try()
 end
 
 
+-- Cancels the task if it has not yet completed.
+-- Returns true if cancelled, false if already done.
+function future:cancel()
+  if self.results then
+    return false  -- already done (or already cancelled)
+  end
+  self.results = pack(false, "cancelled")
+  self.sema:give(self.sema:get_wait())
+  copas.removethread(self.coro)
+  return true
+end
+
+
 
 -- Module implementation
 
@@ -85,8 +98,10 @@ function M.addnamedthread(name, func, ...)
     if not ok then
       results = pack(false, err)
     end
-    f.results = results
-    f.sema:give(f.sema:get_wait())
+    if not f.results then  -- don't overwrite a cancel
+      f.results = results
+      f.sema:give(f.sema:get_wait())
+    end
   end, ...)
 
   return f
