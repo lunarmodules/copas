@@ -1,6 +1,11 @@
 local copas = require("copas")
 local semaphore = require("copas.semaphore")
 
+local pcall = pcall
+if _VERSION == "Lua 5.1" and not jit then  -- obsolete: only for Lua 5.1 compatibility
+  pcall = require("coxpcall").pcall
+end
+
 
 -- nil-safe versions for pack/unpack
 local _unpack = unpack or table.unpack
