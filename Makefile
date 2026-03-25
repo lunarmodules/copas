@@ -26,6 +26,7 @@ install:
 	cp src/copas/lock.lua $(DESTDIR)$(LUA_DIR)/copas/lock.lua
 	cp src/copas/semaphore.lua $(DESTDIR)$(LUA_DIR)/copas/semaphore.lua
 	cp src/copas/queue.lua $(DESTDIR)$(LUA_DIR)/copas/queue.lua
+	cp src/copas/future.lua $(DESTDIR)$(LUA_DIR)/copas/future.lua
 
 tests/certs/clientA.pem:
 	cd ./tests/certs && \
