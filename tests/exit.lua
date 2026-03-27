@@ -25,7 +25,7 @@ else
 end
 
 done = false
-local server = socket.bind("*", 20000)
+local server = socket.bind("localhost", 20000)
 local message = "Hello world!"
 
 copas.addserver(server, function(skt)

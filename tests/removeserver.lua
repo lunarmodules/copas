@@ -5,7 +5,7 @@
 local copas = require("copas")
 local socket = require("socket")
 
-local wskt = socket.bind("*", 0)
+local wskt = socket.bind("localhost", 0)
 local whost, wport = wskt:getsockname()
 wport = tonumber(wport)
 

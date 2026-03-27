@@ -49,7 +49,7 @@ copas.addthread(function()
       -- initial redirect to the same url, over https, hence the final
       -- redirect is a downgrade which then errors out
       -- so we set up a local http-server to deal with this
-      local server = assert(socket.bind("127.0.0.1", 9876))
+      local server = assert(socket.bind("localhost", 9876))
       local crlf = string.char(13)..string.char(10)
       copas.addserver(server, function(skt)
           skt = copas.wrap(skt)

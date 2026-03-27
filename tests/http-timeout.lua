@@ -47,7 +47,7 @@ end, true) -- true: make it the default for all threads/coros
 
 
 local function runtest()
-  local s1 = socket.bind('*', 49500)
+  local s1 = socket.bind('localhost', 49500)
   copas.addserver(s1, copas.handler(function(skt)
     -- HTTP server that will optionally do a timeout on the request, or on the response
     copas.setsocketname("Server 49500", skt)
