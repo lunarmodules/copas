@@ -511,6 +511,58 @@ exchange data with other services.</p>
         secured when started.</p>
     </dd>
 
+    <dt><strong><code>future:cancel()</code></strong></dt>
+    <dd>
+        <p>Cancels a pending task. Returns <code>true</code> if the task was successfully cancelled,
+        or <code>false</code> if the task had already completed.</p>
+
+        <p>Any coroutines blocked on <code>future:get()</code> will be released immediately and
+        return <code>false + "cancelled"</code>. Subsequent calls to <code>future:try()</code>
+        will return <code>future.ERROR, "cancelled"</code>.</p>
+    </dd>
+
+    <dt><strong><code>ok [, results...] = future:get()</code></strong></dt>
+    <dd>
+        <p>Waits for the task to complete and returns its results. If the task has already
+        completed, returns immediately. Can be called multiple times; subsequent calls return
+        the cached result without blocking.</p>
+
+        <p>Returns like <code>pcall</code>: on success returns <code>true</code> followed by
+        the task's return values; on failure returns <code>false</code> followed by the error message.</p>
+
+        <p>The future is also callable: <code>future()</code> is equivalent to <code>future:get()</code>.</p>
+    </dd>
+
+    <dt><strong><code>status [, results...] = future:try()</code></strong></dt>
+    <dd>
+        <p>Non-blocking check on the future's status. Returns one of three outcomes:</p>
+        <ul>
+            <li><code>future.PENDING</code> (<code>false</code>) — the task has not yet completed.</li>
+            <li><code>future.SUCCESS</code> (<code>true</code>), results... — the task completed successfully, followed by its return values.</li>
+            <li><code>future.ERROR</code> (<code>"error"</code>), errmsg — the task failed or was cancelled, followed by the error message.</li>
+        </ul>
+        <p><code>future.PENDING</code> is the only falsy value, so a simple truthiness check indicates
+        whether the task is done (whether successfully or with an error).</p>
+    </dd>
+
+    <dt><strong><code>future.ERROR</code>, <code>future.PENDING</code>, <code>future.SUCCESS</code></strong></dt>
+    <dd>
+        <p>Status constants for use with <code>future:try()</code>. Their values are
+        <code>"error"</code>, <code>false</code>, and <code>true</code> respectively.</p>
+    </dd>
+
+    <dt><strong><code>future = copas.future.addnamedthread(name, func, ...)</code></strong></dt>
+    <dd>
+        <p>Equivalent to <code>copas.addnamedthread</code> but returns a future
+        instead of the coroutine.</p>
+    </dd>
+
+    <dt><strong><code>future = copas.future.addthread(func, ...)</code></strong></dt>
+    <dd>
+        <p>Equivalent to <code>copas.addthread</code> but returns a future
+        instead of the coroutine.</p>
+    </dd>
+
     <dt><strong><code>lock:destroy()</code></strong></dt>
     <dd>
         <p>Will destroy the lock and release all waiting threads. The result for those

@@ -14,3 +14,4 @@ install:
 	copy src\copas\semaphore.lua "$(LUA_DIR)\copas\semaphore.lua"
 	copy src\copas\smtp.lua "$(LUA_DIR)\copas\smtp.lua"
 	copy src\copas\timer.lua "$(LUA_DIR)\copas\timer.lua"
+	copy src\copas\future.lua "$(LUA_DIR)\copas\future.lua"
