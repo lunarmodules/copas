@@ -15,7 +15,7 @@ local body = ("A"):rep(1024*1024*50) -- 50 mb string
 local done = 0
 
 local function runtest()
-  local s1 = socket.bind('*', 49500)
+  local s1 = socket.bind('localhost', 49500)
   copas.addserver(s1, copas.handler(function(skt)
       copas.setsocketname("Server 49500", skt)
       copas.setthreadname("Server 49500")

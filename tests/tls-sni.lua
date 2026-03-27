@@ -67,7 +67,7 @@ local function echoHandler(skt)
   end
 end
 
-server = assert(socket.bind("*", port))
+server = assert(socket.bind("localhost", port))
 copas.addserver(server, copas.handler(echoHandler, server_params))
 
 copas.addthread(function()

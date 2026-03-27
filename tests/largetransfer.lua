@@ -17,7 +17,7 @@ local done = 0
 local sparams, cparams
 
 local function runtest()
-  local s1 = socket.bind('*', 49500)
+  local s1 = socket.bind('localhost', 49500)
   copas.addserver(s1, copas.handler(function(skt)
       copas.setsocketname("Server 49500", skt)
       copas.setthreadname("Server 49500")
@@ -30,7 +30,7 @@ local function runtest()
       done = done + 1
     end, sparams))
 
-  local s2 = socket.bind('*', 49501)
+  local s2 = socket.bind('localhost', 49501)
   copas.addserver(s2, copas.handler(function(skt)
       skt:settimeout(0)  -- set, uses the `receivepartial` method
       copas.setsocketname("Server 49501", skt)
