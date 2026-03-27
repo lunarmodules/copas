@@ -28,8 +28,9 @@ For more details see [the documentation](http://lunarmodules.github.io/copas/).
  - update version in `copas.lua`
  - update version at the top of this README,
  - update copyright years if needed (in `license.html` and `copas.lua`)
- - update rockspec
- - commit as `release X.Y.Z`
+ - update cvs rockspec, and create a new rockspec in ./rockspecs
+ - create a release branch and commit as `release X.Y.Z`
+ - create PR and wait for merge
  - tag as `vX_Y_Z` and as `X.Y.Z`
  - push commit and tag
  - upload to luarocks
