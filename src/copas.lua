@@ -312,6 +312,12 @@ local _sleeping = {} do
     heap:remove(co)
   end
 
+  function _sleeping:cancelall(protected_co)
+    while heap:size() > 0 do heap:pop() end
+    heap:insert(gettime() + TIMEOUT_PRECISION, protected_co)
+    -- lethargy is weak; copas's idle GC sweeps will clean it within a few steps
+  end
+
   -- @param tos number of timeouts running
   function _sleeping:done(tos)
     -- return true if we have nothing more to do
@@ -1374,6 +1380,8 @@ end
 -- Timeout management
 -------------------------------------------------------------------------------
 
+local _get_timeout_thread  -- forward declaration; assigned in the block below
+
 do
   local timeout_register = setmetatable({}, { __mode = "k" })
   local time_out_thread
@@ -1392,6 +1400,8 @@ do
       timerwheel:step()
     end
   end)
+
+  _get_timeout_thread = function() return time_out_thread end
 
   -- get the number of timeouts running
   function copas.gettimeouts()
@@ -1703,6 +1713,51 @@ local resetexit do
   function copas.waitforexit()
     exit_semaphore:take(1)
   end
+end
+
+
+--- Forcibly cancels all pending work and signals exit.
+-- Intended for test teardown only. Abandons all registered threads and sockets
+-- without giving them a chance to clean up. After this call copas.finished()
+-- will return true and the loop will exit. The module is left in a clean state
+-- ready for the next copas.loop() call.
+function copas.cancelall()
+  -- 1. clear resumable queue
+  _resumable:clear_resumelist()
+
+  -- 2. drain sleeping heap, re-insert internal timeout-timer so done() stays valid
+  _sleeping:cancelall(_get_timeout_thread())
+
+  -- 3. close and drain reading sockets (snapshot to avoid mutate-while-iterate)
+  local socks = {}
+  for i = 1, #_reading do socks[i] = _reading[i] end
+  for _, skt in ipairs(socks) do
+    pcall(skt.close, skt)
+    _reading:remove(skt)
+  end
+
+  -- 4. close and drain writing sockets
+  socks = {}
+  for i = 1, #_writing do socks[i] = _writing[i] end
+  for _, skt in ipairs(socks) do
+    pcall(skt.close, skt)
+    _writing:remove(skt)
+  end
+
+  -- 5. remove all servers
+  socks = {}
+  for i = 1, #_servers do socks[i] = _servers[i] end
+  for _, skt in ipairs(socks) do
+    copas.removeserver(skt)
+  end
+
+  -- 6. clear non-weak ancillary tables
+  _closed = {}
+  _reading_log = {}
+  _writing_log = {}
+
+  -- 7. signal exit
+  copas.exit()
 end
 
 
