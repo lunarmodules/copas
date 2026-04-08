@@ -1062,6 +1062,39 @@ print("result: ", result)
 
 <dl class="reference">
 
+    <dt><strong><code>copas.cancelall()</code></strong></dt>
+    <dd>
+        <p>This will clear pending work (client sockets, server sockets, timers) to force the copas
+            loop to exit immediately. This is useful for testing and debugging.
+        </p>
+
+        <p>Here's an example which, upon an error, cancels all pending work to ensure the test
+            ends immediately instead of waiting for the long sleep to end:
+        </p>
+        <pre class="example">
+local failure
+
+copas(function())
+  copas.seterrorhandler(function(msg, co, skt)
+    failure = copas.gettraceback(msg, co, skt)
+    copas.cancelall()   -- cancel all pending work to force exit
+  end, true)            -- true -&gt; set as default errorhandler
+
+  copas.addthread(function()
+    print("sleeping")
+    copas.pause(3600)   -- would block copas loop from exiting
+  end)
+
+  copas.addthread(function()
+    copas.pause(1)
+    error("boom!!")     -- invokes the erorrhandler above
+  end)
+end)
+
+assert(not failure, failure)
+        </pre>
+    </dd>
+
     <dt><strong><code>copas.debug.start([logger] [, core])</code></strong></dt>
     <dd>
         <p>This will internally replace coroutine handler functions to provide log output to
