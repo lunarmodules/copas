@@ -55,7 +55,7 @@ local loop2_done = false
 
 copas.loop(function()
   copas.addthread(function()
-    copas.sleep(0.05)
+    copas.pause(0.05)
     loop2_done = true
   end)
 end)

@@ -1721,30 +1721,24 @@ function copas.cancelall()
   -- 1. clear resumable queue
   _resumable:clear_resumelist()
 
-  -- 2. drain sleeping heap, re-insert internal timeout-timer so done() stays valid
+  -- 2. drain sleeping heap
   _sleeping:cancelall()
 
-  -- 3. close and drain reading sockets (snapshot to avoid mutate-while-iterate)
-  local socks = {}
-  for i = 1, #_reading do socks[i] = _reading[i] end
-  for _, skt in ipairs(socks) do
-    pcall(skt.close, skt)
-    _reading:remove(skt)
+  -- 3. close and drain reading sockets
+  while _reading[1] do
+    copas.close(_reading[1])
+    _reading:remove(_reading[1])
   end
 
   -- 4. close and drain writing sockets
-  socks = {}
-  for i = 1, #_writing do socks[i] = _writing[i] end
-  for _, skt in ipairs(socks) do
-    pcall(skt.close, skt)
-    _writing:remove(skt)
+  while _writing[1] do
+    copas.close(_writing[1])
+    _writing:remove(_writing[1])
   end
 
   -- 5. remove all servers
-  socks = {}
-  for i = 1, #_servers do socks[i] = _servers[i] end
-  for _, skt in ipairs(socks) do
-    copas.removeserver(skt)
+  while _servers[1] do
+    copas.removeserver(_servers[1])
   end
 
   -- 6. clear non-weak ancillary tables
