@@ -43,6 +43,7 @@ local gettime = (socket or system).gettime
 local block_sleep = (socket or system).sleep
 local ssl -- only loaded upon demand
 
+local core_timer_thread
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = (socket or {})._DATAGRAMSIZE or 8192
 local TIMEOUT_PRECISION = 0.1  -- 100ms
@@ -312,9 +313,9 @@ local _sleeping = {} do
     heap:remove(co)
   end
 
-  function _sleeping:cancelall(protected_co)
+  function _sleeping:cancelall()
     while heap:size() > 0 do heap:pop() end
-    heap:insert(gettime() + TIMEOUT_PRECISION, protected_co)
+    heap:insert(gettime() + TIMEOUT_PRECISION, core_timer_thread)
     -- lethargy is weak; copas's idle GC sweeps will clean it within a few steps
   end
 
@@ -1380,28 +1381,23 @@ end
 -- Timeout management
 -------------------------------------------------------------------------------
 
-local _get_timeout_thread  -- forward declaration; assigned in the block below
-
 do
   local timeout_register = setmetatable({}, { __mode = "k" })
-  local time_out_thread
   local timerwheel = require("timerwheel").new({
       now = gettime,
       precision = TIMEOUT_PRECISION,
       ringsize = math.floor(60*60*24/TIMEOUT_PRECISION),  -- ring size 1 day
       err_handler = function(err)
-        return _deferror(err, time_out_thread)
+        return _deferror(err, core_timer_thread)
       end,
     })
 
-  time_out_thread = copas.addnamedthread("copas_core_timer", function()
+  core_timer_thread = copas.addnamedthread("copas_core_timer", function()
     while true do
       copas.pause(TIMEOUT_PRECISION)
       timerwheel:step()
     end
   end)
-
-  _get_timeout_thread = function() return time_out_thread end
 
   -- get the number of timeouts running
   function copas.gettimeouts()
@@ -1726,7 +1722,7 @@ function copas.cancelall()
   _resumable:clear_resumelist()
 
   -- 2. drain sleeping heap, re-insert internal timeout-timer so done() stays valid
-  _sleeping:cancelall(_get_timeout_thread())
+  _sleeping:cancelall()
 
   -- 3. close and drain reading sockets (snapshot to avoid mutate-while-iterate)
   local socks = {}
