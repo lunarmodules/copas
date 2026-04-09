@@ -43,6 +43,7 @@ local gettime = (socket or system).gettime
 local block_sleep = (socket or system).sleep
 local ssl -- only loaded upon demand
 
+local core_timer_thread
 local WATCH_DOG_TIMEOUT = 120
 local UDP_DATAGRAM_MAX = (socket or {})._DATAGRAMSIZE or 8192
 local TIMEOUT_PRECISION = 0.1  -- 100ms
@@ -310,6 +311,12 @@ local _sleeping = {} do
   function _sleeping:cancel(co)
     lethargy[co] = nil
     heap:remove(co)
+  end
+
+  function _sleeping:cancelall()
+    while heap:size() > 0 do heap:pop() end
+    heap:insert(gettime() + TIMEOUT_PRECISION, core_timer_thread)
+    -- lethargy is weak; copas's idle GC sweeps will clean it within a few steps
   end
 
   -- @param tos number of timeouts running
@@ -1376,17 +1383,16 @@ end
 
 do
   local timeout_register = setmetatable({}, { __mode = "k" })
-  local time_out_thread
   local timerwheel = require("timerwheel").new({
       now = gettime,
       precision = TIMEOUT_PRECISION,
       ringsize = math.floor(60*60*24/TIMEOUT_PRECISION),  -- ring size 1 day
       err_handler = function(err)
-        return _deferror(err, time_out_thread)
+        return _deferror(err, core_timer_thread)
       end,
     })
 
-  time_out_thread = copas.addnamedthread("copas_core_timer", function()
+  core_timer_thread = copas.addnamedthread("copas_core_timer", function()
     while true do
       copas.pause(TIMEOUT_PRECISION)
       timerwheel:step()
@@ -1703,6 +1709,45 @@ local resetexit do
   function copas.waitforexit()
     exit_semaphore:take(1)
   end
+end
+
+
+--- Forcibly cancels all pending work and signals exit.
+-- Intended for test teardown only. Abandons all registered threads and sockets
+-- without giving them a chance to clean up. After this call copas.finished()
+-- will return true and the loop will exit. The module is left in a clean state
+-- ready for the next copas.loop() call.
+function copas.cancelall()
+  -- 1. clear resumable queue
+  _resumable:clear_resumelist()
+
+  -- 2. drain sleeping heap
+  _sleeping:cancelall()
+
+  -- 3. close and drain reading sockets
+  while _reading[1] do
+    copas.close(_reading[1])
+    _reading:remove(_reading[1])
+  end
+
+  -- 4. close and drain writing sockets
+  while _writing[1] do
+    copas.close(_writing[1])
+    _writing:remove(_writing[1])
+  end
+
+  -- 5. remove all servers
+  while _servers[1] do
+    copas.removeserver(_servers[1])
+  end
+
+  -- 6. clear non-weak ancillary tables
+  _closed = {}
+  _reading_log = {}
+  _writing_log = {}
+
+  -- 7. signal exit
+  copas.exit()
 end
 
 

@@ -100,6 +100,12 @@ luarocks install copas
 
 <dl class="history">
 
+    <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
+	<dd><ul>
+        <li>Feat: added <code>copas.cancelall()</code>. It cancels pending work to force-exit the loop.
+        Intended use is for testing, to force a loop exit, even if a test fails.</li>
+    </ul></dd>
+
     <dt><strong>Copas 4.10.0</strong> [27/Mar/2026]</dt>
 	<dd><ul>
         <li>Feat: added <code>copas.future</code> class. Wraps a thread in a future, allowing other
