@@ -29,6 +29,36 @@ local function assert(truthy, err)
   end
 end
 
+local function get_socket_timeout_tables()
+  local sto_timeout
+
+  for i = 1, math.huge do
+    local name, value = debug.getupvalue(copas.receive, i)
+    if not name then break end
+    if name == "sto_timeout" then
+      sto_timeout = value
+      break
+    end
+  end
+
+  assert(sto_timeout, "could not find sto_timeout upvalue")
+
+  local tables = {}
+  for i = 1, math.huge do
+    local name, value = debug.getupvalue(sto_timeout, i)
+    if not name then break end
+    if name == "socket_register" or name == "operation_register" or name == "timeout_flags" then
+      tables[name] = value
+    end
+  end
+
+  assert(tables.socket_register, "could not find socket_register upvalue")
+  assert(tables.operation_register, "could not find operation_register upvalue")
+  assert(tables.timeout_flags, "could not find timeout_flags upvalue")
+
+  return tables
+end
+
 -- tcp echo server for testing against, returns `ip, port` to connect to
 -- send `quit\n` to cause server to disconnect client
 -- stops listen server after first connection
@@ -155,6 +185,44 @@ function tests.receive_timeout()
   end)
 
   copas.loop()
+end
+
+
+function tests.receive_timeout_clears_copas_timeout()
+  local timeout_tables = get_socket_timeout_tables()
+  local server = socket.bind("127.0.0.1", 0)
+  local ip, port = server:getsockname()
+  local handler_co
+
+  copas.addserver(server, function(skt)
+    handler_co = coroutine.running()
+    copas.removeserver(server)
+
+    skt = copas.wrap(skt)
+    skt:settimeout(0.01)
+
+    local data, err = skt:receive()
+    assert(data == nil, "somehow recieved data without the client sending")
+    assert(err == "timeout", "failed with non-timeout error: "..tostring(err))
+
+    skt:close()
+  end)
+
+  copas.addthread(function()
+    local client = socket.tcp()
+    local status, err = client:connect(ip, port)
+    assert(status, "failed to connect: "..tostring(err))
+
+    copas.pause(0.25)
+    client:close()
+  end)
+
+  copas.loop()
+
+  assert(handler_co, "server handler did not run")
+  assert(timeout_tables.socket_register[handler_co] == nil, "socket_register kept the timed-out coroutine")
+  assert(timeout_tables.operation_register[handler_co] == nil, "operation_register kept the timed-out coroutine")
+  assert(timeout_tables.timeout_flags[handler_co] == nil, "timeout_flags kept the timed-out coroutine")
 end
 
 -- test "framework"

@@ -571,6 +571,7 @@ function copas.receive(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), part
     end
 
@@ -615,6 +616,7 @@ function copas.receivefrom(client, size)
 
     elseif sto_timed_out() then
       _reading_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), port
     end
 
@@ -652,6 +654,7 @@ function copas.receivepartial(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), part
     end
 
@@ -700,6 +703,7 @@ function copas.send(client, data, from, to)
 
     elseif sto_timed_out() then
       current_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), lastIndex
     end
 
@@ -748,6 +752,7 @@ function copas.connect(skt, host, port)
 
     elseif sto_timed_out() then
       _writing_log[skt] = nil
+      sto_timeout()
       return nil, sto_error(err)
     end
 
@@ -872,6 +877,7 @@ function copas.dohandshake(skt, wrap_params)
       error("TLS/SSL handshake failed: " .. tostring(err))
 
     elseif sto_timed_out() then
+      sto_timeout()
       return nil, sto_error(err)
 
     elseif err == "wantwrite" then
