@@ -464,6 +464,13 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
   function sto_error(err)
     return useSocketTimeoutErrors[coroutine_running()] and err or "timeout"
   end
+
+  -- only in case of testing export some internals
+  if _G._TEST then
+    copas._socket_register = socket_register
+    copas._operation_register = operation_register
+    copas._timeout_flags = timeout_flags
+  end
 end
 
 
