@@ -14,6 +14,7 @@ end
 print("Testing platform: " .. platform)
 
 
+_G._TEST = true -- mark as test, to export some internals for testing
 local copas = require("copas")
 local socket = require("socket")
 
@@ -155,6 +156,44 @@ function tests.receive_timeout()
   end)
 
   copas.loop()
+end
+
+
+function tests.receive_timeout_clears_copas_timeout()
+  -- See issue https://github.com/lunarmodules/copas/issues/185
+  local server = socket.bind("127.0.0.1", 0)
+  local ip, port = server:getsockname()
+  local handler_co
+
+  copas.addserver(server, function(skt)
+    handler_co = coroutine.running()
+    copas.removeserver(server)
+
+    skt = copas.wrap(skt)
+    skt:settimeout(0.01)
+
+    local data, err = skt:receive()
+    assert(data == nil, "somehow recieved data without the client sending")
+    assert(err == "timeout", "failed with non-timeout error: "..tostring(err))
+
+    skt:close()
+  end)
+
+  copas.addthread(function()
+    local client = socket.tcp()
+    local status, err = client:connect(ip, port)
+    assert(status, "failed to connect: "..tostring(err))
+
+    copas.pause(0.25)
+    client:close()
+  end)
+
+  copas.loop()
+
+  assert(handler_co, "server handler did not run")
+  assert(copas._socket_register[handler_co] == nil, "socket_register kept the timed-out coroutine")
+  assert(copas._operation_register[handler_co] == nil, "operation_register kept the timed-out coroutine")
+  assert(copas._timeout_flags[handler_co] == nil, "timeout_flags kept the timed-out coroutine")
 end
 
 -- test "framework"

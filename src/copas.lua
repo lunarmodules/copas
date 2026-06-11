@@ -464,6 +464,13 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
   function sto_error(err)
     return useSocketTimeoutErrors[coroutine_running()] and err or "timeout"
   end
+
+  -- only in case of testing export some internals
+  if _G._TEST then
+    copas._socket_register = socket_register
+    copas._operation_register = operation_register
+    copas._timeout_flags = timeout_flags
+  end
 end
 
 
@@ -571,6 +578,7 @@ function copas.receive(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), part
     end
 
@@ -615,6 +623,7 @@ function copas.receivefrom(client, size)
 
     elseif sto_timed_out() then
       _reading_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), port
     end
 
@@ -652,6 +661,7 @@ function copas.receivepartial(client, pattern, part)
 
     elseif sto_timed_out() then
       current_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), part
     end
 
@@ -700,6 +710,7 @@ function copas.send(client, data, from, to)
 
     elseif sto_timed_out() then
       current_log[client] = nil
+      sto_timeout()
       return nil, sto_error(err), lastIndex
     end
 
@@ -748,6 +759,7 @@ function copas.connect(skt, host, port)
 
     elseif sto_timed_out() then
       _writing_log[skt] = nil
+      sto_timeout()
       return nil, sto_error(err)
     end
 
@@ -872,6 +884,7 @@ function copas.dohandshake(skt, wrap_params)
       error("TLS/SSL handshake failed: " .. tostring(err))
 
     elseif sto_timed_out() then
+      sto_timeout()
       return nil, sto_error(err)
 
     elseif err == "wantwrite" then
