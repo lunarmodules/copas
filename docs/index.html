@@ -74,7 +74,7 @@ as Lua 5.1 to 5.5</p>
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 4.10.0 and was developed for Lua 5.1 to 5.5.</p>
+<p>Current version is 4.11.0 and was developed for Lua 5.1 to 5.5.</p>
 
 <h2><a name="download"></a>Download</h2>
 
@@ -100,10 +100,12 @@ luarocks install copas
 
 <dl class="history">
 
-    <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
+    <dt><strong>Copas 4.11.0</strong> [11/Jun/2026]</dt>
 	<dd><ul>
         <li>Feat: added <code>copas.cancelall()</code>. It cancels pending work to force-exit the loop.
         Intended use is for testing, to force a loop exit, even if a test fails.</li>
+        <li>Fix: when a socket timeout occurs, the registers weren't properly cleaned. This caused
+        a memory leak. Fix by @haoxianhan in #186.</li>
     </ul></dd>
 
     <dt><strong>Copas 4.10.0</strong> [27/Mar/2026]</dt>
