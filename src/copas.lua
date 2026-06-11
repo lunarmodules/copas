@@ -400,6 +400,7 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
   local timeout_flags = setmetatable({}, { __mode = "k" })      -- true if timedout, by coroutine
 
 
+  -- The callback called when a socket timeout occurs.
   local function socket_callback(co)
     local skt = socket_register[co]
     local queue = operation_register[co]
@@ -421,10 +422,11 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
 
   -- Sets a socket timeout.
   -- Calling it as `sto_timeout()` will cancel the timeout.
-  -- @param queue (string) the queue the socket is currently in, must be either "read" or "write"
-  -- @param skt (socket) the socket on which to operate
-  -- @param use_connect_to (bool) timeout to use is determined based on queue (read/write) or if this
-  -- is truthy, it is the connect timeout.
+  -- @param skt (socket) the socket on which to operate, use 'nil' to cancel the current timeout
+  -- @param queue (string) the queue the socket is currently in: "read" or "write"
+  -- @param use_connect_to (bool) if truthy, use the connect timeout instead of the
+  --   read/write timeout implied by queue. Needed because connect also uses the "write"
+  --   queue, so the queue value alone cannot distinguish connect from send operations.
   -- @return true
   function sto_timeout(skt, queue, use_connect_to)
     local co = coroutine_running()
