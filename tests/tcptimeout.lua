@@ -160,6 +160,7 @@ end
 
 
 function tests.receive_timeout_clears_copas_timeout()
+  -- See issue https://github.com/lunarmodules/copas/issues/185
   local server = socket.bind("127.0.0.1", 0)
   local ip, port = server:getsockname()
   local handler_co
