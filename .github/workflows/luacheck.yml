@@ -20,15 +20,17 @@ jobs:
 
   luacheck:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
 
-      - uses: luarocks/gh-actions-lua@master
+      - uses: luarocks/gh-actions-lua@fc6f8de246f8c01f6e1a56a1b851143e23370ff3
         with:
           luaVersion: "5.4"
 
-      - uses: luarocks/gh-actions-luarocks@master
+      - uses: luarocks/gh-actions-luarocks@95d2308a0aff36ad31ebadca493ed14853399842
         with:
           luaRocksVersion: "3.13.0"
 
@@ -37,4 +39,4 @@ jobs:
           for i in $(find . -type f -name "*.rockspec"); do echo $i; luarocks lint $i || exit 1; done
 
       - name: Luacheck
-        uses: lunarmodules/luacheck@v0
+        uses: lunarmodules/luacheck@2445a9dd3859655646bd6eb848459f2b46b4a3e3

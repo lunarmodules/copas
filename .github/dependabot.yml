@@ -1,0 +1,14 @@
+# Keep GitHub Actions up to date with GitHub's Dependabot.
+# https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/auto-update-actions
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
