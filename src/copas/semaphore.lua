@@ -65,12 +65,16 @@ end
 
 
 -- Gives resources.
--- @param given (optional, default 1) number of resources to return. If more
--- than the maximum are returned then it will be capped at the maximum and
--- error "too many" will be returned.
+-- @param given (optional, default 1) number of resources to return. Must be
+-- a finite number greater than or equal to 0. If more than the maximum are
+-- returned then it will be capped at the maximum and error "too many" will
+-- be returned.
 function semaphore:give(given)
   local err
   given = given or 1
+  if given < 0 or given == math.huge or given ~= given then
+    error("expected given resources (1st argument) to be a finite number greater than or equal to 0, got: " .. tostring(given), 2)
+  end
   local count = self.count + given
   --print("now at",count, ", after +"..given)
   if count > self.max then

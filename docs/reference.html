@@ -745,10 +745,13 @@ exchange data with other services.</p>
     <dt><strong><code>semaphore:give([given])</code></strong></dt>
     <dd>
         <p>Gives resources to the semaphore. Parameter <code>given</code> is the number of resources
-        given to the semaphore, if omitted it defaults to 1.</p>
+        given to the semaphore, if omitted it defaults to 1. <code>given</code> must be a finite
+        number greater than or equal to 0, otherwise an error is thrown.</p>
 
         <p>If the total resources in the semaphore exceed the maximum, then it will be capped at the
-        maximum. In that case the result will be <code>nil + "too many"</code>.</p>
+        maximum. In that case the result will be <code>nil + "too many"</code>. To release every
+        currently waiting thread regardless of <code>max</code>, use <code>semaphore:release_all()</code>
+        instead.</p>
     </dd>
 
     <dt><strong><code>copas.semaphore.new(max, [start], [timeout])</code></strong></dt>

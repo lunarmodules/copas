@@ -323,4 +323,41 @@ copas.loop(function()
 end)
 assert(test5_complete, "test 5 did not complete!")
 
+
+-- Test 6: give() must reject invalid input instead of silently corrupting
+-- the resource accounting.
+local test6_complete = false
+copas.loop(function()
+
+  local sema = semaphore.new(10, 0, 5)
+
+  -- a negative amount must error, not push `count` negative
+  local ok = pcall(function() sema:give(-1) end)
+  assert(not ok, "expected give(-1) to raise an error")
+  assert(sema:get_count() == 0, "count must be unaffected by the rejected call")
+
+  -- math.huge must error too; even on an uncapped semaphore (max = math.huge)
+  -- it would leave `count` permanently `inf`, since there is no cap left to
+  -- clamp it back down.
+  local uncapped = semaphore.new(math.huge, 0, 5)
+  ok = pcall(function() uncapped:give(math.huge) end)
+  assert(not ok, "expected give(math.huge) on an uncapped semaphore to raise an error")
+  assert(uncapped:get_count() == 0, "count must be unaffected by the rejected call")
+
+  -- NaN must error too
+  ok = pcall(function() sema:give(0/0) end)
+  assert(not ok, "expected give(NaN) to raise an error")
+
+  -- 0 remains a valid no-op
+  assert(sema:give(0))
+  assert(sema:get_count() == 0)
+
+  -- no argument still defaults to 1
+  assert(sema:give())
+  assert(sema:get_count() == 1)
+
+  test6_complete = true
+end)
+assert(test6_complete, "test 6 did not complete!")
+
 print("test success!")
