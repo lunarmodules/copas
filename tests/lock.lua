@@ -146,4 +146,64 @@ copas.loop(function()
 end)
 assert(test2_complete, "test 2 did not complete!")
 
+
+-- Test 3: a failed zero-timeout acquisition must not remain queued.
+-- See https://github.com/lunarmodules/copas/issues/201
+local test3_complete = false
+copas.loop(function()
+
+  -- 3a: the probe itself must not leave a stale entry behind
+  -- (must come from another coroutine: get(0) on the owning coroutine
+  -- itself takes the reentrant path, not the queuing one)
+  local lock3 = assert(Lock.new(5))
+  assert(lock3:get()) -- owner = this (the main) coroutine
+
+  local prober_err, prober_wait
+  copas.addthread(function()
+    local _, e, w = lock3:get(0) -- non-blocking probe while locked
+    prober_err, prober_wait = e, w
+  end)
+  copas.pause(0.1) -- let the prober run its probe
+
+  assert(prober_err == "timeout", "expected immediate timeout, got: "..tostring(prober_err))
+  assert(prober_wait == 0)
+
+  assert(lock3.q_tip == lock3.q_tail,
+    "expected the failed zero-timeout probe to not be queued, q_tip="
+    ..tostring(lock3.q_tip)..", q_tail="..tostring(lock3.q_tail))
+
+  -- 3b: even if the prober coroutine happens to go to sleep afterwards for
+  -- an unrelated reason, a stale queue entry must not let it hijack the
+  -- lock next time it is released
+  local lock4 = assert(Lock.new(5))
+  assert(lock4:get()) -- owner = this (the main) coroutine
+
+  local prober_done = false
+  copas.addthread(function()
+    local _, prober_err = lock4:get(0) -- non-blocking probe while locked
+    assert(prober_err == "timeout", "expected immediate timeout, got: "..tostring(prober_err))
+    copas.pauseforever() -- unrelated sleep, nothing to do with the lock
+    prober_done = true
+  end)
+  copas.pause(0.1) -- let the prober run its probe and go to sleep
+
+  assert(lock4:release()) -- must not hand the lock to the sleeping prober
+  copas.pause(0.1)
+
+  assert(not prober_done, "the prober should still be asleep, unrelated to the lock")
+  assert(lock4.owner == nil, "expected the lock to be free, not hijacked by the prober")
+
+  local waiter_result
+  copas.addthread(function()
+    local ok, werr = lock4:get(1)
+    waiter_result = ok and "got it" or werr
+  end)
+  copas.pause(1.2)
+  assert(waiter_result == "got it",
+    "expected a legitimate waiter to get the freed lock, got: "..tostring(waiter_result))
+
+  test3_complete = true
+end)
+assert(test3_complete, "test 3 did not complete!")
+
 print("test success!")

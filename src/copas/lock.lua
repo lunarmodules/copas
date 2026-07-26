@@ -120,12 +120,13 @@ function lock:get(timeout)
       return 0
     end
 
-    self.queue[self.q_tail] = co
-    self.q_tail = self.q_tail + 1
     timeout = timeout or self.timeout
     if timeout == 0 then
       return nil, "timeout", 0
     end
+
+    self.queue[self.q_tail] = co
+    self.q_tail = self.q_tail + 1
 
     -- set up timeout
     registry[co] = self
