@@ -979,7 +979,7 @@ function copas.dohandshake(skt, wrap_params)
 
     elseif sto_timed_out() then
       sto_timeout()
-      return nil, sto_error(err)
+      error("TLS/SSL handshake timeout: " .. tostring(err))
 
     elseif err == "wantwrite" then
       sto_change_queue("write")
@@ -1043,6 +1043,8 @@ local _skt_mt_tcp = {
         -- if ssl parameters are available, it will also include a handshake
         connect = function(self, ...)
           local res, err = copas.connect(self.socket, ...)
+          -- sni errors out if it fails, so we do not need to check for errors here.
+          -- sni() itself returns nothing on success, so its result must not be folded into 'res'.
           if res then
             if self.ssl_params.sni then self:sni() end
             if self.ssl_params.wrap then res, err = self:dohandshake() end
@@ -1112,13 +1114,13 @@ local _skt_mt_tcp = {
             names = sslp.sni.names
             strict = sslp.sni.strict
           end
+          -- sni() throws on bad parameters by itself, and returns nothing on success
           return self.socket:sni(names, strict)
         end,
 
         dohandshake = function(self, wrap_params)
-          local nskt, err = copas.dohandshake(self.socket, wrap_params or self.ssl_params.wrap)
-          if not nskt then return nskt, err end
-          self.socket = nskt  -- replace internal socket with the newly wrapped ssl one
+          -- copas.dohandshake() either returns the wrapped ssl socket, or throws
+          self.socket = copas.dohandshake(self.socket, wrap_params or self.ssl_params.wrap)
           return self
         end,
 
@@ -1201,6 +1203,8 @@ function copas.handler(handler, sslparams)
   return function (skt, ...)
     skt = copas.wrap(skt, sslparams) -- this call will normalize the sslparams table
     local sslp = skt.ssl_params
+    -- sni doesn't return an error, just throws on bad params, so no error checking needed.
+    -- the wrapped dohandshake does the same, so also no error handling needed.
     if sslp.sni then skt:sni(sslp.sni.names, sslp.sni.strict) end
     if sslp.wrap then skt:dohandshake(sslp.wrap) end
     return handler(skt, ...)

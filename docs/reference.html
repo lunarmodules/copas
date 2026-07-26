@@ -438,6 +438,9 @@ exchange data with other services.</p>
         <code>copas.handler</code> (for incoming connections) and <code>copas.wrap</code> (for
         outgoing connections), which then ensures that the connection will automatically be
         secured when started.</p>
+
+        <p>Unlike the LuaSec method, this does not return <code>nil + error</code> on failure;
+        it throws an error instead (see <code>copas.dohandshake()</code>).</p>
     </dd>
 
     <dt><strong><code>sock:receive([pattern [, prefix]])</code></strong></dt>

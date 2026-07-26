@@ -102,6 +102,10 @@ luarocks install copas
 
     <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
 	<dd><ul>
+        <li>Fix: <code>sock:dohandshake()</code> returned <code>nil + err</code> on a handshake
+        timeout instead of throwing like every other failure path. A
+        timed-out handshake could leave a connection running without the intended TLS
+        configuration instead of aborting it; it now throws consistently on a failure (#189).</li>
         <li>Fix: <code>copas.http</code> reused the SNI server name from the first request of a
         redirect chain for every subsequent hop, so a redirect to a different host still sent the
         original host's name in the TLS handshake instead of the new target's. This also applied
