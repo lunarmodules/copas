@@ -172,17 +172,18 @@ function lock:release()
   end
 
   -- need a loop, since individual coroutines might have been removed
-  -- so there might be holes
+  -- (or canceled externally, eg. via `copas.removethread`/`future:cancel`)
+  -- so there might be holes, or stale entries whose wakeup will fail
   while self.q_tip < self.q_tail do
     local next_up = self.queue[self.q_tip]
-    if next_up then
+    self.queue[self.q_tip] = nil
+    self.q_tip = self.q_tip + 1
+    if next_up and copas.wakeup(next_up) then
       self.owner = next_up
-      self.queue[self.q_tip] = nil
-      self.q_tip = self.q_tip + 1
-      copas.wakeup(next_up)
       return true
     end
-    self.q_tip = self.q_tip + 1
+    -- either an empty hole, or 'next_up' was canceled and will never resume
+    -- to release the lock itself, so move on to the next waiter in line
   end
   -- queue is empty, reset pointers
   self.owner = nil

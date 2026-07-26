@@ -301,11 +301,13 @@ local _sleeping = {} do
     if lethargy[co] then
       lethargy[co] = nil
       _resumable:push(co)
-      return
+      return true
     end
     if heap:remove(co) then
       _resumable:push(co)
+      return true
     end
+    return nil, "not sleeping"
   end
 
   function _sleeping:cancel(co)
@@ -1392,8 +1394,10 @@ end
 
 
 -- Wakes up a sleeping coroutine 'co'.
+-- @return true on success, or nil+"not sleeping" if 'co' wasn't sleeping
+-- (eg. it was already woken up, finished, or canceled through `copas.removethread`).
 function copas.wakeup(co)
-  _sleeping:wakeup(co)
+  return _sleeping:wakeup(co)
 end
 
 

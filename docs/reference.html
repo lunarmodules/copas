@@ -399,11 +399,14 @@ exchange data with other services.</p>
         <p><i>Deprecated:</i> use <code>copas.pause</code> and <code>copas.pauseforever</code> instead.</p>
     </dd>
 
-    <dt><strong><code>copas.wakeup(co)</code></strong></dt>
+    <dt><strong><code>ok, err = copas.wakeup(co)</code></strong></dt>
     <dd>
         <p>Immediately wakes up a coroutine that was sleeping or sleeping-forever.
         <code>co</code> is the coroutine to wakeup, see <code>copas.pause()</code>
-        and <code>copas.pauseforever()</code>. Does nothing if the coroutine wasn't sleeping.</p>
+        and <code>copas.pauseforever()</code>.</p>
+        <p>Returns <code>true</code> on success, or <code>nil + "not sleeping"</code> if the
+        coroutine wasn't sleeping (eg. it already finished, was already woken up, or was
+        canceled through <code>copas.removethread()</code>).</p>
     </dd>
 
     <dt><strong><code>sock:close()</code></strong></dt>

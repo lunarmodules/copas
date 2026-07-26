@@ -67,6 +67,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/timeout_errors.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/tls-sni.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/udptimeout.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/wakeup.lua
 	$(LUA) $(DELIM)
 
 coverage:

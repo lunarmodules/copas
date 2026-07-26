@@ -104,4 +104,46 @@ copas.loop(function()
 end)
 assert(test_complete, "test did not complete!")
 
+
+-- Test 2: canceling a queued waiter must not permanently transfer ownership
+-- to it, locking out every legitimate waiter behind it forever.
+-- See https://github.com/lunarmodules/copas/issues/199
+local test2_complete = false
+copas.loop(function()
+
+  local lock2 = assert(Lock.new(5))
+  assert(lock2:get()) -- owned by this (the main) coroutine
+
+  -- queue a waiter that will be canceled (eg. via future:cancel()) while
+  -- it is still waiting in line for the lock
+  local canceled_co = copas.addthread(function()
+    lock2:get()
+  end)
+
+  -- queue a legitimate waiter behind it
+  local waiter_result
+  copas.addthread(function()
+    local ok, err = lock2:get()
+    waiter_result = ok and "got it" or err
+    if ok then
+      assert(lock2:release())
+    end
+  end)
+
+  copas.pause(0.1) -- let both threads enqueue behind the lock
+
+  copas.removethread(canceled_co) -- simulate external cancellation
+
+  assert(lock2:release()) -- should hand the lock to the legitimate waiter
+
+  copas.pause(0.1)
+
+  assert(waiter_result == "got it",
+    "expected the legitimate waiter to get the lock, got: "..tostring(waiter_result))
+  assert(lock2.owner == nil, "expected the lock to be free again")
+
+  test2_complete = true
+end)
+assert(test2_complete, "test 2 did not complete!")
+
 print("test success!")
