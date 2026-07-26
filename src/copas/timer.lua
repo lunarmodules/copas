@@ -75,6 +75,10 @@ end
 
 
 --- Cancels a running timer.
+-- If the timer callback is currently in progress (eg. yielded on socket I/O),
+-- it is allowed to run to completion, it just won't be rescheduled. Only a
+-- timer that is idle, waiting for its next recurrence, is woken up and
+-- stopped immediately.
 -- @return timer object, or nil+error
 function timer:cancel()
   if not self.co then
@@ -86,8 +90,7 @@ function timer:cancel()
   end
 
   self.cancelled = true
-  copas.wakeup(self.co)       -- resume asap
-  copas.removethread(self.co) -- will immediately drop the thread upon resuming
+  copas.wakeup(self.co) -- in case it's idle between recurrences, exit immediately
   self.co = nil
   return self
 end

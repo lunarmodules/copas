@@ -822,7 +822,8 @@ exchange data with other services.</p>
 
     <dt><strong><code>timer:cancel()</code></strong></dt>
     <dd>
-        <p>Will cancel the timer.</p>
+        <p>Will cancel the timer. If the callback is currently in progress then the callback won't be
+        cancelled, just new invocations will be prevented.</p>
     </dd>
 
 </dl>

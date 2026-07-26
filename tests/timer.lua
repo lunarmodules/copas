@@ -4,6 +4,7 @@ package.path = string.format("../src/?.lua;%s", package.path)
 
 
 local copas = require "copas"
+local socket = require "socket"
 local gettime = copas.gettime
 local timer = copas.timer
 
@@ -121,7 +122,54 @@ copas.loop(function()
   })
   -- succes count = 15
 
+  -- Regression test for https://github.com/lunarmodules/copas/issues/206
+  -- Cancelling a recurring timer while its callback is yielded on socket I/O
+  -- must let the in-progress callback resume and finish (just without
+  -- rescheduling), not abandon it mid-flight.
+  do
+    local io_invocations = 0
+    local io_callback_finished = false
+
+    local receiver = socket.udp()
+    receiver:setsockname("127.0.0.1", 0)
+    local ip, port = receiver:getsockname()
+    receiver = copas.wrap(receiver)
+
+    local io_timer
+    io_timer = timer.new({
+      delay = 0.1,
+      recurring = true,
+      callback = function()
+        io_invocations = io_invocations + 1
+        local data = receiver:receive()  -- yields on socket I/O
+        assert(data == "wakeup", "expected to receive 'wakeup', got: "..tostring(data))
+        io_callback_finished = true
+      end,
+    })
+
+    copas.addthread(function()
+      -- wait until the timer callback is parked waiting on the socket read
+      while io_invocations == 0 do
+        copas.pause(0.01)
+      end
+      copas.pause(0.05) -- make sure it actually reached the yield point
+
+      assert(io_timer:cancel())
+
+      local sender = copas.wrap(socket.udp())
+      sender:sendto("wakeup", ip, port)
+
+      copas.pause(0.2) -- allow the in-progress callback to resume and finish
+      assert(io_callback_finished, "in-progress callback was abandoned after cancel()")
+      successes = successes + 1  -- 1 to come
+
+      assert(io_invocations == 1, "timer rescheduled after being cancelled")
+      successes = successes + 1  -- 1 to come
+    end)
+  end
+  -- succes count = 17
+
 end)
 
-assert(successes == 15, "number of successes didn't match! got: "..successes)
+assert(successes == 17, "number of successes didn't match! got: "..successes)
 print("test success!")
