@@ -554,6 +554,12 @@ end
 -- UDP: a UDP socket expects a second argument to be a number, so it MUST
 -- be provided as the 'pattern' below defaults to a string. Will throw a
 -- 'bad argument' error if omitted.
+-- SECURITY: the default pattern "*l" has no maximum length, matching LuaSocket
+-- and Lua file-io semantics. It buffers until a newline/EOF/error, and the
+-- per-operation timeout resets on every partial receive, so it does not bound
+-- the accumulated size either. Do not use the default line-read directly on
+-- untrusted/remote input without an application-enforced size limit; use a
+-- numeric (sized) pattern or receivepartial with your own cumulative cap instead.
 function copas.receive(client, pattern, part)
   local s, err
   pattern = pattern or "*l"

@@ -434,6 +434,18 @@ exchange data with other services.</p>
         <p>Non-blocking equivalent to the LuaSocket method (after <code>copas.wrap</code>).
         Please see <code>sock:receivepartial</code> for differences with LuaSocket, especially
         when using the <code>"*a"</code> pattern.</p>
+
+        <p><strong>Security note:</strong> the default pattern, <code>"*l"</code>, has no
+        maximum line length. Just like LuaSocket and Lua's own file-io, it will keep
+        buffering data until a newline, end-of-file, or a socket error is encountered.
+        Because the Copas timeout resets on every chunk received (see the timeout note
+        above), a peer that trickles in bytes without ever sending a newline is not timed
+        out either, so the buffer keeps growing for as long as the peer stays connected.
+        Do not use the default <code>receive()</code>/<code>"*l"</code> pattern directly on
+        data from an untrusted or remote peer unless the protocol itself guarantees a
+        bounded line length. For untrusted input, read a bounded/known size (a numeric
+        pattern), or use <code>receivepartial</code> and enforce your own cumulative size
+        limit, closing the connection when it is exceeded.</p>
     </dd>
 
     <dt><strong><code>sock:receivefrom([size])</code></strong></dt>
@@ -901,6 +913,11 @@ servers.</p>
         <p><strong>Note:</strong> for UDP sockets the <code>size</code> parameter is NOT
         optional. For the wrapped function <code>socket:receive([size])</code> it is
         optional again.</p>
+
+        <p><strong>Security note:</strong> see the note under <code>sock:receive</code>
+        above regarding the default <code>"*l"</code> pattern having no maximum length,
+        which makes it unsafe to use directly on untrusted/remote input without an
+        application-enforced size limit.</p>
     </dd>
 
     <dt><strong><code>copas.receivepartial(skt [, pattern [, prefix]])</code></strong></dt>
