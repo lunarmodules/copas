@@ -215,4 +215,21 @@ function semaphore:get_wait()
 end
 
 
+-- Releases every currently queued waiter, regardless of `max`.
+-- Feeds `get_wait()` into `give()` in `max`-sized chunks, since a single
+-- `give()` call is capped at `max` and would otherwise strand waiters
+-- beyond it.
+function semaphore:release_all()
+  local wait = self:get_wait()
+  while wait > 0 do
+    if wait > self.max then
+      self:give(self.max)
+    else
+      self:give(wait)
+    end
+    wait = wait - self.max
+  end
+end
+
+
 return semaphore

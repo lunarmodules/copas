@@ -763,6 +763,14 @@ exchange data with other services.</p>
         seconds, and defaults to 10 (<code>math.huge</code> can be used to wait forever).</p>
     </dd>
 
+    <dt><strong><code>semaphore:release_all()</code></strong></dt>
+    <dd>
+        <p>Releases every currently queued waiter, regardless of <code>max</code>. Unlike
+        <code>semaphore:give(semaphore:get_wait())</code>, which is capped at <code>max</code> and can
+        strand waiters beyond it, this feeds the required amount into <code>give()</code> in
+        <code>max</code>-sized chunks until nobody is left waiting.</p>
+    </dd>
+
     <dt><strong><code>semaphore:take([requested], [timeout])</code></strong></dt>
     <dd>
         <p>Takes resources from the semaphore. Parameter <code>requested</code> is the number of resources

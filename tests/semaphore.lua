@@ -242,4 +242,55 @@ copas.loop(function()
 end)
 assert(test3_complete, "test 3 did not complete!")
 
+
+-- Test 4: release_all() must release every waiter regardless of how many
+-- times `max` it takes to do so (unlike give(math.huge), which is capped
+-- at `max` and strands the rest). See https://github.com/lunarmodules/copas/issues/203.
+local test4_complete = false
+copas.loop(function()
+
+  local sema = semaphore.new(2, 0, 5) -- max = 2, well below the waiter count
+  local released = 0
+  for _ = 1, 5 do
+    copas.addthread(function()
+      assert(sema:take(1))
+      released = released + 1
+    end)
+  end
+  copas.pause(0.1) -- let all 5 enqueue
+
+  sema:release_all()
+  copas.pause(0.1)
+
+  assert(released == 5, "expected all 5 waiters to be released, got: "..tostring(released))
+  assert(sema:get_count() == 0,
+    "expected no leftover balance after releasing everyone, got: "..tostring(sema:get_count()))
+
+  -- release_all() combined with a canceled waiter mixed into the queue
+  -- must not leave a stray leftover balance either (that would be the
+  -- fixed get_wait() bug resurfacing through release_all()).
+  local sema2 = semaphore.new(2, 0, 5)
+  local canceled_co = copas.addthread(function() sema2:take(1) end)
+  local released2 = 0
+  for _ = 1, 3 do
+    copas.addthread(function()
+      assert(sema2:take(1))
+      released2 = released2 + 1
+    end)
+  end
+  copas.pause(0.1) -- let all 4 enqueue
+
+  copas.removethread(canceled_co) -- simulate external cancellation
+
+  sema2:release_all()
+  copas.pause(0.1)
+
+  assert(released2 == 3, "expected the 3 legitimate waiters to be released, got: "..tostring(released2))
+  assert(sema2:get_count() == 0,
+    "expected no leftover balance, got: "..tostring(sema2:get_count()))
+
+  test4_complete = true
+end)
+assert(test4_complete, "test 4 did not complete!")
+
 print("test success!")
