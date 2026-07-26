@@ -737,8 +737,9 @@ exchange data with other services.</p>
     <dd>
         <p>Returns the total number of resources requested by all currently waiting threads minus
         the available resources. Such that <code>sempahore:give(semaphore:get_wait())</code> will
-        release all waiting threads and leave the semaphore with 0 resources. If there are no waiting threads
-        then the result will be 0, and the number of resources in the semaphore will be greater than or equal to 0.</p>
+        release all waiting threads and leave the semaphore with 0 resources (provided they are
+        within the <code>max</code> limits). If there are no waiting threads then the result will
+        be 0, and the number of resources in the semaphore will be greater than or equal to 0.</p>
     </dd>
 
     <dt><strong><code>semaphore:give([given])</code></strong></dt>

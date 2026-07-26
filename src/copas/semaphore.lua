@@ -206,7 +206,10 @@ end
 function semaphore:get_wait()
   local wait = 0
   for i = self.q_tip, self.q_tail - 1 do
-    wait = wait + ((self.queue[i] or {}).requested or 0)
+    local item = self.queue[i]
+    if item and copas.issleeping(item.co) then
+      wait = wait + item.requested
+    end
   end
   return wait - self.count
 end

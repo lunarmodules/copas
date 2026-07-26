@@ -217,4 +217,29 @@ copas.loop(function()
 end)
 assert(test2_complete, "test 2 did not complete!")
 
+
+-- Test 3: get_wait() must not count queued waiters that were canceled
+-- externally (eg. via copas.removethread) -- they will never consume the
+-- resources handed to them, so counting their `requested` overstates how
+-- much is actually needed to release everyone still legitimately waiting.
+local test3_complete = false
+copas.loop(function()
+
+  local sema = semaphore.new(10, 0, 5)
+  local canceled_co = copas.addthread(function() sema:take(1) end)
+  copas.addthread(function() sema:take(1) end)
+  copas.addthread(function() sema:take(1) end)
+  copas.pause(0.1) -- let all 3 enqueue
+
+  assert(sema:get_wait() == 3, "expected all 3 live waiters to be counted")
+
+  copas.removethread(canceled_co) -- simulate external cancellation
+
+  assert(sema:get_wait() == 2,
+    "expected the canceled waiter to be excluded, got: "..tostring(sema:get_wait()))
+
+  test3_complete = true
+end)
+assert(test3_complete, "test 3 did not complete!")
+
 print("test success!")
