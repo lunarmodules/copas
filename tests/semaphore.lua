@@ -360,4 +360,35 @@ copas.loop(function()
 end)
 assert(test6_complete, "test 6 did not complete!")
 
+
+-- Test 7: take() must reject invalid input instead of silently bypassing
+-- `max` and corrupting the resource count.
+local test7_complete = false
+copas.loop(function()
+
+  local sema = semaphore.new(5, 0, 5)
+
+  -- a negative request must error, not add to `count` on the fast path
+  local ok = pcall(function() sema:take(-100) end)
+  assert(not ok, "expected take(-100) to raise an error")
+  assert(sema:get_count() == 0, "count must be unaffected by the rejected call, max was 5")
+
+  -- 0 must error too; it's not a meaningful amount of resources to request
+  ok = pcall(function() sema:take(0) end)
+  assert(not ok, "expected take(0) to raise an error")
+
+  -- NaN must error too; it would otherwise queue forever, since
+  -- `count >= NaN` is always false and can never be satisfied
+  ok = pcall(function() sema:take(0/0) end)
+  assert(not ok, "expected take(NaN) to raise an error")
+
+  -- no argument still defaults to 1 and works normally
+  assert(sema:give(1))
+  assert(sema:take())
+  assert(sema:get_count() == 0)
+
+  test7_complete = true
+end)
+assert(test7_complete, "test 7 did not complete!")
+
 print("test success!")

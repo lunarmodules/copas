@@ -777,7 +777,8 @@ exchange data with other services.</p>
     <dt><strong><code>semaphore:take([requested], [timeout])</code></strong></dt>
     <dd>
         <p>Takes resources from the semaphore. Parameter <code>requested</code> is the number of resources
-        requested from the semaphore, if omitted it defaults to 1.</p>
+        requested from the semaphore, if omitted it defaults to 1. <code>requested</code> must be a
+        number greater than or equal to 1, otherwise an error is thrown.</p>
 
         <p>If not enough resources are available it
         will yield and wait until enough resources are available, or a timeout occurs. The exception is when

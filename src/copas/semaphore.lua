@@ -148,13 +148,17 @@ end
 
 -- Requests resources from the semaphore.
 -- Waits if there are not enough resources available before returning.
--- @param requested (optional, default 1) the number of resources requested
+-- @param requested (optional, default 1) the number of resources requested.
+-- Must be a number greater than or equal to 1, and not NaN.
 -- @param timeout (optional, defaults to semaphore timeout) timeout in
 -- seconds. If 0 it will either succeed or return immediately with error "timeout".
 -- If `math.huge` it will wait forever.
 -- @return true, or nil+"destroyed"
 function semaphore:take(requested, timeout)
   requested = requested or 1
+  if requested < 1 or requested ~= requested then
+    error("expected requested resources (1st argument) to be a number greater than or equal to 1, got: " .. tostring(requested), 2)
+  end
   if self.q_tail == 1 and self.count >= requested then
     -- nobody is waiting before us, and there is enough in store
     self.count = self.count - requested
