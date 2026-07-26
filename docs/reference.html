@@ -409,6 +409,14 @@ exchange data with other services.</p>
         canceled through <code>copas.removethread()</code>).</p>
     </dd>
 
+    <dt><strong><code>bool = copas.issleeping(co)</code></strong></dt>
+    <dd>
+        <p>Checks whether <code>co</code> is currently sleeping (paused or paused-forever),
+        without waking it up. Useful for code that queues coroutines and later needs to tell
+        a still-legitimately-waiting coroutine apart from one that was canceled in the
+        meantime (eg. through <code>copas.removethread()</code>) while it was queued.</p>
+    </dd>
+
     <dt><strong><code>sock:close()</code></strong></dt>
     <dd>
         <p>Equivalent to the LuaSocket method (after <code>copas.wrap</code>).</p>

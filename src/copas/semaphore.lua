@@ -83,18 +83,26 @@ function semaphore:give(given)
     local nxt = self.queue[i] -- there can be holes, so nxt might be nil
     if not nxt then
       self.q_tip = i + 1
+    elseif not copas.issleeping(nxt.co) then
+      -- stale entry; 'nxt.co' was canceled externally (eg. via
+      -- copas.removethread/future:cancel) and will never resume to
+      -- consume or give back resources. Drop it without touching 'count',
+      -- and regardless of how much it had requested, so it doesn't block
+      -- waiters behind it that request less than it did.
+      self.queue[i] = nil
+      self.to_flags[nxt.co] = nil
+      self.q_tip = i + 1
+      nxt.co = nil
+    elseif count >= nxt.requested then
+      -- release it
+      self.queue[i] = nil
+      self.to_flags[nxt.co] = nil
+      count = count - nxt.requested
+      self.q_tip = i + 1
+      copas.wakeup(nxt.co)
+      nxt.co = nil
     else
-      if count >= nxt.requested then
-        -- release it
-        self.queue[i] = nil
-        self.to_flags[nxt.co] = nil
-        count = count - nxt.requested
-        self.q_tip = i + 1
-        copas.wakeup(nxt.co)
-        nxt.co = nil
-      else
-        break -- we ran out of resources
-      end
+      break -- we ran out of resources
     end
   end
 

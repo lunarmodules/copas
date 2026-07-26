@@ -310,6 +310,14 @@ local _sleeping = {} do
     return nil, "not sleeping"
   end
 
+  -- non-destructive check; unlike wakeup/cancel it doesn't remove 'co'
+  function _sleeping:issleeping(co)
+    if lethargy[co] then
+      return true
+    end
+    return heap:valueByPayload(co) ~= nil
+  end
+
   function _sleeping:cancel(co)
     lethargy[co] = nil
     heap:remove(co)
@@ -1398,6 +1406,15 @@ end
 -- (eg. it was already woken up, finished, or canceled through `copas.removethread`).
 function copas.wakeup(co)
   return _sleeping:wakeup(co)
+end
+
+
+-- Checks whether a coroutine 'co' is currently sleeping (paused or
+-- paused-forever), without waking it up. Useful to detect a coroutine
+-- that was canceled (eg. through `copas.removethread`) while it was
+-- expected to still be waiting.
+function copas.issleeping(co)
+  return _sleeping:issleeping(co)
 end
 
 

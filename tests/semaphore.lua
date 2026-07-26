@@ -143,4 +143,78 @@ copas.loop(function()
   test_complete = true
 end)
 assert(test_complete, "test did not complete!")
+
+
+-- Test 2: canceling a queued waiter must not permanently leak the
+-- resources handed to it, nor starve legitimate waiters behind it.
+-- See https://github.com/lunarmodules/copas/issues/199 (same root cause
+-- as the copas.lock bug: `copas.wakeup()` failures were ignored).
+local test2_complete = false
+copas.loop(function()
+
+  -- 2a: a lone canceled waiter must not leak the resources given to it
+  local sema2 = semaphore.new(10, 0, 5)
+  local canceled_co = copas.addthread(function()
+    sema2:take(5)
+  end)
+  copas.pause(0.1) -- let it enqueue
+
+  copas.removethread(canceled_co) -- simulate external cancellation
+
+  assert(sema2:give(5))
+  copas.pause(0.1)
+
+  assert(sema2:get_count() == 5,
+    "expected the 5 given resources to remain available, got: "..tostring(sema2:get_count()))
+
+  -- 2b: a legitimate waiter behind a canceled one must still be served
+  local sema3 = semaphore.new(10, 0, 5)
+  local canceled_co2 = copas.addthread(function()
+    sema3:take(5)
+  end)
+  local waiter_result
+  copas.addthread(function()
+    local ok, err = sema3:take(5)
+    waiter_result = ok and "got it" or err
+  end)
+  copas.pause(0.1) -- let both enqueue
+
+  copas.removethread(canceled_co2) -- simulate external cancellation
+
+  assert(sema3:give(5))
+  copas.pause(0.1)
+
+  assert(waiter_result == "got it",
+    "expected the legitimate waiter to be served, got: "..tostring(waiter_result))
+
+  -- 2c: a canceled waiter requesting MORE than what's available must not
+  -- block a legitimate waiter behind it that requests less; the canceled
+  -- entry has to be dropped regardless of resource sufficiency, not just
+  -- when there happen to be enough resources to satisfy its own request.
+  local sema4 = semaphore.new(10, 0, 5)
+  local canceled_co3 = copas.addthread(function()
+    sema4:take(2) -- will be canceled while waiting for 2
+  end)
+  local waiter_result2
+  copas.addthread(function()
+    local ok, err = sema4:take(1) -- only needs 1
+    waiter_result2 = ok and "got it" or err
+  end)
+  copas.pause(0.1) -- let both enqueue
+
+  copas.removethread(canceled_co3) -- simulate external cancellation
+
+  assert(sema4:give(1)) -- not enough for the canceled request (2), plenty for the real one (1)
+  copas.pause(0.1)
+
+  assert(waiter_result2 == "got it",
+    "expected the smaller legitimate waiter to be served ahead of a stale bigger request, got: "
+    ..tostring(waiter_result2))
+  assert(sema4:get_count() == 0,
+    "expected the 1 given resource to have gone to the waiter, got: "..tostring(sema4:get_count()))
+
+  test2_complete = true
+end)
+assert(test2_complete, "test 2 did not complete!")
+
 print("test success!")
