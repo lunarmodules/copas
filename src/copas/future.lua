@@ -42,7 +42,7 @@ future.__call = function(self, ...) return self:get(...) end
 local function new_future()
   local self = setmetatable({
     results = nil, -- results will be stored here in a 'packed' table (pcall-style: true/false prefix)
-    sema = semaphore.new(9999, 0, math.huge),
+    sema = semaphore.new(math.huge, 0, math.huge),
     coro = nil -- the coroutine that will execute the task
   }, future)
 
