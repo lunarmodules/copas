@@ -49,6 +49,7 @@ test: certs
 	$(LUA) $(DELIM) $(PKGPATH) tests/exittest.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/http-timeout.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/httpredirect.lua
+	$(LUA) $(DELIM) $(PKGPATH) tests/httpvalidate.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/largetransfer.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/lock.lua
 	$(LUA) $(DELIM) $(PKGPATH) tests/loop_starter.lua

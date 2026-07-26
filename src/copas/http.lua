@@ -261,6 +261,11 @@ local function adjustrequest(reqt)
     local nreqt = reqt.url and url.parse(reqt.url, default) or {}
     -- explicit components override url
     for i,v in base.pairs(reqt) do nreqt[i] = v end
+    socket.try(base.type(nreqt.scheme) == "string",
+        "invalid scheme '" .. base.tostring(nreqt.scheme) .. "'")
+    nreqt.scheme = string.lower(nreqt.scheme)
+    socket.try(nreqt.scheme == "http" or nreqt.scheme == "https",
+        "unsupported scheme '" .. nreqt.scheme .. "'")
     if nreqt.port == "" then nreqt.port = 80 end
     socket.try(nreqt.host and nreqt.host ~= "",
         "invalid host '" .. base.tostring(nreqt.host) .. "'")
