@@ -293,4 +293,34 @@ copas.loop(function()
 end)
 assert(test4_complete, "test 4 did not complete!")
 
+
+-- Test 5: destroy() must release EVERY waiting thread, even when there are
+-- more of them than `max`. It used to call give(math.huge), which is
+-- capped at `max` and stranded the excess forever -- the same root cause
+-- as https://github.com/lunarmodules/copas/issues/203.
+local test5_complete = false
+copas.loop(function()
+
+  local sema = semaphore.new(2, 0, 5) -- max = 2, well below the waiter count
+  local destroyed_count = 0
+  for _ = 1, 5 do
+    copas.addthread(function()
+      local ok, err = sema:take(1)
+      if not ok and err == "destroyed" then
+        destroyed_count = destroyed_count + 1
+      end
+    end)
+  end
+  copas.pause(0.1) -- let all 5 enqueue
+
+  assert(sema:destroy())
+  copas.pause(0.1)
+
+  assert(destroyed_count == 5,
+    "expected all 5 waiters to be released on destroy, got: "..tostring(destroyed_count))
+
+  test5_complete = true
+end)
+assert(test5_complete, "test 5 did not complete!")
+
 print("test success!")

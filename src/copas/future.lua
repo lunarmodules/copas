@@ -84,7 +84,7 @@ function future:cancel()
     return false  -- already done (or already cancelled)
   end
   self.results = pack(false, "cancelled")
-  self.sema:give(self.sema:get_wait())
+  self.sema:release_all()
   copas.removethread(self.coro)
   return true
 end
@@ -105,7 +105,7 @@ function M.addnamedthread(name, func, ...)
     end
     if not f.results then  -- don't overwrite a cancel
       f.results = results
-      f.sema:give(f.sema:get_wait())
+      f.sema:release_all()
     end
   end, ...)
 

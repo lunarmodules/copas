@@ -56,7 +56,7 @@ do
   -- destroy a semaphore.
   -- Releases all waiting threads with `nil+"destroyed"`
   function semaphore:destroy()
-    self:give(math.huge)
+    self:release_all()
     self.destroyed = true
     setmetatable(self, destroyed_semaphore_mt)
     return true
