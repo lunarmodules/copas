@@ -196,6 +196,123 @@ function tests.receive_timeout_clears_copas_timeout()
   assert(copas._timeout_flags[handler_co] == nil, "timeout_flags kept the timed-out coroutine")
 end
 
+
+-- See issue https://github.com/lunarmodules/copas/issues/208
+-- Two coroutines waiting on the same socket at the same time is a bug in
+-- the caller, not something Copas should silently queue for: exactly one
+-- of them must win the claim and run to completion, the other must get an
+-- immediate "Operation already in progress" error back as a normal return
+-- value (the same way it would see "timeout" or "closed"), not be silently
+-- abandoned.
+--
+-- Note: copas.receive/send both have a built-in fairness mechanism (a
+-- random chance, each retry, to yield via copas.pause() before re-trying)
+-- to stop one busy coroutine from starving others. That means which of the
+-- two racing coroutines below actually wins the claim is not deterministic,
+-- so the assertions below check the invariant (one winner, one conflict),
+-- not which specific coroutine ends up being which.
+function tests.duplicate_read_waiter_errors()
+  local server = socket.bind("127.0.0.1", 0)
+  local ip, port = server:getsockname()
+  local results = {}
+
+  copas.addserver(server, function(skt)
+    copas.removeserver(server)
+    copas.settimeout(skt, 0.1)
+
+    local function waiter()
+      -- nothing is ever sent, so the winner only ever ends via its own
+      -- timeout; the loser gets the claim-conflict error immediately
+      local s, err = copas.receive(skt, 10)
+      results[#results + 1] = { s, err }
+    end
+
+    copas.addthread(waiter)
+    copas.addthread(waiter)
+
+    -- outlive both threads above, otherwise this handler returning would
+    -- trigger copas.autoclose and close `skt` out from under them before
+    -- either gets a chance to run
+    copas.pause(1)
+  end)
+
+  copas.addthread(function()
+    local client = socket.connect(ip, port)
+    -- comfortably past the server's read timeout, so there's no race
+    -- between the timeout and the connection closing
+    copas.pause(1)
+    client:close()
+  end)
+
+  copas.loop()
+
+  assert(#results == 2, "expected both waiters to finish, got: "..#results)
+
+  local conflicts, timeouts = 0, 0
+  for _, r in ipairs(results) do
+    if r[1] == nil and r[2] == "Operation already in progress" then
+      conflicts = conflicts + 1
+    elseif r[1] == nil and r[2] == "timeout" then
+      timeouts = timeouts + 1
+    end
+  end
+  assert(conflicts == 1, "expected exactly one claim-conflict result, got: "..conflicts)
+  assert(timeouts == 1, "expected exactly one normal timeout result, got: "..timeouts)
+end
+
+
+function tests.duplicate_write_waiter_errors()
+  -- a payload well past default OS socket buffers, sent to a peer that
+  -- never reads, so send() reliably has to wait rather than complete
+  -- in one non-blocking call
+  local body = ("A"):rep(1024 * 1024 * 8)
+
+  local server = socket.bind("127.0.0.1", 0)
+  local ip, port = server:getsockname()
+  local results = {}
+
+  copas.addserver(server, function(skt)
+    copas.removeserver(server)
+    -- deliberately never read: keeps the client's send() waiting
+    copas.pause(2)
+    copas.close(skt)
+  end)
+
+  copas.addthread(function()
+    local client = socket.connect(ip, port)
+    client = copas.wrap(client)
+    -- comfortably longer than the server's 2 second delay above, so the
+    -- connection closing is what ends the winner, not a race with its own
+    -- timeout
+    client:settimeout(10)
+
+    local function waiter()
+      -- the winner ends once the server above closes the connection; the
+      -- loser gets the claim-conflict error immediately
+      local status, err = client:send(body)
+      results[#results + 1] = { status, err }
+    end
+
+    copas.addthread(waiter)
+    copas.addthread(waiter)
+  end)
+
+  copas.loop()
+
+  assert(#results == 2, "expected both waiters to finish, got: "..#results)
+
+  local conflicts, closes = 0, 0
+  for _, r in ipairs(results) do
+    if r[1] == nil and r[2] == "Operation already in progress" then
+      conflicts = conflicts + 1
+    elseif r[1] == nil and r[2] == "closed" then
+      closes = closes + 1
+    end
+  end
+  assert(conflicts == 1, "expected exactly one claim-conflict result, got: "..conflicts)
+  assert(closes == 1, "expected exactly one normal closed result, got: "..closes)
+end
+
 -- test "framework"
 for name, test in pairs(tests) do
   print("testing: "..tostring(name))

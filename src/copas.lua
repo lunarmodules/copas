@@ -163,7 +163,9 @@ local object_names = setmetatable({}, {
 
 -------------------------------------------------------------------------------
 -- Simple set implementation
--- adds a FIFO queue for each socket in the set
+-- tracks at the waiting coroutine per socket in the set.
+-- Sets exist for reading and writing. So each socket can have a reader and writer
+-- simultaneously, but only one reader and one writer at a time.
 -------------------------------------------------------------------------------
 
 local function newsocketset()
@@ -200,26 +202,42 @@ local function newsocketset()
 
   end
 
-  do  -- queues implementation
-    local fifo_queues = setmetatable({},{
-      __mode = "k",                 -- auto collect queue if socket is gone
-      __index = function(self, skt) -- auto create fifo queue if not found
-        local newfifo = {}
-        self[skt] = newfifo
-        return newfifo
-      end,
-    })
+  do  -- single-waiter implementation
+    -- the set instance (read or write) determines what operation the coroutine is waiting for
+    local waiters = setmetatable({}, { __mode = "k" }) -- coroutine by socket
 
-    -- pushes an item in the fifo queue for the socket.
-    function set:push(skt, itm)
-      local queue = fifo_queues[skt]
-      queue[#queue + 1] = itm
+    -- Registers the coroutine as the socket's waiter, to be resumed
+    -- once the socket becomes ready.
+    -- @return true on success, or nil + error message if another coroutine
+    -- is already waiting on this socket read/write.
+    function set:claim(skt, co)
+      if waiters[skt] then
+        return nil, "Operation already in progress"
+      end
+      waiters[skt] = co
+      return true
     end
 
-    -- pops an item from the fifo queue for the socket
-    function set:pop(skt)
-      local queue = fifo_queues[skt]
-      return table.remove(queue, 1)
+    -- Clears and returns the coroutine waiting on the socket read/write operation, or nil if
+    -- none is waiting.
+    function set:release(skt)
+      local co = waiters[skt]
+      waiters[skt] = nil
+      return co
+    end
+
+    -- Drops the socket from the set and discards its waiting coroutine (if
+    -- any), without resuming it. Only call this when the socket is being
+    -- discarded outright and no waiter is expected to be woken through the
+    -- normal readiness path (e.g. the socket object itself is being thrown
+    -- away). Do not use this as a general substitute for `remove`: if a
+    -- waiter still needs to observe the outcome (for example a coroutine
+    -- waiting on a socket that is being closed, which is resumed via the
+    -- normal tick()/release() path with a "closed" result), purging here
+    -- would silently drop it instead.
+    function set:purge(skt)
+      waiters[skt] = nil
+      self:remove(skt)
     end
 
   end
@@ -419,10 +437,13 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
     timeout_flags[co] = true
     _resumable:push(co)
 
-    -- clear the socket from the current queue
+    -- release our claim on the socket and stop watching it; the timer, not
+    -- the readiness path, is resuming `co`, so nothing else will do this
     if queue == "read" then
+      _reading:release(skt)
       _reading:remove(skt)
     elseif queue == "write" then
+      _writing:release(skt)
       _writing:remove(skt)
     else
       error("bad queue name; expected 'read'/'write', got: "..tostring(queue))
@@ -477,6 +498,7 @@ local sto_timeout, sto_timed_out, sto_change_queue, sto_error do
     return useSocketTimeoutErrors[coroutine_running()] and err or "timeout"
   end
 
+
   -- only in case of testing export some internals
   if _G._TEST then
     copas._socket_register = socket_register
@@ -491,6 +513,21 @@ end
 -- Coroutine based socket I/O functions.
 -------------------------------------------------------------------------------
 
+-- Claims the socket for the current coroutine and yields to wait for it to
+-- become ready, returning `true` once resumed.
+-- @return nil + error if another coroutine is already waiting on this
+-- socket (a bug in the caller, not a Copas failure).
+local function wait_on(queue, skt)
+  local claimed, err = queue:claim(skt, coroutine_running())
+  if not claimed then
+    return nil, err
+  end
+  queue:insert(skt)
+  coroutine_yield(skt, queue)
+  return true
+end
+
+
 -- Returns "tcp"" for plain TCP and "ssl" for ssl-wrapped sockets, so truthy
 -- for tcp based, and falsy for udp based.
 local isTCP do
@@ -504,11 +541,11 @@ local isTCP do
   end
 end
 
+
 function copas.close(skt, ...)
   _closed[#_closed+1] = skt
   return skt:close(...)
 end
-
 
 
 -- nil or negative is indefinitly
@@ -520,6 +557,7 @@ function copas.settimeout(skt, timeout)
 
   return copas.settimeouts(skt, timeout, timeout, timeout)
 end
+
 
 -- negative is indefinitly, nil means do not change
 function copas.settimeouts(skt, connect, send, read)
@@ -600,16 +638,24 @@ function copas.receive(client, pattern, part)
       return nil, sto_error(err), part
     end
 
+    local queue, direction
     if err == "wantwrite" then -- wantwrite may be returned during SSL renegotiations
+      queue = _writing
+      direction = "write"
       current_log = _writing_log
-      current_log[client] = gettime()
-      sto_change_queue("write")
-      coroutine_yield(client, _writing)
     else
+      queue = _reading
+      direction = "read"
       current_log = _reading_log
-      current_log[client] = gettime()
-      sto_change_queue("read")
-      coroutine_yield(client, _reading)
+    end
+
+    current_log[client] = gettime()
+    sto_change_queue(direction)
+    local ok, werr = wait_on(queue, client)
+    if not ok then
+      current_log[client] = nil
+      sto_timeout()
+      return nil, werr, part
     end
   until false
 end
@@ -646,7 +692,12 @@ function copas.receivefrom(client, size)
     end
 
     _reading_log[client] = gettime()
-    coroutine_yield(client, _reading)
+    local ok, werr = wait_on(_reading, client)
+    if not ok then
+      _reading_log[client] = nil
+      sto_timeout()
+      return nil, werr, port
+    end
   until false
 end
 
@@ -683,16 +734,24 @@ function copas.receivepartial(client, pattern, part)
       return nil, sto_error(err), part
     end
 
+    local queue, direction
     if err == "wantwrite" then
+      queue = _writing
+      direction = "write"
       current_log = _writing_log
-      current_log[client] = gettime()
-      sto_change_queue("write")
-      coroutine_yield(client, _writing)
     else
+      queue = _reading
+      direction = "read"
       current_log = _reading_log
-      current_log[client] = gettime()
-      sto_change_queue("read")
-      coroutine_yield(client, _reading)
+    end
+
+    current_log[client] = gettime()
+    sto_change_queue(direction)
+    local ok, werr = wait_on(queue, client)
+    if not ok then
+      current_log[client] = nil
+      sto_timeout()
+      return nil, werr, part
     end
   until false
 end
@@ -732,16 +791,24 @@ function copas.send(client, data, from, to)
       return nil, sto_error(err), lastIndex
     end
 
+    local queue, direction
     if err == "wantread" then
+      queue = _reading
+      direction = "read"
       current_log = _reading_log
-      current_log[client] = gettime()
-      sto_change_queue("read")
-      coroutine_yield(client, _reading)
     else
+      queue = _writing
+      direction = "write"
       current_log = _writing_log
-      current_log[client] = gettime()
-      sto_change_queue("write")
-      coroutine_yield(client, _writing)
+    end
+
+    current_log[client] = gettime()
+    sto_change_queue(direction)
+    local ok, werr = wait_on(queue, client)
+    if not ok then
+      current_log[client] = nil
+      sto_timeout()
+      return nil, werr, lastIndex
     end
   until false
 end
@@ -783,7 +850,12 @@ function copas.connect(skt, host, port)
 
     tried_more_than_once = tried_more_than_once or true
     _writing_log[skt] = gettime()
-    coroutine_yield(skt, _writing)
+    local ok, werr = wait_on(_writing, skt)
+    if not ok then
+      _writing_log[skt] = nil
+      sto_timeout()
+      return nil, werr
+    end
   until false
 end
 
@@ -917,7 +989,11 @@ function copas.dohandshake(skt, wrap_params)
       error("TLS/SSL handshake failed: " .. tostring(err))
     end
 
-    coroutine_yield(nskt, queue)
+    local ok, werr = wait_on(queue, nskt)
+    if not ok then
+      sto_timeout()
+      error("TLS/SSL handshake failed: " .. tostring(werr))
+    end
   until false
 end
 
@@ -1208,8 +1284,14 @@ local function _doTick (co, skt, ...)
   --   pcall(_errhandlers[co] or _deferror, "task ran for "..tostring(duration).." milliseconds.", co, skt)
   -- end
 
-  if new_q == _reading or new_q == _writing or new_q == _sleeping then
-    -- we're yielding to a new queue
+  if new_q == _reading or new_q == _writing then
+    -- we're yielding to wait on a socket; the claim was already taken by
+    -- the coroutine itself before it yielded (see wait_on below), so by
+    -- construction this can't fail here
+    new_q:insert (res)
+    return
+  elseif new_q == _sleeping then
+    -- we're yielding to sleep
     new_q:insert (res)
     new_q:push (res, co)
     return
@@ -1496,7 +1578,7 @@ local _readable_task = {} do
       _accept(skt, handler)
     else
       _reading:remove(skt)
-      _doTick(_reading:pop(skt), skt)
+      _doTick(_reading:release(skt), skt)
     end
   end
 
@@ -1517,7 +1599,7 @@ local _writable_task = {} do
 
   local function tick(skt)
     _writing:remove(skt)
-    _doTick(_writing:pop(skt), skt)
+    _doTick(_writing:release(skt), skt)
   end
 
   function _writable_task:step()
