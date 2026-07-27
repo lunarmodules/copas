@@ -917,15 +917,19 @@ local function normalize_sslt(sslt)
     r.sni = false
 
   elseif t == "table" then
-    if sslt.mode or sslt.protocol then
-      -- has the mandatory fields for the ssl-params table for handshake
-      -- backward compatibility
-      r.wrap = sslt
-      r.sni = false
-    else
-      -- has the target definition, copy our known keys
+    if sslt.wrap or sslt.sni then
+      -- has the target definition (current format), copy our known keys
       r.wrap = sslt.wrap or false -- 'or false' because we do not want nils
       r.sni = sslt.sni or false -- 'or false' because we do not want nils
+    else
+      -- neither of our own keys is truthy, so treat it as a flat luasec
+      -- context/wrap-params table (backward compatibility), or garbage.
+      -- There are no default TLS settings, so we cannot detect/reject a bad
+      -- table here. But we do not need to; LuaSec validates its mandatory
+      -- fields (mode, protocol, etc.) itself and throws on anything
+      -- incomplete, so this can never fail open into silent plaintext.
+      r.wrap = sslt
+      r.sni = false
     end
 
   elseif t == "userdata" then
@@ -1173,7 +1177,8 @@ _skt_mt_udp.__index.settimeouts = function (self, connect, send, receive)
 ---
 -- Wraps a LuaSocket socket object in an async Copas based socket object.
 -- @param skt The socket to wrap
--- @sslt (optional) Table with ssl parameters, use an empty table to use ssl with defaults
+-- @param[opt] sslt Table with ssl parameters (see 'sslparams' in the reference docs).
+-- Omit the parameter to disable TLS entirely.
 -- @return wrapped socket object
 function copas.wrap (skt, sslt)
   if (getmetatable(skt) == _skt_mt_tcp) or (getmetatable(skt) == _skt_mt_udp) then
