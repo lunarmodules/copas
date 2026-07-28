@@ -354,6 +354,16 @@ end
     return 1, code, headers, status
 end
 
+-- Returns true if `host` is a literal IPv4 or IPv6 address rather than a DNS
+-- hostname. RFC 6066 disallows IP literals in the TLS SNI extension, so these
+-- must not be sent as an SNI name.
+local function ishostliteral(host)
+  if string.find(host, ":", 1, true) then
+    return true -- IPv6 addresses always contain a colon (socket.url strips the brackets)
+  end
+  return string.match(host, "^%d+%.%d+%.%d+%.%d+$") ~= nil
+end
+
 -- Return a function which creates a tcp socket that will
 -- include the optional SSL/TLS connection, and unsafe redirect checks
 function _M.getcreatefunc(params)
@@ -396,15 +406,22 @@ function _M.getcreatefunc(params)
    return function (reqt)
       local u = url.parse(reqt.url)
       if (reqt.scheme or u.scheme) == "https" then
+        if type(ssl_params.sni) ~= "table" then
+          ssl_params.sni = {}  -- was collapsed to `false` below on a prior IP-literal hop
+        end
         if first_request then
           ssl_params.sni.names = sni_name    -- set SNI name to the given name
           first_request = false
         else
           ssl_params.sni.names = nil         -- clear SNI name for follow up redirects
         end
-        if not ssl_params.sni.names then
-          -- TODO: only do this if u.host is a valid hostname, not an IP address. Otherwise, the SNI extension will be sent with an invalid name.
+        if not ssl_params.sni.names and not ishostliteral(u.host) then
           ssl_params.sni.names = u.host
+        end
+        if not ssl_params.sni.names then
+          -- no hostname to send: u.host is an IP literal, which RFC 6066 forbids
+          -- in the SNI extension, so omit it entirely rather than send a bogus name
+          ssl_params.sni = false
         end
         -- https, provide an ssl wrapped socket
         local conn = copas.wrap(socket.tcp(), ssl_params)

@@ -107,6 +107,10 @@ luarocks install copas
         original host's name in the TLS handshake instead of the new target's. This also applied
         to an explicitly caller-supplied SNI name, which is now cleared on redirect so it no longer
         follows the chain to unrelated hosts.</li>
+        <li>Fix: <code>copas.http</code> sent a redirect target's literal IP address as the TLS
+        SNI name when no hostname was available. IP literals are not valid SNI names per RFC 6066;
+        the SNI extension is now omitted entirely for such requests instead of sending a bogus
+        name.</li>
         <li>Fix: a recurring timer that cancelled and immediately re-armed itself from within
         its own callback leaked the old (cancelled) coroutine into the sleeping heap. The old
         coroutine would sit there for its full delay (#213).</li>
