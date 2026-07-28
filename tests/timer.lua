@@ -172,4 +172,65 @@ copas.loop(function()
 end)
 
 assert(successes == 17, "number of successes didn't match! got: "..successes)
+
+-- Regression test for https://github.com/lunarmodules/copas/issues/213
+-- A recurring timer that cancels-and-rearms itself from within its own
+-- callback must not leak the cancelled (old-generation) coroutine into the
+-- sleeping heap. Each leaked coroutine would sit there for its full delay,
+-- consuming a slot until it (eventually) expires -- forever, for a delay of
+-- math.huge, as in the original report.
+-- Run in its own isolated loop so the sleeping-heap count isn't affected by
+-- other tests' timers.
+local leaktest_done = false
+
+copas.loop(function()
+  local rearm_count = 0
+  local max_rearms = 5
+  local baseline = copas.status().timer
+
+  local leak_timer
+  leak_timer = timer.new({
+    delay = 2,  -- long enough that a leaked old-generation coroutine is still parked when checked
+    initial_delay = 0,
+    recurring = true,
+    callback = function(timer_obj)
+      rearm_count = rearm_count + 1
+      if rearm_count <= max_rearms then
+        assert(timer_obj:cancel())
+        assert(timer_obj:arm(0))
+      else
+        assert(timer_obj:cancel())
+      end
+    end,
+  })
+
+  -- watchdog: without the fix, the leaked coroutines keep the loop alive
+  -- until their delay expires (or forever, for math.huge). Bound the
+  -- failure mode instead of letting the test suite hang.
+  local watchdog
+  watchdog = timer.new({
+    delay = 5,
+    callback = function()
+      print("timer leak regression test (issue #213) did not complete within 5 seconds")
+      os.exit(1)
+    end,
+  })
+
+  copas.addthread(function()
+    while rearm_count <= max_rearms do
+      copas.pause(0.01)
+    end
+    copas.pause(0.05) -- let everything settle
+
+    assert(leak_timer.cancelled, "expected the timer to be cancelled")
+    local timer_count = copas.status().timer
+    assert(timer_count <= baseline + 1,
+      "leaked timer coroutines detected: expected around "..baseline..", got "..timer_count)
+
+    watchdog:cancel()
+    leaktest_done = true
+  end)
+end)
+
+assert(leaktest_done, "timer leak regression test (issue #213) did not complete")
 print("test success!")

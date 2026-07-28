@@ -102,6 +102,9 @@ luarocks install copas
 
     <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
 	<dd><ul>
+        <li>Fix: a recurring timer that cancelled and immediately re-armed itself from within
+        its own callback leaked the old (cancelled) coroutine into the sleeping heap. The old
+        coroutine would sit there for its full delay (#213).</li>
         <li>Fix: TLS <code>sslparams</code> tables that didn't contain the current
         <code>wrap</code>/<code>sni</code> keys (e.g. an empty table, or one with misspelled keys)
         were misidentified and silently ended up disabling TLS, producing a plaintext connection

@@ -25,11 +25,20 @@ end
 
 do
   local function expire_func(self, initial_delay)
+    local my_co = coroutine_running()
     if self.errorhandler then
       copas.seterrorhandler(self.errorhandler)
     end
     copas.pause(initial_delay)
     while true do
+      if self.co ~= my_co then
+        -- This generation was replaced (eg. the callback cancelled and
+        -- rearmed the timer, synchronously, before returning). `self.co`
+        -- and `self.cancelled` now belong to the new generation, so this
+        -- coroutine must exit without touching them.
+        return
+      end
+
       if not self.cancelled then
         if not self.recurring then
           -- non-recurring timer
@@ -43,6 +52,11 @@ do
           -- recurring timer
           self:callback(self.params)
         end
+      end
+
+      if self.co ~= my_co then
+        -- replaced while the callback was running, see above
+        return
       end
 
       if self.cancelled then
