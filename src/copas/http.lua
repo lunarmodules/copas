@@ -37,7 +37,6 @@ _M.SSLPORT = 443
 _M.SSLPROTOCOL = "tlsv1_2"
 _M.SSLOPTIONS  = "all"
 _M.SSLVERIFY   = "none"
-_M.SSLSNISTRICT = false
 
 
 -----------------------------------------------------------------------------
@@ -366,9 +365,7 @@ function _M.getcreatefunc(params)
       options = params.options,
       verify = params.verify,
    }
-   ssl_params.sni = ssl_params.sni or {
-      strict = _M.SSLSNISTRICT
-   }
+   ssl_params.sni = ssl_params.sni or {}
 
    -- Default settings
    ssl_params.wrap.protocol = ssl_params.wrap.protocol or _M.SSLPROTOCOL
@@ -378,9 +375,9 @@ function _M.getcreatefunc(params)
    end
    ssl_params.wrap.mode = "client"   -- Force client mode
 
-   local sni_names = ssl_params.sni.names
-   if not sni_names then
-      -- names haven't been set, and hence will be set below. Since this alters
+   local sni_name = ssl_params.sni.names
+   if not sni_name then
+      -- name hasn't been set, and hence will be set below. Since this alters
       -- the table, we must make a copy. Otherwise the altered table might be
       -- reused if a redirect is encountered.
       local old_params = ssl_params
@@ -388,7 +385,7 @@ function _M.getcreatefunc(params)
       for k,v in pairs(old_params) do
         ssl_params[k] = v
       end
-      ssl_params.sni = { strict = old_params.sni.strict }
+      ssl_params.sni = {}
    end
 
    -- upvalue to track https -> http redirection
@@ -399,7 +396,7 @@ function _M.getcreatefunc(params)
       local u = url.parse(reqt.url)
       if (reqt.scheme or u.scheme) == "https" then
         -- set SNI name to the current host unless explicitly given
-        ssl_params.sni.names = sni_names or u.host
+        ssl_params.sni.names = sni_name or u.host
         -- https, provide an ssl wrapped socket
         local conn = copas.wrap(socket.tcp(), ssl_params)
         -- insert https default port, overriding http port inserted by LuaSocket
