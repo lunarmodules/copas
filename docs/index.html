@@ -104,7 +104,9 @@ luarocks install copas
 	<dd><ul>
         <li>Fix: <code>copas.http</code> reused the SNI server name from the first request of a
         redirect chain for every subsequent hop, so a redirect to a different host still sent the
-        original host's name in the TLS handshake instead of the new target's.</li>
+        original host's name in the TLS handshake instead of the new target's. This also applied
+        to an explicitly caller-supplied SNI name, which is now cleared on redirect so it no longer
+        follows the chain to unrelated hosts.</li>
         <li>Fix: a recurring timer that cancelled and immediately re-armed itself from within
         its own callback leaked the old (cancelled) coroutine into the sleeping heap. The old
         coroutine would sit there for its full delay (#213).</li>
