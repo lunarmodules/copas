@@ -378,7 +378,8 @@ function _M.getcreatefunc(params)
    end
    ssl_params.wrap.mode = "client"   -- Force client mode
 
-   if not ssl_params.sni.names then
+   local sni_names = ssl_params.sni.names
+   if not sni_names then
       -- names haven't been set, and hence will be set below. Since this alters
       -- the table, we must make a copy. Otherwise the altered table might be
       -- reused if a redirect is encountered.
@@ -397,8 +398,8 @@ function _M.getcreatefunc(params)
    return function (reqt)
       local u = url.parse(reqt.url)
       if (reqt.scheme or u.scheme) == "https" then
-        -- set SNI name to host if not given
-        ssl_params.sni.names = ssl_params.sni.names or u.host
+        -- set SNI name to the current host unless explicitly given
+        ssl_params.sni.names = sni_names or u.host
         -- https, provide an ssl wrapped socket
         local conn = copas.wrap(socket.tcp(), ssl_params)
         -- insert https default port, overriding http port inserted by LuaSocket
