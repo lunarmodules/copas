@@ -100,6 +100,41 @@ luarocks install copas
 
 <dl class="history">
 
+    <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
+	<dd><ul>
+        <li>Fix: TLS <code>sslparams</code> tables that didn't contain the current
+        <code>wrap</code>/<code>sni</code> keys (e.g. an empty table, or one with misspelled keys)
+        were misidentified and silently ended up disabling TLS, producing a plaintext connection
+        with no error. Such tables are now passed through to LuaSec, which validates and errors on
+        them (#211).</li>
+        <li>Fix: a socket read/write/connect timeout left a stale entry in that socket's wait queue.
+        If the socket was reused afterwards (e.g. returned to a pool), a later real waiter could
+        queue up behind the stale entry and never get woken. Only a single waiter per direction is
+        now allowed; a conflicting second waiter gets an immediate "already in progress" error
+        instead of being silently abandoned (#209).</li>
+        <li>Fix: <code>timer:cancel()</code> could abandon an already in-flight callback instead of
+        letting it complete (#207).</li>
+        <li>Fix: several accounting bugs in <code>copas.semaphore</code>: <code>take()</code> and
+        <code>give()</code> didn't validate their amount, so negative, NaN, or infinite values could
+        corrupt or unbound the internal count; <code>destroy()</code> only released up to
+        <code>max</code> queued waiters instead of all of them; and <code>get_wait()</code> counted
+        waiters that had already been cancelled. Added <code>semaphore:release_all()</code> to
+        release every waiter past <code>max</code> (#205).</li>
+        <li>Fix: <code>copas.future</code> completion was capped at 9999 waiters; the cap has been
+        removed (#204).</li>
+        <li>Fix: <code>copas.lock:get()</code> with a zero timeout that failed to acquire immediately
+        still queued the caller, which then waited forever with nothing left to time it out (#202).</li>
+        <li>Fix: <code>copas.lock</code> and <code>copas.semaphore</code> could deadlock or leak
+        resources when a queued waiter was cancelled externally (e.g. via
+        <code>copas.removethread()</code> or <code>future:cancel()</code>) before being resumed --
+        <code>lock:release()</code> could hand ownership to a coroutine that would never run, and
+        <code>semaphore:give()</code> could deduct resources for a waiter that would never consume
+        them. <code>copas.wakeup()</code> now reports whether it actually woke a coroutine, so callers
+        can skip stale entries instead (#200).</li>
+        <li>Fix: <code>copas.http</code> silently fell back to plain HTTP when given a URL with an
+        unknown/unrecognized scheme, instead of erroring (#195).</li>
+    </ul></dd>
+
     <dt><strong>Copas 4.11.0</strong> [11/Jun/2026]</dt>
 	<dd><ul>
         <li>Feat: added <code>copas.cancelall()</code>. It cancels pending work to force-exit the loop.
