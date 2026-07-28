@@ -396,7 +396,11 @@ function _M.getcreatefunc(params)
       local u = url.parse(reqt.url)
       if (reqt.scheme or u.scheme) == "https" then
         -- set SNI name to the current host unless explicitly given
-        ssl_params.sni.names = sni_name or u.host
+        ssl_params.sni.names = sni_name
+        if not ssl_params.sni.names then
+          -- TODO: only do this if u.host is a valid hostname, not an IP address. Otherwise, the SNI extension will be sent with an invalid name.
+          ssl_params.sni.names = u.host
+        end
         -- https, provide an ssl wrapped socket
         local conn = copas.wrap(socket.tcp(), ssl_params)
         -- insert https default port, overriding http port inserted by LuaSocket
