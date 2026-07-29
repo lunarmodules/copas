@@ -24,7 +24,8 @@ local server_params = {
     options = {"all", "no_sslv2", "no_sslv3", "no_tlsv1"},
   },
   sni = {
-    strict = true, -- only allow connection 'myhost.com'
+    strict = true, -- reject client-supplied SNI names other than 'myhost.com';
+                   -- clients that send no SNI still connect using the default context
     names = {}
   }
 }
