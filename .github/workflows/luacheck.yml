@@ -16,12 +16,12 @@ on:
     branches:
     - master
 
+permissions: read-all
+
 jobs:
 
   luacheck:
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: read
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
