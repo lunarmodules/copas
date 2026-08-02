@@ -204,13 +204,13 @@ end
 -----------------------------------------------------------------------------
 local function adjusturi(reqt)
     local u = reqt
+    reqt.fragment = nil -- fragments are client-side only and must never be sent on the wire
     -- if there is a proxy, we need the full url. otherwise, just a part.
     if not reqt.proxy and not _M.PROXY then
         u = {
            path = socket.try(reqt.path, "invalid path 'nil'"),
            params = reqt.params,
            query = reqt.query,
-           fragment = reqt.fragment
         }
     end
     return url.build(u)

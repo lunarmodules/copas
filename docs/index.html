@@ -102,6 +102,10 @@ luarocks install copas
 
     <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
 	<dd><ul>
+        <li>Fix: <code>copas.http</code> included the URL fragment in the request line sent to
+        the origin server (and, in proxy mode, to the proxy). Fragments are client-side only and
+        must never be transmitted on the wire; a fragment containing sensitive data (e.g. an OAuth
+        callback token) was disclosed to the server and to proxy infrastructure/logs (#220).</li>
         <li>Fix: <code>sock:dohandshake()</code> returned <code>nil + err</code> on a handshake
         timeout instead of throwing like every other failure path. A
         timed-out handshake could leave a connection running without the intended TLS
