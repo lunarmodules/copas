@@ -102,6 +102,10 @@ luarocks install copas
 
     <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
 	<dd><ul>
+        <li>Fix: a 0-byte <code>receive(0)</code> on a TCP/SSL socket was treated like a normal
+        read and queued the caller on <code>select</code>, blocking until more data arrived even
+        though nothing was needed. Per POSIX, a 0-byte read on a stream socket is a no-op; it now
+        returns <code>""</code> immediately (#223).</li>
         <li>Fix: <code>copas.http</code> included the URL fragment in the request line sent to
         the origin server (and, in proxy mode, to the proxy). Fragments are client-side only and
         must never be transmitted on the wire; a fragment containing sensitive data (e.g. an OAuth

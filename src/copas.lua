@@ -542,6 +542,15 @@ local isTCP do
 end
 
 
+-- POSIX: a 0-byte read on a stream socket (TCP/SSL) is a no-op and must
+-- return immediately without waiting on `select`. UDP is different: a
+-- 0-byte datagram is a distinct payload, so it must still wait.
+-- See https://github.com/lunarmodules/copas/issues/223
+local function is_zero_byte_tcp_read(client, pattern)
+  return pattern == 0 and isTCP(client)
+end
+
+
 function copas.close(skt, ...)
   _closed[#_closed+1] = skt
   return skt:close(...)
@@ -609,6 +618,11 @@ end
 -- untrusted/remote input without an application-enforced size limit; use a
 -- numeric (sized) pattern or receivepartial with your own cumulative cap instead.
 function copas.receive(client, pattern, part)
+  if is_zero_byte_tcp_read(client, pattern) then
+    copas.pause() -- yield so a tight receive(0) loop can't starve other coroutines
+    return part or "", nil, nil
+  end
+
   local s, err
   pattern = pattern or "*l"
   local current_log = _reading_log
@@ -704,6 +718,11 @@ end
 -- same as above but with special treatment when reading chunks,
 -- unblocks on any data received.
 function copas.receivepartial(client, pattern, part)
+  if is_zero_byte_tcp_read(client, pattern) then
+    copas.pause() -- yield so a tight receive(0) loop can't starve other coroutines
+    return part or "", nil, nil
+  end
+
   local s, err
   pattern = pattern or "*l"
   local orig_size = #(part or "")

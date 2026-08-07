@@ -159,6 +159,34 @@ function tests.receive_timeout()
 end
 
 
+-- See issue https://github.com/lunarmodules/copas/issues/223
+-- A 0-byte read on a TCP socket is a POSIX no-op: it must return
+-- immediately without waiting for the socket to become readable, unlike a
+-- normal (>0 byte) read which would sit in the `select` wait set.
+function tests.receive_zero_bytes_returns_immediately()
+  local ip, port = singleuseechoserver()
+
+  copas.addthread(function()
+    local client = socket.tcp()
+    client = copas.wrap(client)
+    -- long enough that hitting it would mean the bug is back
+    client:settimeout(1)
+    local status, err = client:connect(ip, port)
+    assert(status, "failed to connect: "..tostring(err))
+
+    -- nothing is ever sent by the peer, so a normal read would time out
+    local start = copas.gettime()
+    local data, err = client:receive(0)
+    assert(data == "", "expected an immediate empty read, got: "..tostring(data)..", err: "..tostring(err))
+    assert(copas.gettime() - start < 0.5, "receive(0) waited on the socket instead of returning immediately")
+
+    client:close()
+  end)
+
+  copas.loop()
+end
+
+
 function tests.receive_timeout_clears_copas_timeout()
   -- See issue https://github.com/lunarmodules/copas/issues/185
   local server = socket.bind("127.0.0.1", 0)
