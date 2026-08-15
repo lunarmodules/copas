@@ -74,7 +74,7 @@ as Lua 5.1 to 5.5</p>
 
 <h2><a name="status"></a>Status</h2>
 
-<p>Current version is 4.11.0 and was developed for Lua 5.1 to 5.5.</p>
+<p>Current version is 4.12.0 and was developed for Lua 5.1 to 5.5.</p>
 
 <h2><a name="download"></a>Download</h2>
 
@@ -100,7 +100,7 @@ luarocks install copas
 
 <dl class="history">
 
-    <dt><strong>Copas 4.x.x</strong> [unreleased]</dt>
+    <dt><strong>Copas 4.12.0</strong> [15/Aug/2026]</dt>
 	<dd><ul>
         <li>Fix: a 0-byte <code>receive(0)</code> on a TCP/SSL socket was treated like a normal
         read and queued the caller on <code>select</code>, blocking until more data arrived even
@@ -142,7 +142,8 @@ luarocks install copas
         <code>give()</code> didn't validate their amount, so negative, NaN, or infinite values could
         corrupt or unbound the internal count; <code>destroy()</code> only released up to
         <code>max</code> queued waiters instead of all of them; and <code>get_wait()</code> counted
-        waiters that had already been cancelled. Added <code>semaphore:release_all()</code> to
+        waiters that had already been cancelled (#205).</li>
+        <li>Added <code>semaphore:release_all()</code> to
         release every waiter past <code>max</code> (#205).</li>
         <li>Fix: <code>copas.future</code> completion was capped at 9999 waiters; the cap has been
         removed (#204).</li>
