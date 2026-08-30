@@ -405,7 +405,10 @@ function _M.getcreatefunc(params)
    -- 'create' function for LuaSocket
    return function (reqt)
       local u = url.parse(reqt.url)
-      if (reqt.scheme or u.scheme) == "https" then
+      local scheme = string.lower(reqt.scheme or u.scheme or "")
+      socket.try(scheme == "http" or scheme == "https",
+          "unsupported scheme '" .. scheme .. "'")
+      if scheme == "https" then
         if type(ssl_params.sni) ~= "table" then
           ssl_params.sni = {}  -- was collapsed to `false` below on a prior IP-literal hop
         end

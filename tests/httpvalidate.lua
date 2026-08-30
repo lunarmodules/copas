@@ -92,6 +92,24 @@ copas.addthread(function()
     check(conn.ssl_params.wrap == false, "'http' scheme does not select the TLS transport")
   end
 
+  -- getcreatefunc() itself must normalize an unnormalized/mixed-case scheme,
+  -- instead of falling back to plain HTTP (see security issue #227)
+  do
+    local create = http.getcreatefunc()
+    local conn = create({ url = "https://localhost/", scheme = "HtTpS" })
+    check(conn.ssl_params.wrap ~= false,
+      "mixed-case 'HtTpS' scheme passed directly to getcreatefunc() selects the TLS transport")
+  end
+
+  -- getcreatefunc() must reject an unsupported scheme rather than silently
+  -- falling back to plain HTTP
+  do
+    local create = http.getcreatefunc()
+    local ok, err = pcall(create, { url = "ftp://localhost/", scheme = "ftp" })
+    check(ok == false and tostring(err):match("unsupported scheme") ~= nil,
+      "getcreatefunc() rejects an unsupported scheme, got: "..tostring(err))
+  end
+
   if failures > 0 then
     print(failures.." check(s) failed")
     os.exit(1)
