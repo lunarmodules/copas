@@ -100,7 +100,7 @@ luarocks install copas
 
 <dl class="history">
 
-    <dt><strong>Copas 4.12.0</strong> [15/Aug/2026]</dt>
+    <dt><strong>Unreleased</strong></dt>
 	<dd><ul>
         <li>Fix: the public <code>copas.http.getcreatefunc()</code> connection factory compared
         the effective scheme (<code>reqt.scheme</code> or the URL's scheme) as-is against
@@ -109,6 +109,10 @@ luarocks install copas
         as not-https and silently fell back to a plaintext TCP connection. The factory now
         lowercases and validates the effective scheme itself, rejecting anything other than
         <code>http</code>/<code>https</code> (#227).</li>
+	</ul></dd>
+
+    <dt><strong>Copas 4.12.0</strong> [15/Aug/2026]</dt>
+	<dd><ul>
         <li>Fix: a 0-byte <code>receive(0)</code> on a TCP/SSL socket was treated like a normal
         read and queued the caller on <code>select</code>, blocking until more data arrived even
         though nothing was needed. Per POSIX, a 0-byte read on a stream socket is a no-op; it now
